@@ -1304,6 +1304,70 @@ pub fn File::deflate_of_bytes(
 }
 
 ///|
+/// Get compression format
+pub fn File::compression(self : File) -> Compression {
+  self.compression
+}
+
+///|
+/// Get start offset in compressed_bytes
+pub fn File::start(self : File) -> Int {
+  self.start
+}
+
+///|
+/// Get compressed size
+pub fn File::compressed_size(self : File) -> Int {
+  self.compressed_size
+}
+
+///|
+/// Get compressed bytes (the full buffer)
+pub fn File::compressed_bytes(self : File) -> Bytes {
+  self.compressed_bytes
+}
+
+///|
+/// Extract just the compressed data as a standalone Bytes object
+pub fn File::compressed_bytes_to_bytes(self : File) -> Bytes {
+  let result = Array::make(self.compressed_size, b'\x00')
+  for i = 0; i < self.compressed_size; i = i + 1 {
+    result[i] = self.compressed_bytes[self.start + i]
+  }
+  Bytes::from_fixedarray(FixedArray::from_iter(result[0:].iter()))
+}
+
+///|
+/// Get decompressed size
+pub fn File::decompressed_size(self : File) -> Int {
+  self.decompressed_size
+}
+
+///|
+/// Get decompressed CRC-32
+pub fn File::decompressed_crc32(self : File) -> UInt32 {
+  self.decompressed_crc32
+}
+
+///|
+/// Get version made by
+pub fn File::version_made_by(self : File) -> UInt16 {
+  self.version_made_by
+}
+
+///|
+/// Get version needed to extract
+pub fn File::version_needed_to_extract(self : File) -> UInt16 {
+  self.version_needed_to_extract
+}
+
+///|
+/// Get general purpose flags
+pub fn File::gp_flags(self : File) -> UInt16 {
+  self.gp_flags
+}
+
+///|
 /// Check if file is encrypted
 pub fn File::is_encrypted(self : File) -> Bool {
   (self.gp_flags & gp_flag_encrypted) != 0
@@ -1577,6 +1641,23 @@ pub fn Archive::to_array(self : Archive) -> Array[Member] {
   let result : Array[Member] = []
   self.members.each(fn(_path, m) { result.push(m) })
   result
+}
+
+///|
+/// Convert archive to a SortedMap from path to member
+pub fn Archive::to_map(
+  self : Archive,
+) -> @immut/sorted_map.SortedMap[String, Member] {
+  self.members
+}
+
+///|
+/// Create archive from a SortedMap
+/// Warning: Assumes each key k maps to member m with Member::path(m) == k
+pub fn Archive::of_map(
+  map : @immut/sorted_map.SortedMap[String, Member],
+) -> Archive {
+  { members: map }
 }
 
 ///|
@@ -2079,4 +2160,27 @@ pub fn Archive::to_bytes(
   write_uint16_le(result, pos, 0) // comment length
   pos = pos + 2
   Ok(Bytes::from_fixedarray(FixedArray::from_iter(result[0:pos].iter())))
+}
+
+///|
+/// Write archive bytes to a pre-allocated buffer at given offset
+/// Returns the number of bytes written or error if buffer is too small
+/// Note: Currently not implemented due to Bytes immutability - use to_bytes() instead
+pub fn Archive::write_bytes(
+  self : Archive,
+  _buffer : Bytes,
+  offset : Int,
+  first : Fpath?,
+) -> Result[Int, String] {
+  match self.to_bytes(first) {
+    Ok(encoded) => {
+      let size = encoded.length()
+      // Note: In MoonBit, Bytes is immutable so we can't write to it
+      // This function exists for API compatibility but recommends using to_bytes()
+      Err(
+        "write_bytes not supported (Bytes is immutable): use to_bytes() instead. Would write \{size} bytes at offset \{offset}",
+      )
+    }
+    Err(msg) => Err(msg)
+  }
 }

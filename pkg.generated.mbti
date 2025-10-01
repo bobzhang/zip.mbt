@@ -82,9 +82,12 @@ fn Archive::is_empty(Self) -> Bool
 fn Archive::mem(Self, String) -> Bool
 fn Archive::member_count(Self) -> Int
 fn Archive::of_bytes(Bytes) -> Result[Self, String]
+fn Archive::of_map(@sorted_map.SortedMap[String, Member]) -> Self
 fn Archive::remove(Self, String) -> Self
 fn Archive::to_array(Self) -> Array[Member]
 fn Archive::to_bytes(Self, String?) -> Result[Bytes, String]
+fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, Member]
+fn Archive::write_bytes(Self, Bytes, Int, String?) -> Result[Int, String]
 
 type ByteBuf
 fn ByteBuf::add_byte(Self, Int) -> Unit
@@ -139,12 +142,22 @@ pub struct File {
   decompressed_crc32 : Int64
 }
 fn File::can_extract(Self) -> Bool
+fn File::compressed_bytes(Self) -> Bytes
+fn File::compressed_bytes_to_bytes(Self) -> Bytes
+fn File::compressed_size(Self) -> Int
+fn File::compression(Self) -> Compression
+fn File::decompressed_crc32(Self) -> Int64
+fn File::decompressed_size(Self) -> Int
 fn File::deflate_of_bytes(Bytes, Int, Int, DeflateLevel?) -> Result[Self, String]
+fn File::gp_flags(Self) -> Int
 fn File::is_encrypted(Self) -> Bool
 fn File::make(Bytes, Int, Int, Compression, Int, Int64, Int?, Int?, Int?) -> Result[Self, String]
+fn File::start(Self) -> Int
 fn File::stored_of_bytes(Bytes, Int, Int) -> Result[Self, String]
 fn File::to_bytes(Self) -> Bytes
 fn File::to_bytes_no_crc_check(Self) -> (Bytes, Int64)
+fn File::version_made_by(Self) -> Int
+fn File::version_needed_to_extract(Self) -> Int
 
 pub struct HuffmanDecoder {
   counts : Array[Int]

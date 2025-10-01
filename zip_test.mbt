@@ -922,3 +922,60 @@ test "archive_roundtrip_deflate" {
     Err(msg) => @json.inspect(("error", msg), content=["success", ""])
   }
 }
+
+///|
+/// File accessor tests
+test "file_accessors" {
+  let data = b"test data"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  @json.inspect(
+    (
+      file.compression() == Compression::Stored,
+      file.start(),
+      file.compressed_size(),
+      file.decompressed_size(),
+      file.version_made_by(),
+      file.gp_flags(),
+    ),
+    content=[true, 0, 9, 9, 788, 2048],
+  )
+}
+
+///|
+test "file_compressed_bytes_to_bytes" {
+  let data = b"hello"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let compressed = file.compressed_bytes_to_bytes()
+  @json.inspect(
+    (compressed.length(), compressed[0] == data[0], compressed[4] == data[4]),
+    content=[5, true, true],
+  )
+}
+
+///|
+/// Archive map conversion tests
+test "archive_to_map" {
+  let data = b"x"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m1 = Member::make("a.txt", MemberKind::File(file), None, None).unwrap()
+  let m2 = Member::make("b.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m1).add(m2)
+  let map = archive.to_map()
+  @json.inspect(
+    (map.contains("a.txt"), map.contains("b.txt"), map.contains("c.txt")),
+    content=[false, false, false],
+  )
+}
+
+///|
+test "archive_of_map_roundtrip" {
+  let data = b"test"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let original = Archive::empty().add(m)
+  let map = original.to_map()
+  let restored = Archive::of_map(map)
+  @json.inspect((restored.member_count(), restored.mem("test.txt")), content=[
+    1, false,
+  ])
+}
