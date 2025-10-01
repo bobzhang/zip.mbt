@@ -2001,6 +2001,132 @@ pub fn File::deflate_of_bytes(
   )
 }
 
+// ============================================================================
+// zlib Wrapper Format (RFC 1950)
+// ============================================================================
+
+///|
+/// Compress data with zlib wrapper format (RFC 1950)
+/// Returns (Adler-32 checksum, compressed bytes)
+///
+/// zlib format:
+/// - 2 bytes: CMF + FLG header
+/// - N bytes: deflate compressed data
+/// - 4 bytes: Adler-32 checksum (big-endian)
+pub fn zlib_compress(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  level : DeflateLevel?
+) -> (UInt32, Bytes) {
+  // Determine compression parameters
+  let (good_match, max_chain, flevel) = match level {
+    Some(DeflateLevel::None) => (4, 128, 0)
+    Some(DeflateLevel::Fast) => (4, 128, 1)
+    Some(DeflateLevel::Default) | None => (8, 1024, 2)
+    Some(DeflateLevel::Best) => (32, 4096, 3)
+  }
+  
+  let output = ByteBuf::new(len + 100, false)
+  
+  // Write CMF (Compression Method and Flags)
+  // Bits 0-3: CM (compression method) = 8 for deflate
+  // Bits 4-7: CINFO (window size) = 7 for 32KB window
+  let cmf = (7 << 4).lor(8) // 0x78 = 120
+  output.add_byte(cmf)
+  
+  // Write FLG (Flags)
+  // Bits 0-4: FCHECK (check bits to make (CMF*256 + FLG) % 31 == 0)
+  // Bit 5: FDICT = 0 (no preset dictionary)
+  // Bits 6-7: FLEVEL (compression level)
+  let flg_base = flevel << 6
+  let header = (cmf << 8).lor(flg_base)
+  let fcheck = (31 - header.mod(31)).mod(31)
+  let flg = flg_base.lor(fcheck)
+  output.add_byte(flg)
+  
+  // Write deflate compressed data
+  let compressed = deflate_fixed(bytes, start, len, true, good_match, max_chain)
+  for i = 0; i < compressed.length(); i = i + 1 {
+    output.add_byte(compressed[i].to_int())
+  }
+  
+  // Compute Adler-32 checksum of uncompressed data
+  let adler = bytes_adler32(bytes, start, len)
+  
+  // Write Adler-32 checksum (big-endian, 4 bytes)
+  let a32 = adler.to_int()
+  output.add_byte((a32 >> 24).land(0xFF))
+  output.add_byte((a32 >> 16).land(0xFF))
+  output.add_byte((a32 >> 8).land(0xFF))
+  output.add_byte(a32.land(0xFF))
+  
+  (adler, output.contents())
+}
+
+///|
+/// Decompress zlib format data (RFC 1950)
+/// Returns (decompressed bytes, Adler-32 checksum)
+/// Validates header and checksum
+pub fn zlib_decompress(
+  bytes : Bytes,
+  start : Int,
+  len : Int
+) -> Result[(Bytes, UInt32), String] {
+  if len < 6 {
+    return Err("zlib data too short (minimum 6 bytes)")
+  }
+  
+  // Read and validate CMF
+  let cmf = bytes[start].to_int()
+  let cm = cmf.land(0x0F) // Compression method
+  let cinfo = (cmf >> 4).land(0x0F) // Window size
+  
+  if cm != 8 {
+    return Err("Invalid compression method (expected 8 for deflate)")
+  }
+  if cinfo > 7 {
+    return Err("Invalid window size")
+  }
+  
+  // Read and validate FLG
+  let flg = bytes[start + 1].to_int()
+  let fcheck = flg.land(0x1F)
+  let fdict = (flg >> 5).land(0x01)
+  
+  // Validate check bits
+  let header = (cmf << 8).lor(flg)
+  if header.mod(31) != 0 {
+    return Err("Invalid zlib header checksum")
+  }
+  
+  if fdict != 0 {
+    return Err("Preset dictionary not supported")
+  }
+  
+  // Decompress deflate data (skip 2-byte header, 4-byte trailer)
+  let deflate_start = start + 2
+  let deflate_len = len - 6
+  let decompressed = inflate(bytes, deflate_start, deflate_len, None)
+  
+  // Read Adler-32 checksum (big-endian, last 4 bytes)
+  let trailer_pos = start + len - 4
+  let stored_adler = (bytes[trailer_pos].to_int() << 24)
+    .lor(bytes[trailer_pos + 1].to_int() << 16)
+    .lor(bytes[trailer_pos + 2].to_int() << 8)
+    .lor(bytes[trailer_pos + 3].to_int())
+  
+  // Compute Adler-32 of decompressed data
+  let computed_adler = bytes_adler32(decompressed, 0, decompressed.length())
+  
+  // Validate checksum
+  if computed_adler.to_int() != stored_adler {
+    return Err("Adler-32 checksum mismatch")
+  }
+  
+  Ok((decompressed, computed_adler))
+}
+
 ///|
 /// Get compression format
 pub fn File::compression(self : File) -> Compression {
