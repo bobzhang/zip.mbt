@@ -7,3 +7,8 @@ and keep doing it in a incremental way.
 - MoonBit String is utf16, MoonBit supports UInt16, Int16, UInt32, Int32, UInt64, Int64 more rich data types
 
 [Moonbit](./MoonBit.md) contains more information about MoonBit and its toolchain
+
+# Align features
+
+Maintain a checklist of which features are missed in the MoonBit library, and try to add tests and 
+implement them one by one
