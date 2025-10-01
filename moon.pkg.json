@@ -1,8 +1,5 @@
 {
   "test-import": [
-    {
-      "path": "bobzhang/zip/hexdump",
-      "alias": "hexdump"
-    }
+     "bobzhang/zip/hexdump"
   ]
 }
