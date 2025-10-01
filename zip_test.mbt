@@ -1804,3 +1804,96 @@ test "deflate_fixed_literals_roundtrip" {
     content=[5, 0, 1, 127, 128, 255],
   )
 }
+
+// ============================================================================
+// LZ77 String Matching Tests
+// ============================================================================
+
+///|
+test "lz77_hash4_basic" {
+  let data = b"test"
+  let hash = hash4(data, 0)
+  let valid = hash >= 0 && hash < 32768
+  @json.inspect(valid, content=true)
+}
+
+///|
+test "lz77_hash4_consistency" {
+  let data1 = b"hello world"
+  let data2 = b"xhello world"
+  let hash1 = hash4(data1, 0) // "hell"
+  let hash2 = hash4(data2, 1) // "hell"
+  @json.inspect(hash1 == hash2, content=true)
+}
+
+///|
+test "lz77_insert_hash_basic" {
+  let hash_head = Array::make(32768, -1)
+  let hash_prev = Array::make(32768, 0)
+  insert_hash(hash_head, hash_prev, 42, 100)
+  @json.inspect((hash_head[42], hash_prev[100 % 32768]), content=[100, -1])
+}
+
+///|
+test "lz77_insert_hash_chain" {
+  let hash_head = Array::make(32768, -1)
+  let hash_prev = Array::make(32768, 0)
+  insert_hash(hash_head, hash_prev, 42, 100)
+  insert_hash(hash_head, hash_prev, 42, 200)
+  insert_hash(hash_head, hash_prev, 42, 300)
+  @json.inspect(
+    (hash_head[42], hash_prev[300 % 32768], hash_prev[200 % 32768], hash_prev[100 % 32768]),
+    content=[300, 200, 100, -1],
+  )
+}
+
+///|
+test "lz77_match_fwd_identical" {
+  let data = b"hello world hello"
+  let len = match_fwd(data, 0, 12, 0, 10)
+  @json.inspect(len, content=5) // "hello" = 5 chars
+}
+
+///|
+test "lz77_match_fwd_partial" {
+  let data = b"hello world help"
+  let len = match_fwd(data, 0, 12, 0, 10)
+  @json.inspect(len, content=3) // "hel" = 3 chars
+}
+
+///|
+test "lz77_backref_packing" {
+  let bref = make_backref(100, 5)
+  @json.inspect((backref_dist(bref), backref_len(bref)), content=[100, 5])
+}
+
+///|
+test "lz77_backref_large_values" {
+  let bref = make_backref(32768, 258)
+  @json.inspect((backref_dist(bref), backref_len(bref)), content=[32768, 258])
+}
+
+///|
+test "lz77_find_backref_basic" {
+  let data = b"hello world hello"
+  let hash_head = Array::make(32768, -1)
+  let hash_prev = Array::make(32768, 0)
+  let hash0 = hash4(data, 0)
+  insert_hash(hash_head, hash_prev, hash0, 0)
+  let hash12 = hash4(data, 12)
+  let bref = find_backref(data, hash_head, hash_prev, 12, hash12, 0, 10, 4, 4096)
+  @json.inspect((backref_dist(bref), backref_len(bref)), content=[12, 5])
+}
+
+///|
+test "lz77_find_backref_no_match" {
+  let data = b"abcdefghij"
+  let hash_head = Array::make(32768, -1)
+  let hash_prev = Array::make(32768, 0)
+  let hash0 = hash4(data, 0)
+  insert_hash(hash_head, hash_prev, hash0, 0)
+  let hash6 = hash4(data, 6)
+  let bref = find_backref(data, hash_head, hash_prev, 6, hash6, 0, 10, 4, 4096)
+  @json.inspect(bref, content=0) // No match
+}
+

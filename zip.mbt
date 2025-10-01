@@ -1716,6 +1716,98 @@ pub fn find_match_length(
 }
 
 ///|
+/// Back-reference: represents a (distance, length) pair for LZ77
+/// Packed into a single Int: (distance << 16) | length
+/// If distance == 0, it's a literal (length is the byte value)
+pub fn make_backref(dist : Int, len : Int) -> Int {
+  (dist << 16).lor(len)
+}
+
+pub fn backref_dist(bref : Int) -> Int {
+  // Extract upper 16 bits, handling the bit pattern correctly
+  let bits = bref.land(-65536) // Mask to keep only upper 16 bits
+  if bits < 0 {
+    // Negative means bit 31 was set, need to handle as unsigned
+    (bits >> 16).land(0xFFFF)
+  } else {
+    bits >> 16
+  }
+}
+
+pub fn backref_len(bref : Int) -> Int {
+  bref.land(0xFFFF)
+}
+
+///|
+/// Find the best back-reference match starting at position pos
+/// Returns a backref (0 if no good match found)
+/// Uses hash chain to search previous positions with same hash
+/// Parameters:
+/// - good_match: If match >= this length, reduce search effort (quality vs speed)
+/// - max_chain_len: Maximum number of hash chain entries to check
+pub fn find_backref(
+  bytes : Bytes,
+  hash_head : Array[Int],
+  hash_prev : Array[Int],
+  pos : Int,
+  hash : Int,
+  prev_match_len : Int,
+  max_match_len : Int,
+  good_match : Int,
+  max_chain_len : Int
+) -> Int {
+  // Adjust prev_match_len: we want at least lz77_min_match_len
+  let prev_len = if prev_match_len == 0 {
+    lz77_min_match_len - 1
+  } else {
+    prev_match_len
+  }
+  
+  // Early exit if already at max
+  if prev_len >= max_match_len {
+    return 0
+  }
+  
+  // Adjust chain length based on match quality
+  let chain_steps = if prev_len >= good_match {
+    max_chain_len / 4 // Reduce effort if we already have a good match
+  } else {
+    max_chain_len
+  }
+  
+  // Search the hash chain for best match
+  fn search_chain(chain_left : Int, i : Int, match_pos : Int, best_len : Int) -> Int {
+    if i == lz77_no_pos || chain_left == 0 || pos - i > lz77_max_match_dist {
+      // End of chain or out of range
+      if match_pos == lz77_no_pos {
+        0 // No match found
+      } else {
+        make_backref(pos - match_pos, best_len)
+      }
+    } else {
+      // Try to find match at position i
+      let len = find_match_length(bytes, i, pos, best_len, max_match_len)
+      
+      if len == max_match_len {
+        // Found maximum possible match, stop searching
+        make_backref(pos - i, len)
+      } else if len > 0 {
+        // Found a better match, continue searching
+        let next_i = hash_prev[i.mod(lz77_window_size)]
+        search_chain(chain_left - 1, next_i, i, len)
+      } else {
+        // No better match, continue searching
+        let next_i = hash_prev[i.mod(lz77_window_size)]
+        search_chain(chain_left - 1, next_i, match_pos, best_len)
+      }
+    }
+  }
+  
+  let start_i = hash_head[hash]
+  search_chain(chain_steps, start_i, lz77_no_pos, prev_len)
+}
+
+///|
 /// Create deflate-compressed file data from bytes
 /// Note: Currently uses uncompressed deflate blocks (stored format)
 /// Full LZ77+Huffman deflate compression is TODO
