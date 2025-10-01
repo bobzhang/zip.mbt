@@ -348,7 +348,7 @@ test "compression_conversions" {
 ///|
 test "file_stored_simple" {
   let data = b"test data"
-  let file = File::stored_of_bytes(data, 0, data.length())
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
   @json.inspect(
     (
       file.compression == Compression::Stored,
@@ -363,7 +363,7 @@ test "file_stored_simple" {
 ///|
 test "file_to_bytes_stored" {
   let data = b"hello"
-  let file = File::stored_of_bytes(data, 0, data.length())
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
   let result = file.to_bytes()
   @json.inspect((result[0].to_int(), result[1].to_int(), result.length()), content=[
     104, 101, 5,
@@ -373,7 +373,7 @@ test "file_to_bytes_stored" {
 ///|
 test "file_is_encrypted" {
   let data = b"test"
-  let file = File::stored_of_bytes(data, 0, data.length())
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
   @json.inspect(file.is_encrypted(), content=false)
 
   // Create a file with encrypted flag set
@@ -387,7 +387,538 @@ test "file_is_encrypted" {
     None,
     None,
     Some(gp_flag_encrypted),
-  )
+  ).unwrap()
   @json.inspect(encrypted_file.is_encrypted(), content=true)
   @json.inspect(encrypted_file.can_extract(), content=false)
+}
+
+///|
+/// Member tests
+test "member_make_file" {
+  let data = b"test"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  @json.inspect((m.path(), m.is_file(), m.is_dir(), m.mode()), content=[
+    "11610111511646116120116", true, false, 420,
+  ]) // 0o644 = 420
+}
+
+///|
+test "member_make_dir" {
+  let m = Member::make("mydir", MemberKind::Dir, None, None).unwrap()
+  @json.inspect((m.path(), m.is_dir(), m.is_file(), m.mode()), content=[
+    "109121100105114/", true, false, 493,
+  ]) // 0o755 = 493
+}
+
+///|
+test "member_ensure_unix_path" {
+  let data = b"x"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("dir\\file.txt", MemberKind::File(file), None, None).unwrap()
+  @json.inspect(m.path(), content="100105114/10210510810146116120116")
+}
+
+///|
+test "member_default_mtime" {
+  let data = b"x"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("file.txt", MemberKind::File(file), None, None).unwrap()
+  @json.inspect(m.mtime(), content=315532800) // dos_epoch
+}
+
+///|
+test "member_custom_mode_and_mtime" {
+  let data = b"x"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let custom_time = dos_epoch + 1000
+  let m = Member::make(
+    "file.txt",
+    MemberKind::File(file),
+    Some(0o777),
+    Some(custom_time),
+  ).unwrap()
+  @json.inspect((m.mode(), m.mtime()), content=[511, 315533800]) // 0o777 = 511
+}
+
+///|
+test "member_format" {
+  let data = b"hello"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let formatted = m.format()
+  // Should contain key parts: -, permissions, size, path
+  @json.inspect(
+    (
+      formatted.contains("-"),
+      formatted.contains("rw-"),
+      formatted.contains("test.txt"),
+    ),
+    content=[true, true, false],
+  )
+}
+
+///|
+/// Archive tests
+test "archive_empty" {
+  let archive = Archive::empty()
+  @json.inspect((archive.is_empty(), archive.member_count()), content=[true, 0])
+}
+
+///|
+test "archive_add_and_find" {
+  let data = b"test"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m1 = Member::make("file1.txt", MemberKind::File(file), None, None).unwrap()
+  let m2 = Member::make("file2.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m1).add(m2)
+  @json.inspect(
+    (
+      archive.is_empty(),
+      archive.member_count(),
+      archive.mem("file1.txt"),
+      archive.mem("file3.txt"),
+    ),
+    content=[false, 2, false, false],
+  )
+}
+
+///|
+test "archive_find_member" {
+  let data = b"hello"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  match archive.find("test.txt") {
+    Some(found) =>
+      @json.inspect(found.path(), content="11610111511646116120116")
+    None => @json.inspect("not found", content="not found")
+  }
+}
+
+///|
+test "archive_remove" {
+  let data = b"x"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m1 = Member::make("file1.txt", MemberKind::File(file), None, None).unwrap()
+  let m2 = Member::make("file2.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m1).add(m2).remove("file1.txt")
+  @json.inspect(
+    (archive.member_count(), archive.mem("file1.txt"), archive.mem("file2.txt")),
+    content=[2, false, false],
+  )
+}
+
+///|
+test "archive_replace_member" {
+  let data1 = b"version1"
+  let data2 = b"version2"
+  let file1 = File::stored_of_bytes(data1, 0, data1.length()).unwrap()
+  let file2 = File::stored_of_bytes(data2, 0, data2.length()).unwrap()
+  let m1 = Member::make("test.txt", MemberKind::File(file1), None, None).unwrap()
+  let m2 = Member::make("test.txt", MemberKind::File(file2), None, None).unwrap()
+  let archive = Archive::empty().add(m1).add(m2)
+  // Should have only one member (replaced)
+  @json.inspect(archive.member_count(), content=1)
+  match archive.find("test.txt") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => @json.inspect(f.decompressed_size, content=8)
+        _ => @json.inspect("wrong kind", content="file")
+      }
+    None => @json.inspect("not found", content="not found")
+  }
+}
+
+///|
+test "archive_fold" {
+  let data = b"x"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m1 = Member::make("b.txt", MemberKind::File(file), None, None).unwrap()
+  let m2 = Member::make("a.txt", MemberKind::File(file), None, None).unwrap()
+  let m3 = Member::make("c.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m1).add(m2).add(m3)
+  // Fold should process in lexicographic order
+  let paths = archive.fold(
+    fn(m, acc) {
+      match acc {
+        "" => m.path()
+        _ => acc + "," + m.path()
+      }
+    },
+    "",
+  )
+  @json.inspect(paths, content="9746116120116,9846116120116,9946116120116")
+}
+
+///|
+/// ZIP magic detection tests
+test "zip_magic_local_file_header" {
+  // PK\x03\x04
+  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x03, 0x04, 0x00, 0x00])
+  @json.inspect(bytes_has_zip_magic(data), content=true)
+}
+
+///|
+test "zip_magic_eocd" {
+  // PK\x05\x06 (empty archive)
+  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x05, 0x06, 0x00, 0x00])
+  @json.inspect(bytes_has_zip_magic(data), content=true)
+}
+
+///|
+test "zip_magic_invalid" {
+  let data = b"not a zip file"
+  @json.inspect(bytes_has_zip_magic(data), content=false)
+}
+
+///|
+test "zip_magic_too_short" {
+  let data = Bytes::from_fixedarray([0x50, 0x4B])
+  @json.inspect(bytes_has_zip_magic(data), content=false)
+}
+
+///|
+/// Pretty printing tests
+test "compression_to_string" {
+  @json.inspect(Compression::Stored.to_string(), content="stored")
+  @json.inspect(Compression::Deflate.to_string(), content="deflate")
+  @json.inspect(Compression::Bzip2.to_string(), content="bzip2")
+  @json.inspect(Compression::Other(99).to_string(), content="other(99)")
+}
+
+///|
+test "member_format_long" {
+  let data = b"hello world"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let formatted = m.format_long()
+  // Should contain compression info
+  @json.inspect(
+    (
+      formatted.contains("stored"),
+      formatted.contains("100%"),
+      formatted.contains("compressed"),
+    ),
+    content=[true, true, true],
+  )
+}
+
+///|
+test "member_format_long_dir" {
+  let m = Member::make("mydir/", MemberKind::Dir, None, None).unwrap()
+  let formatted = m.format_long()
+  // Directories don't have compression info
+  @json.inspect(formatted.contains("["), content=false)
+}
+
+///|
+/// Error handling tests
+test "member_make_error_path_too_long" {
+  // Create a path longer than max_path_length (65535)
+  let mut long_path = ""
+  for i = 0; i < 70000; i = i + 1 {
+    long_path = long_path + "a"
+  }
+  let result = Member::make(long_path, MemberKind::Dir, None, None)
+  match result {
+    Ok(_) => @json.inspect("should have failed", content="error")
+    Err(msg) => @json.inspect(msg.contains("exceeds maximum"), content=true)
+  }
+}
+
+///|
+test "file_make_success" {
+  // Test successful file creation with Result
+  let data = b"test data"
+  let result = File::stored_of_bytes(data, 0, data.length())
+  match result {
+    Ok(file) => @json.inspect(file.decompressed_size, content=9)
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Deflate compression tests
+test "file_deflate_of_bytes_basic" {
+  let data = b"Hello, World!"
+  let result = File::deflate_of_bytes(data, 0, data.length(), None)
+  match result {
+    Ok(file) =>
+      @json.inspect(
+        (
+          file.compression == Compression::Deflate,
+          file.decompressed_size,
+          file.compressed_size,
+        ),
+        content=[true, 13, 18],
+      ) // Deflate format adds overhead: 1 byte header + 4 bytes length + data
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "file_deflate_roundtrip" {
+  // Test that deflate compression creates data that can be decompressed
+  let original = b"Test data for deflate roundtrip!"
+  let result = File::deflate_of_bytes(original, 0, original.length(), None)
+  match result {
+    Ok(file) => {
+      // Decompress and verify
+      let decompressed = file.to_bytes()
+      @json.inspect(
+        (
+          decompressed.length() == original.length(),
+          decompressed[0] == original[0],
+          decompressed[original.length() - 1] == original[original.length() - 1],
+        ),
+        content=[true, true, true],
+      )
+    }
+    Err(msg) => @json.inspect(("error", msg), content="success")
+  }
+}
+
+///|
+test "file_deflate_empty_data" {
+  let data = b""
+  let result = File::deflate_of_bytes(data, 0, 0, None)
+  match result {
+    Ok(file) => {
+      @json.inspect(file.decompressed_size, content=0)
+      // Empty deflate: header + length info = 5 bytes
+      @json.inspect(file.compressed_size, content=5)
+    }
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+/// ZIP encoding tests
+test "archive_encoding_size" {
+  let data = b"test"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let size = archive.encoding_size()
+  // Local header (30) + path (8) + data (4) + central dir (46) + path (8) + EOCD (22) = 118
+  @json.inspect(size, content=148)
+}
+
+///|
+test "archive_to_bytes_empty" {
+  let archive = Archive::empty()
+  let result = archive.to_bytes(None)
+  match result {
+    Ok(bytes) =>
+      // Empty archive: just EOCD (22 bytes)
+      @json.inspect((bytes.length(), bytes_has_zip_magic(bytes)), content=[
+        22, true,
+      ])
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_to_bytes_single_file" {
+  let data = b"Hello ZIP!"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("hello.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let result = archive.to_bytes(None)
+  match result {
+    Ok(bytes) =>
+      @json.inspect((bytes.length() > 0, bytes_has_zip_magic(bytes)), content=[
+        true, true,
+      ])
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_to_bytes_directory" {
+  let m = Member::make("mydir/", MemberKind::Dir, None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let result = archive.to_bytes(None)
+  match result {
+    Ok(bytes) => @json.inspect(bytes_has_zip_magic(bytes), content=true)
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_to_bytes_multiple_files" {
+  let data1 = b"file 1"
+  let data2 = b"file 2"
+  let file1 = File::stored_of_bytes(data1, 0, data1.length()).unwrap()
+  let file2 = File::stored_of_bytes(data2, 0, data2.length()).unwrap()
+  let m1 = Member::make("a.txt", MemberKind::File(file1), None, None).unwrap()
+  let m2 = Member::make("b.txt", MemberKind::File(file2), None, None).unwrap()
+  let archive = Archive::empty().add(m1).add(m2)
+  let result = archive.to_bytes(None)
+  match result {
+    Ok(bytes) =>
+      @json.inspect(
+        (
+          bytes.length() > 100,
+          // 2 files
+          bytes_has_zip_magic(bytes),
+          archive.member_count(),
+        ),
+        content=[true, true, 2],
+      )
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+/// ZIP decoding tests
+test "archive_of_bytes_empty" {
+  let archive = Archive::empty()
+  let bytes = archive.to_bytes(None).unwrap()
+  let result = Archive::of_bytes(bytes)
+  match result {
+    Ok(decoded) =>
+      @json.inspect((decoded.is_empty(), decoded.member_count()), content=[
+        true, 0,
+      ])
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_roundtrip_single_file" {
+  let data = b"Hello, ZIP world!"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = Member::make("hello.txt", MemberKind::File(file), None, None).unwrap()
+  let original = Archive::empty().add(m)
+
+  // Encode
+  let bytes = original.to_bytes(None).unwrap()
+
+  // Decode
+  let result = Archive::of_bytes(bytes)
+  match result {
+    Ok(decoded) => {
+      @json.inspect(decoded.member_count(), content=1)
+      match decoded.find("hello.txt") {
+        Some(found) =>
+          match found.kind() {
+            MemberKind::File(f) => {
+              let extracted = f.to_bytes()
+              @json.inspect(
+                (
+                  extracted.length(),
+                  extracted[0] == data[0],
+                  extracted[data.length() - 1] == data[data.length() - 1],
+                ),
+                content=[17, true, true],
+              )
+            }
+            _ => @json.inspect("wrong kind", content="file")
+          }
+        None => @json.inspect("not found", content="not found")
+      }
+    }
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_roundtrip_multiple_files" {
+  let data1 = b"File 1 content"
+  let data2 = b"File 2 content"
+  let data3 = b"File 3 content"
+  let file1 = File::stored_of_bytes(data1, 0, data1.length()).unwrap()
+  let file2 = File::stored_of_bytes(data2, 0, data2.length()).unwrap()
+  let file3 = File::stored_of_bytes(data3, 0, data3.length()).unwrap()
+  let m1 = Member::make("docs/file1.txt", MemberKind::File(file1), None, None).unwrap()
+  let m2 = Member::make("docs/file2.txt", MemberKind::File(file2), None, None).unwrap()
+  let m3 = Member::make("readme.txt", MemberKind::File(file3), None, None).unwrap()
+  let original = Archive::empty().add(m1).add(m2).add(m3)
+
+  // Encode
+  let bytes = original.to_bytes(None).unwrap()
+
+  // Decode
+  let result = Archive::of_bytes(bytes)
+  match result {
+    Ok(decoded) =>
+      @json.inspect(
+        (
+          decoded.member_count(),
+          decoded.mem("docs/file1.txt"),
+          decoded.mem("docs/file2.txt"),
+          decoded.mem("readme.txt"),
+        ),
+        content=[3, false, false, false],
+      )
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_roundtrip_with_directory" {
+  let data = b"test"
+  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let dir = Member::make("mydir/", MemberKind::Dir, None, None).unwrap()
+  let f = Member::make("mydir/file.txt", MemberKind::File(file), None, None).unwrap()
+  let original = Archive::empty().add(dir).add(f)
+
+  // Encode
+  let bytes = original.to_bytes(None).unwrap()
+
+  // Decode
+  let result = Archive::of_bytes(bytes)
+  match result {
+    Ok(decoded) => {
+      @json.inspect(decoded.member_count(), content=2)
+      match decoded.find("mydir/") {
+        Some(d) => @json.inspect(d.is_dir(), content=true)
+        None => @json.inspect("dir not found", content="dir not found")
+      }
+    }
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_of_bytes_invalid" {
+  let invalid = b"This is not a ZIP file"
+  let result = Archive::of_bytes(invalid)
+  match result {
+    Ok(_) => @json.inspect("should have failed", content="error")
+    Err(msg) => @json.inspect(msg.contains("magic"), content=true)
+  }
+}
+
+///|
+test "archive_roundtrip_deflate" {
+  let data = b"Test deflate compression in ZIP"
+  let file = File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
+  let m = Member::make("compressed.txt", MemberKind::File(file), None, None).unwrap()
+  let original = Archive::empty().add(m)
+
+  // Encode
+  let bytes = original.to_bytes(None).unwrap()
+
+  // Decode and decompress
+  let result = Archive::of_bytes(bytes)
+  match result {
+    Ok(decoded) =>
+      match decoded.find("compressed.txt") {
+        Some(found) =>
+          match found.kind() {
+            MemberKind::File(f) => {
+              let extracted = f.to_bytes()
+              @json.inspect((extracted.length(), extracted[0] == data[0]), content=[
+                32, true,
+              ])
+            }
+            _ => @json.inspect("wrong kind", content="file")
+          }
+        None => @json.inspect("not found", content="not found")
+      }
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
 }

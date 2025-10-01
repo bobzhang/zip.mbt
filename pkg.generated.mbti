@@ -1,0 +1,185 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip"
+
+import(
+  "moonbitlang/core/immut/sorted_map"
+)
+
+// Values
+fn bytes_adler32(Bytes, Int, Int) -> Int64
+
+fn bytes_crc32(Bytes, Int, Int) -> Int64
+
+fn bytes_has_zip_magic(Bytes) -> Bool
+
+fn check_adler32(Int64, Int64) -> Result[Unit, String]
+
+fn check_crc32(Int64, Int64) -> Result[Unit, String]
+
+let dist_value_of_sym : Array[Int]
+
+let dos_epoch : Int
+
+let fixed_dist_decoder : HuffmanDecoder
+
+let fixed_litlen_decoder : HuffmanDecoder
+
+fn format_file_mode(Int) -> String
+
+fn fpath_ensure_directoryness(String) -> String
+
+fn fpath_ensure_unix(String) -> String
+
+fn fpath_sanitize(String) -> String
+
+let gp_flag_encrypted : Int
+
+let gp_flag_utf8 : Int
+
+fn inflate(Bytes, Int, Int, Int?) -> Bytes
+
+fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
+
+fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
+
+let length_value_of_sym_table : Array[Int]
+
+let max_file_size : Int64
+
+let max_member_count : Int
+
+let max_path_length : Int
+
+fn ptime_format(Int) -> String
+
+fn ptime_of_dos_date_time(Int, Int) -> Int
+
+fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
+
+fn ptime_to_dos_date_time(Int) -> (Int, Int)
+
+// Errors
+
+// Types and methods
+pub struct Adler32 {
+  value : Int64
+}
+fn Adler32::finish(Self) -> Int64
+fn Adler32::init() -> Self
+fn Adler32::update_bytes(Self, Bytes, Int, Int) -> Self
+impl Eq for Adler32
+impl Show for Adler32
+
+pub struct Archive {
+  members : @sorted_map.SortedMap[String, Member]
+}
+fn Archive::add(Self, Member) -> Self
+fn Archive::empty() -> Self
+fn Archive::encoding_size(Self) -> Int
+fn Archive::find(Self, String) -> Member?
+fn[T] Archive::fold(Self, (Member, T) -> T, T) -> T
+fn Archive::is_empty(Self) -> Bool
+fn Archive::mem(Self, String) -> Bool
+fn Archive::member_count(Self) -> Int
+fn Archive::of_bytes(Bytes) -> Result[Self, String]
+fn Archive::remove(Self, String) -> Self
+fn Archive::to_array(Self) -> Array[Member]
+fn Archive::to_bytes(Self, String?) -> Result[Bytes, String]
+
+type ByteBuf
+fn ByteBuf::add_byte(Self, Int) -> Unit
+fn ByteBuf::add_bytes(Self, Bytes, Int, Int) -> Unit
+fn ByteBuf::contents(Self) -> Bytes
+fn ByteBuf::length(Self) -> Int
+fn ByteBuf::new(Int, Bool) -> Self
+fn ByteBuf::recopy(Self, Int, Int) -> Unit
+
+pub(all) enum Compression {
+  Stored
+  Deflate
+  Bzip2
+  Lzma
+  Xz
+  Zstd
+  Other(Int)
+}
+fn Compression::from_int(Int) -> Self
+fn Compression::to_int(Self) -> Int
+fn Compression::to_string(Self) -> String
+impl Eq for Compression
+impl Show for Compression
+
+pub struct Crc32 {
+  value : Int64
+}
+fn Crc32::finish(Self) -> Int64
+fn Crc32::init() -> Self
+fn Crc32::update_byte(Self, Int) -> Self
+fn Crc32::update_bytes(Self, Bytes, Int, Int) -> Self
+impl Eq for Crc32
+impl Show for Crc32
+
+pub enum DeflateLevel {
+  None
+  Fast
+  Default
+  Best
+}
+impl Eq for DeflateLevel
+
+pub struct File {
+  version_made_by : Int
+  version_needed_to_extract : Int
+  gp_flags : Int
+  compression : Compression
+  start : Int
+  compressed_size : Int
+  compressed_bytes : Bytes
+  decompressed_size : Int
+  decompressed_crc32 : Int64
+}
+fn File::can_extract(Self) -> Bool
+fn File::deflate_of_bytes(Bytes, Int, Int, DeflateLevel?) -> Result[Self, String]
+fn File::is_encrypted(Self) -> Bool
+fn File::make(Bytes, Int, Int, Compression, Int, Int64, Int?, Int?, Int?) -> Result[Self, String]
+fn File::stored_of_bytes(Bytes, Int, Int) -> Result[Self, String]
+fn File::to_bytes(Self) -> Bytes
+fn File::to_bytes_no_crc_check(Self) -> (Bytes, Int64)
+
+pub struct HuffmanDecoder {
+  counts : Array[Int]
+  symbols : Array[Int]
+  mut max_sym : Int
+}
+fn HuffmanDecoder::new() -> Self
+
+pub struct Member {
+  path : String
+  kind : MemberKind
+  mode : Int
+  mtime : Int
+}
+fn Member::format(Self) -> String
+fn Member::format_long(Self) -> String
+fn Member::is_dir(Self) -> Bool
+fn Member::is_file(Self) -> Bool
+fn Member::kind(Self) -> MemberKind
+fn Member::make(String, MemberKind, Int?, Int?) -> Result[Self, String]
+fn Member::mode(Self) -> Int
+fn Member::mtime(Self) -> Int
+fn Member::path(Self) -> String
+
+pub(all) enum MemberKind {
+  Dir
+  File(File)
+}
+
+// Type aliases
+pub typealias Int as FileMode
+
+pub typealias String as Fpath
+
+pub typealias Int as Ptime
+
+// Traits
+

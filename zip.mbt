@@ -185,9 +185,6 @@ let litlen_end_of_block_sym : Int = 256
 let litlen_first_len_sym : Int = 257
 
 ///|
-let length_value_max : Int = 258
-
-///|
 /// Extract base length value (upper bits)
 fn length_value_base(v : Int) -> Int {
   v >> 4
@@ -255,12 +252,6 @@ let dist_sym_max : Int = 29
 let max_dist_sym_count : Int = 30
 
 ///|
-let dist_sym_fixed_max : Int = 31
-
-///|
-let dist_value_max : Int = 32768
-
-///|
 fn dist_value_base(v : Int) -> Int {
   v >> 4
 }
@@ -320,9 +311,6 @@ pub let dist_value_of_sym : Array[Int] = [
 ]
 
 // Code length symbols
-
-///|
-let codelen_sym_max : Int = 18
 
 ///|
 let max_codelen_sym_count : Int = 19
@@ -490,7 +478,7 @@ pub fn ByteBuf::recopy(self : ByteBuf, start : Int, len : Int) -> Unit {
 
 ///|
 /// Inflate decoder state
-struct InflateDecoder {
+priv struct InflateDecoder {
   src : Bytes // Source compressed data
   src_max : Int // Maximum valid index in src
   mut src_pos : Int // Current read position
@@ -499,8 +487,6 @@ struct InflateDecoder {
   dst : ByteBuf // Output buffer
   dyn_litlen : HuffmanDecoder // Dynamic literal/length decoder
   dyn_dist : HuffmanDecoder // Dynamic distance decoder
-  crc_state : Crc32 // For CRC-32 computation
-  mut crc_next : Int // Position in dst for next CRC update
 }
 
 ///|
@@ -525,8 +511,6 @@ fn InflateDecoder::new(
     dst,
     dyn_litlen: HuffmanDecoder::new(),
     dyn_dist: HuffmanDecoder::new(),
-    crc_state: Crc32::init(),
-    crc_next: 0,
   }
 }
 
@@ -1154,6 +1138,20 @@ pub fn Compression::from_int(compression_method : Int) -> Compression {
 }
 
 ///|
+/// Convert compression format to human-readable string
+pub fn Compression::to_string(self : Compression) -> String {
+  match self {
+    Stored => "stored"
+    Deflate => "deflate"
+    Bzip2 => "bzip2"
+    Lzma => "lzma"
+    Zstd => "zstd"
+    Xz => "xz"
+    Other(n) => "other(\{n})"
+  }
+}
+
+///|
 /// File data in a ZIP archive
 pub struct File {
   version_made_by : UInt16
@@ -1199,31 +1197,110 @@ pub fn File::make(
   version_made_by : Int?,
   version_needed : Int?,
   gp_flags : Int?,
-) -> File {
+) -> Result[File, String] {
   if compressed_size.to_int64() > max_file_size ||
     decompressed_size.to_int64() > max_file_size {
-    abort(
+    Err(
       "Maximum ZIP file size \{max_file_size} exceeded: compressed=\{compressed_size}, decompressed=\{decompressed_size}",
     )
-  }
-  {
-    version_made_by: version_made_by.unwrap_or(version_made_by_default),
-    version_needed_to_extract: version_needed.unwrap_or(version_needed_default),
-    gp_flags: gp_flags.unwrap_or(gp_flag_default),
-    compression,
-    start,
-    compressed_size,
-    compressed_bytes,
-    decompressed_size,
-    decompressed_crc32,
+  } else {
+    Ok({
+      version_made_by: version_made_by.unwrap_or(version_made_by_default),
+      version_needed_to_extract: version_needed.unwrap_or(
+        version_needed_default,
+      ),
+      gp_flags: gp_flags.unwrap_or(gp_flag_default),
+      compression,
+      start,
+      compressed_size,
+      compressed_bytes,
+      decompressed_size,
+      decompressed_crc32,
+    })
   }
 }
 
 ///|
 /// Create stored (uncompressed) file data from bytes
-pub fn File::stored_of_bytes(bytes : Bytes, start : Int, len : Int) -> File {
+pub fn File::stored_of_bytes(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+) -> Result[File, String] {
   let crc = bytes_crc32(bytes, start, len)
-  File::make(bytes, start, len, Stored, len, crc, None, None, None)
+  File::make(bytes, start, len, Compression::Stored, len, crc, None, None, None)
+}
+
+///|
+/// Deflate compression levels
+/// Note: Only None is currently implemented; others are reserved for future use
+pub enum DeflateLevel {
+  None // No compression, use stored blocks only
+  Fast // Fast compression (TODO)
+  Default // Default compression (TODO)
+  Best // Best compression (TODO)
+} derive(Eq)
+
+///|
+/// Create uncompressed deflate blocks (RFC 1951)
+/// This creates valid deflate format using only stored (uncompressed) blocks
+fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes {
+  // Deflate format with stored blocks:
+  // Each block: 1 byte header + 4 bytes length info + data
+  // We'll use a single block for simplicity
+  let max_block_size = 65535 // Maximum size for a stored block
+  if len <= max_block_size {
+    // Single block
+    let result_size = 1 + 4 + len // header + len info + data
+    let result = Array::make(result_size, b'\x00')
+
+    // Block header: BFINAL=1 (last block), BTYPE=00 (no compression)
+    result[0] = (0b00000001).to_byte()
+
+    // Length (little-endian)
+    result[1] = (len & 0xFF).to_byte()
+    result[2] = ((len >> 8) & 0xFF).to_byte()
+
+    // One's complement of length
+    let nlen = len ^ 0xFFFF
+    result[3] = (nlen & 0xFF).to_byte()
+    result[4] = ((nlen >> 8) & 0xFF).to_byte()
+
+    // Copy data
+    for i = 0; i < len; i = i + 1 {
+      result[5 + i] = bytes[start + i]
+    }
+    Bytes::from_fixedarray(FixedArray::from_iter(result[0:].iter()))
+  } else {
+    // Multiple blocks needed (not yet implemented)
+    abort("Deflate compression for data > 65535 bytes not yet implemented")
+  }
+}
+
+///|
+/// Create deflate-compressed file data from bytes
+/// Note: Currently uses uncompressed deflate blocks (stored format)
+/// Full LZ77+Huffman deflate compression is TODO
+pub fn File::deflate_of_bytes(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  _level : DeflateLevel?,
+) -> Result[File, String] {
+  // For now, ignore level and always use stored blocks
+  let compressed = deflate_stored(bytes, start, len)
+  let crc = bytes_crc32(bytes, start, len)
+  File::make(
+    compressed,
+    0,
+    compressed.length(),
+    Compression::Deflate,
+    len,
+    crc,
+    None,
+    None,
+    None,
+  )
 }
 
 ///|
@@ -1286,4 +1363,720 @@ pub fn File::to_bytes(self : File) -> Bytes {
     )
   }
   result
+}
+
+///|
+/// Archive Member - represents a file or directory in a ZIP archive
+pub(all) enum MemberKind {
+  Dir // Directory entry
+  File(File) // File entry with compressed data
+}
+
+///|
+/// Maximum number of members in a ZIP archive (non-ZIP64)
+pub let max_member_count : Int = 65535
+
+///|
+/// Maximum path length in ZIP archives
+pub let max_path_length : Int = 65535
+
+///|
+/// Archive member (file or directory)
+pub struct Member {
+  path : Fpath
+  kind : MemberKind
+  mode : FileMode
+  mtime : Ptime
+}
+
+///|
+/// Create a new archive member
+pub fn Member::make(
+  path : Fpath,
+  kind : MemberKind,
+  mode : FileMode?,
+  mtime : Ptime?,
+) -> Result[Member, String] {
+  // Ensure Unix-style path
+  let normalized_path = fpath_ensure_unix(path)
+
+  // Ensure directories end with /
+  let final_path = match kind {
+    Dir => fpath_ensure_directoryness(normalized_path)
+    File(_) => normalized_path
+  }
+
+  // Check path length
+  if final_path.length() > max_path_length {
+    Err("Path length \{final_path.length()} exceeds maximum \{max_path_length}")
+  } else {
+    // Set default mode
+    let file_mode = mode.unwrap_or(
+      match kind {
+        Dir => 0o755
+        File(_) => 0o644
+      },
+    )
+
+    // Set default mtime (truncate to dos_epoch if before)
+    let modification_time = mtime.unwrap_or(dos_epoch)
+    let final_mtime = if modification_time < dos_epoch {
+      dos_epoch
+    } else {
+      modification_time
+    }
+    Ok({ path: final_path, kind, mode: file_mode, mtime: final_mtime })
+  }
+}
+
+///|
+/// Get the path of a member
+pub fn Member::path(self : Member) -> Fpath {
+  self.path
+}
+
+///|
+/// Get the kind of a member
+pub fn Member::kind(self : Member) -> MemberKind {
+  self.kind
+}
+
+///|
+/// Get the file mode of a member
+pub fn Member::mode(self : Member) -> FileMode {
+  self.mode
+}
+
+///|
+/// Get the modification time of a member
+pub fn Member::mtime(self : Member) -> Ptime {
+  self.mtime
+}
+
+///|
+/// Check if member is a directory
+pub fn Member::is_dir(self : Member) -> Bool {
+  match self.kind {
+    Dir => true
+    File(_) => false
+  }
+}
+
+///|
+/// Check if member is a file
+pub fn Member::is_file(self : Member) -> Bool {
+  match self.kind {
+    Dir => false
+    File(_) => true
+  }
+}
+
+///|
+/// Format member info (like ls -l)
+pub fn Member::format(self : Member) -> String {
+  let is_dir_char = match self.kind {
+    Dir => "d"
+    File(_) => "-"
+  }
+  let mode_str = format_file_mode(self.mode)
+  let size = match self.kind {
+    Dir => 0
+    File(f) => f.decompressed_size
+  }
+  let time_str = ptime_format(self.mtime)
+
+  // Format size with padding (8 characters)
+  let size_str = size.to_string()
+  let spaces_needed = 8 - size_str.length()
+  let mut padding = ""
+  for i = 0; i < spaces_needed; i = i + 1 {
+    padding = padding + " "
+  }
+  let padded_size = padding + size_str
+  is_dir_char + mode_str + " " + padded_size + " " + time_str + " " + self.path
+}
+
+///|
+/// Format member info with detailed compression information
+pub fn Member::format_long(self : Member) -> String {
+  let basic = self.format()
+  match self.kind {
+    Dir => basic
+    File(f) => {
+      let compression_str = f.compression.to_string()
+      let ratio = if f.decompressed_size == 0 {
+        "0%"
+      } else {
+        let pct = f.compressed_size * 100 / f.decompressed_size
+        pct.to_string() + "%"
+      }
+      basic + " [" + compression_str + ", " + ratio + " compressed]"
+    }
+  }
+}
+
+///|
+/// ZIP Archive - represents a complete ZIP file
+pub struct Archive {
+  members : @immut/sorted_map.SortedMap[String, Member] // Maps path to member
+}
+
+///|
+/// Create an empty archive
+pub fn Archive::empty() -> Archive {
+  { members: @immut/sorted_map.SortedMap::new() }
+}
+
+///|
+/// Check if archive is empty
+pub fn Archive::is_empty(self : Archive) -> Bool {
+  self.members.is_empty()
+}
+
+///|
+/// Get the number of members in the archive
+pub fn Archive::member_count(self : Archive) -> Int {
+  let mut count = 0
+  self.members.each(fn(_path, _m) { count = count + 1 })
+  count
+}
+
+///|
+/// Check if archive has a member with the given path
+pub fn Archive::mem(self : Archive, path : Fpath) -> Bool {
+  self.members.contains(path)
+}
+
+///|
+/// Find a member by path
+pub fn Archive::find(self : Archive, path : Fpath) -> Member? {
+  self.members.get(path)
+}
+
+///|
+/// Add a member to the archive (replaces if path already exists)
+pub fn Archive::add(self : Archive, m : Member) -> Archive {
+  { members: self.members.add(m.path(), m) }
+}
+
+///|
+/// Remove a member from the archive by path
+pub fn Archive::remove(self : Archive, path : Fpath) -> Archive {
+  { members: self.members.remove(path) }
+}
+
+///|
+/// Fold over all members in lexicographic path order
+pub fn[T] Archive::fold(self : Archive, f : (Member, T) -> T, init : T) -> T {
+  self.members.foldl_with_key(init~, fn(acc, _path, m) { f(m, acc) })
+}
+
+///|
+/// Convert archive to an array of members (sorted by path)
+pub fn Archive::to_array(self : Archive) -> Array[Member] {
+  let result : Array[Member] = []
+  self.members.each(fn(_path, m) { result.push(m) })
+  result
+}
+
+///|
+/// ZIP file format constants and detection
+
+///|
+/// ZIP local file header signature: 0x04034b50 ("PK\x03\x04")
+let zip_local_file_sig : Int = 0x04034b50
+
+///|
+/// ZIP end of central directory signature: 0x06054b50 ("PK\x05\x06")
+let zip_eocd_sig : Int = 0x06054b50
+
+///|
+/// Check if bytes start with ZIP magic signature
+pub fn bytes_has_zip_magic(data : Bytes) -> Bool {
+  if data.length() < 4 {
+    false
+  } else {
+    let sig = data[0].to_int() |
+      (data[1].to_int() << 8) |
+      (data[2].to_int() << 16) |
+      (data[3].to_int() << 24)
+    sig == zip_local_file_sig || sig == zip_eocd_sig
+  }
+}
+
+///|
+/// ZIP file encoding utilities
+
+///|
+/// Helper to write 16-bit little-endian integer to array
+fn write_uint16_le(arr : Array[Byte], pos : Int, value : Int) -> Unit {
+  arr[pos] = (value & 0xFF).to_byte()
+  arr[pos + 1] = ((value >> 8) & 0xFF).to_byte()
+}
+
+///|
+/// Helper to write 32-bit little-endian integer to array
+fn write_uint32_le(arr : Array[Byte], pos : Int, value : Int64) -> Unit {
+  arr[pos] = value.land(0xFFL).to_int().to_byte()
+  arr[pos + 1] = (value >> 8).land(0xFFL).to_int().to_byte()
+  arr[pos + 2] = (value >> 16).land(0xFFL).to_int().to_byte()
+  arr[pos + 3] = (value >> 24).land(0xFFL).to_int().to_byte()
+}
+
+///|
+/// Helper to write bytes to array
+fn write_bytes(arr : Array[Byte], pos : Int, data : Bytes) -> Unit {
+  for i = 0; i < data.length(); i = i + 1 {
+    arr[pos + i] = data[i]
+  }
+}
+
+///|
+/// Central directory file header signature: 0x02014b50
+let zip_central_dir_sig : Int = 0x02014b50
+
+///|
+/// ZIP file decoding utilities
+
+///|
+/// Helper to read 16-bit little-endian integer from bytes
+fn read_uint16_le(data : Bytes, pos : Int) -> Int {
+  data[pos].to_int() | (data[pos + 1].to_int() << 8)
+}
+
+///|
+/// Helper to read 32-bit little-endian integer from bytes
+fn read_uint32_le(data : Bytes, pos : Int) -> Int64 {
+  data[pos].to_int().to_int64() |
+  (data[pos + 1].to_int().to_int64() << 8) |
+  (data[pos + 2].to_int().to_int64() << 16) |
+  (data[pos + 3].to_int().to_int64() << 24)
+}
+
+///|
+/// Find the end of central directory record (EOCD)
+/// Returns the position of EOCD or None if not found
+fn find_eocd(data : Bytes) -> Int? {
+  let len = data.length()
+  if len < 22 {
+    return None // Too small to contain EOCD
+  }
+
+  // EOCD is at the end, search backwards
+  // Maximum comment size is 65535, so search last 65557 bytes (22 + 65535)
+  let search_start = if len > 65557 { len - 65557 } else { 0 }
+  for i = len - 22; i >= search_start; i = i - 1 {
+    let sig = read_uint32_le(data, i)
+    if sig == zip_eocd_sig.to_int64() {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+/// Parse end of central directory record
+fn parse_eocd(data : Bytes, pos : Int) -> Result[(Int, Int, Int), String] {
+  // Returns (central_dir_offset, central_dir_size, entry_count)
+  if data.length() < pos + 22 {
+    return Err("Truncated EOCD record")
+  }
+  let disk = read_uint16_le(data, pos + 4)
+  let cd_disk = read_uint16_le(data, pos + 6)
+  if disk != 0 || cd_disk != 0 {
+    return Err("Multi-disk archives not supported")
+  }
+  let entries_this_disk = read_uint16_le(data, pos + 8)
+  let entries_total = read_uint16_le(data, pos + 10)
+  if entries_this_disk != entries_total {
+    return Err("Inconsistent entry count in EOCD")
+  }
+  let cd_size = read_uint32_le(data, pos + 12).to_int()
+  let cd_offset = read_uint32_le(data, pos + 16).to_int()
+  Ok((cd_offset, cd_size, entries_total))
+}
+
+///|
+/// Parse a central directory entry
+fn parse_central_dir_entry(
+  data : Bytes,
+  pos : Int,
+) -> Result[(Member, Int), String] {
+  // Returns (member, next_position)
+  if data.length() < pos + 46 {
+    return Err("Truncated central directory entry")
+  }
+  let sig = read_uint32_le(data, pos)
+  if sig != zip_central_dir_sig.to_int64() {
+    return Err("Invalid central directory signature")
+  }
+  let version_made_by = read_uint16_le(data, pos + 4)
+  let version_needed = read_uint16_le(data, pos + 6)
+  let gp_flags = read_uint16_le(data, pos + 8)
+  let compression_method = read_uint16_le(data, pos + 10)
+  let dos_time = read_uint16_le(data, pos + 12)
+  let dos_date = read_uint16_le(data, pos + 14)
+  let crc32 = read_uint32_le(data, pos + 16)
+  let compressed_size = read_uint32_le(data, pos + 20).to_int()
+  let uncompressed_size = read_uint32_le(data, pos + 24).to_int()
+  let filename_len = read_uint16_le(data, pos + 28)
+  let extra_len = read_uint16_le(data, pos + 30)
+  let comment_len = read_uint16_le(data, pos + 32)
+  let external_attrs = read_uint32_le(data, pos + 38)
+  let local_header_offset = read_uint32_le(data, pos + 42).to_int()
+
+  // Read filename
+  if data.length() < pos + 46 + filename_len {
+    return Err("Truncated filename in central directory")
+  }
+  let filename_arr = Array::make(filename_len, b'\x00')
+  for i = 0; i < filename_len; i = i + 1 {
+    filename_arr[i] = data[pos + 46 + i]
+  }
+  let filename_bytes = Bytes::from_fixedarray(
+    FixedArray::from_iter(filename_arr[0:].iter()),
+  )
+  let path = filename_bytes.to_string()
+
+  // Calculate next position
+  let next_pos = pos + 46 + filename_len + extra_len + comment_len
+
+  // Determine if directory (path ends with /)
+  let is_dir = path.length() > 0 && path[path.length() - 1] == '/'
+
+  // Extract file mode from external attributes (Unix: high 16 bits)
+  let mode = (external_attrs >> 16).to_int() & 0xFFFF
+  let file_mode = if mode == 0 {
+    if is_dir {
+      0o755
+    } else {
+      0o644
+    }
+  } else {
+    mode
+  }
+
+  // Convert DOS time to POSIX time
+  let mtime = ptime_of_dos_date_time(dos_date, dos_time)
+
+  // Parse local file header to get actual data offset
+  if data.length() < local_header_offset + 30 {
+    return Err("Invalid local header offset")
+  }
+  let local_sig = read_uint32_le(data, local_header_offset)
+  if local_sig != zip_local_file_sig.to_int64() {
+    return Err("Invalid local file header signature")
+  }
+  let local_filename_len = read_uint16_le(data, local_header_offset + 26)
+  let local_extra_len = read_uint16_le(data, local_header_offset + 28)
+  let data_offset = local_header_offset +
+    30 +
+    local_filename_len +
+    local_extra_len
+
+  // Create member
+  let kind = if is_dir {
+    MemberKind::Dir
+  } else {
+    let compression = Compression::from_int(compression_method)
+    let file = match
+      File::make(
+        data,
+        data_offset,
+        compressed_size,
+        compression,
+        uncompressed_size,
+        crc32,
+        Some(version_made_by),
+        Some(version_needed),
+        Some(gp_flags),
+      ) {
+      Ok(f) => f
+      Err(msg) => return Err(msg)
+    }
+    MemberKind::File(file)
+  }
+  let m = match Member::make(path, kind, Some(file_mode), Some(mtime)) {
+    Ok(mem) => mem
+    Err(msg) => return Err(msg)
+  }
+  Ok((m, next_pos))
+}
+
+///|
+/// Decode ZIP archive from bytes
+pub fn Archive::of_bytes(data : Bytes) -> Result[Archive, String] {
+  // Check magic
+  if not(bytes_has_zip_magic(data)) {
+    return Err("Not a ZIP file: missing magic signature")
+  }
+
+  // Find EOCD
+  let eocd_pos = match find_eocd(data) {
+    Some(pos) => pos
+    None => return Err("Could not find end of central directory")
+  }
+
+  // Parse EOCD
+  let (cd_offset, _cd_size, entry_count) = match parse_eocd(data, eocd_pos) {
+    Ok(result) => result
+    Err(msg) => return Err(msg)
+  }
+
+  // Parse central directory entries
+  let mut archive = Archive::empty()
+  let mut pos = cd_offset
+  for _i = 0; _i < entry_count; _i = _i + 1 {
+    match parse_central_dir_entry(data, pos) {
+      Ok((m, next_pos)) => {
+        // Add member (last one wins if duplicate paths)
+        archive = archive.add(m)
+        pos = next_pos
+      }
+      Err(msg) => return Err(msg)
+    }
+  }
+  Ok(archive)
+}
+
+///|
+/// Calculate the size needed to encode an archive
+pub fn Archive::encoding_size(self : Archive) -> Int {
+  let mut size = 0
+  // For each member: local file header + data + central directory header
+  self.members.each(fn(_path, m) {
+    let path_bytes = m.path().length()
+    match m.kind() {
+      Dir =>
+        // Local file header (30) + path + central directory header (46) + path
+        size = size + 30 + path_bytes + 46 + path_bytes
+      File(f) =>
+        // Local file header (30) + path + data + central directory header (46) + path
+        size = size + 30 + path_bytes + f.compressed_size + 46 + path_bytes
+    }
+  })
+  // End of central directory record (22)
+  size = size + 22
+  size
+}
+
+///|
+/// Encode archive to bytes
+pub fn Archive::to_bytes(
+  self : Archive,
+  first : Fpath?,
+) -> Result[Bytes, String] {
+  // Check member count limit
+  let count = self.member_count()
+  if count > max_member_count {
+    return Err(
+      "Archive has \{count} members, exceeds maximum \{max_member_count}",
+    )
+  }
+  let total_size = self.encoding_size()
+  // Allocate slightly more space to account for any rounding
+  let result = Array::make(total_size + 1024, b'\x00')
+  let mut pos = 0
+  let central_dir_entries : Array[(Int, Member)] = []
+
+  // Helper to encode a member
+  let encode_member = fn(m : Member) {
+    let path_bytes = m.path().to_bytes()
+    let path_len = path_bytes.length()
+    let (dos_date, dos_time) = ptime_to_dos_date_time(m.mtime())
+    match m.kind() {
+      Dir => {
+        // Local file header for directory
+        write_uint32_le(result, pos, zip_local_file_sig.to_int64())
+        pos = pos + 4
+        write_uint16_le(result, pos, version_needed_default) // version needed
+        pos = pos + 2
+        write_uint16_le(result, pos, gp_flag_default) // gp flags
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // compression method (stored)
+        pos = pos + 2
+        write_uint16_le(result, pos, dos_time)
+        pos = pos + 2
+        write_uint16_le(result, pos, dos_date)
+        pos = pos + 2
+        write_uint32_le(result, pos, 0L) // CRC-32
+        pos = pos + 4
+        write_uint32_le(result, pos, 0L) // compressed size
+        pos = pos + 4
+        write_uint32_le(result, pos, 0L) // uncompressed size
+        pos = pos + 4
+        write_uint16_le(result, pos, path_len) // file name length
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // extra field length
+        pos = pos + 2
+        write_bytes(result, pos, path_bytes)
+        pos = pos + path_len
+        central_dir_entries.push((pos - 30 - path_len, m))
+      }
+      File(f) => {
+        // Record position for central directory
+        let local_header_offset = pos
+
+        // Local file header for file
+        write_uint32_le(result, pos, zip_local_file_sig.to_int64())
+        pos = pos + 4
+        write_uint16_le(result, pos, f.version_needed_to_extract)
+        pos = pos + 2
+        write_uint16_le(result, pos, f.gp_flags)
+        pos = pos + 2
+        write_uint16_le(result, pos, f.compression.to_int())
+        pos = pos + 2
+        write_uint16_le(result, pos, dos_time)
+        pos = pos + 2
+        write_uint16_le(result, pos, dos_date)
+        pos = pos + 2
+        write_uint32_le(result, pos, f.decompressed_crc32)
+        pos = pos + 4
+        write_uint32_le(result, pos, f.compressed_size.to_int64())
+        pos = pos + 4
+        write_uint32_le(result, pos, f.decompressed_size.to_int64())
+        pos = pos + 4
+        write_uint16_le(result, pos, path_len)
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // extra field length
+        pos = pos + 2
+        write_bytes(result, pos, path_bytes)
+        pos = pos + path_len
+
+        // Write compressed data
+        for i = 0; i < f.compressed_size; i = i + 1 {
+          result[pos + i] = f.compressed_bytes[f.start + i]
+        }
+        pos = pos + f.compressed_size
+        central_dir_entries.push((local_header_offset, m))
+      }
+    }
+  }
+
+  // Encode members in order (first, if specified, then rest in sorted order)
+  match first {
+    Some(first_path) =>
+      match self.find(first_path) {
+        Some(first_member) => {
+          encode_member(first_member)
+          // Encode rest in sorted order
+          self.members.each(fn(path, m) {
+            if path != first_path {
+              encode_member(m)
+            }
+          })
+        }
+        None =>
+          // First path not found, just encode all in sorted order
+          self.members.each(fn(_path, m) { encode_member(m) })
+      }
+    None =>
+      // Encode all in sorted order
+      self.members.each(fn(_path, m) { encode_member(m) })
+  }
+
+  // Write central directory
+  let central_dir_start = pos
+  for entry in central_dir_entries {
+    let (offset, m) = entry
+    let path_bytes = m.path().to_bytes()
+    let path_len = path_bytes.length()
+    let (dos_date, dos_time) = ptime_to_dos_date_time(m.mtime())
+    write_uint32_le(result, pos, zip_central_dir_sig.to_int64())
+    pos = pos + 4
+    match m.kind() {
+      Dir => {
+        write_uint16_le(result, pos, version_made_by_default)
+        pos = pos + 2
+        write_uint16_le(result, pos, version_needed_default)
+        pos = pos + 2
+        write_uint16_le(result, pos, gp_flag_default)
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // compression
+        pos = pos + 2
+        write_uint16_le(result, pos, dos_time)
+        pos = pos + 2
+        write_uint16_le(result, pos, dos_date)
+        pos = pos + 2
+        write_uint32_le(result, pos, 0L) // CRC
+        pos = pos + 4
+        write_uint32_le(result, pos, 0L) // compressed size
+        pos = pos + 4
+        write_uint32_le(result, pos, 0L) // uncompressed size
+        pos = pos + 4
+        write_uint16_le(result, pos, path_len)
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // extra field length
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // file comment length
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // disk number start
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // internal file attributes
+        pos = pos + 2
+        write_uint32_le(result, pos, (m.mode() << 16).to_int64()) // external file attributes
+        pos = pos + 4
+        write_uint32_le(result, pos, offset.to_int64()) // relative offset
+        pos = pos + 4
+        write_bytes(result, pos, path_bytes)
+        pos = pos + path_len
+      }
+      File(f) => {
+        write_uint16_le(result, pos, f.version_made_by)
+        pos = pos + 2
+        write_uint16_le(result, pos, f.version_needed_to_extract)
+        pos = pos + 2
+        write_uint16_le(result, pos, f.gp_flags)
+        pos = pos + 2
+        write_uint16_le(result, pos, f.compression.to_int())
+        pos = pos + 2
+        write_uint16_le(result, pos, dos_time)
+        pos = pos + 2
+        write_uint16_le(result, pos, dos_date)
+        pos = pos + 2
+        write_uint32_le(result, pos, f.decompressed_crc32)
+        pos = pos + 4
+        write_uint32_le(result, pos, f.compressed_size.to_int64())
+        pos = pos + 4
+        write_uint32_le(result, pos, f.decompressed_size.to_int64())
+        pos = pos + 4
+        write_uint16_le(result, pos, path_len)
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // extra field length
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // file comment length
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // disk number start
+        pos = pos + 2
+        write_uint16_le(result, pos, 0) // internal file attributes
+        pos = pos + 2
+        write_uint32_le(result, pos, (m.mode() << 16).to_int64()) // external file attributes
+        pos = pos + 4
+        write_uint32_le(result, pos, offset.to_int64()) // relative offset
+        pos = pos + 4
+        write_bytes(result, pos, path_bytes)
+        pos = pos + path_len
+      }
+    }
+  }
+  let central_dir_size = pos - central_dir_start
+
+  // Write end of central directory record
+  write_uint32_le(result, pos, zip_eocd_sig.to_int64())
+  pos = pos + 4
+  write_uint16_le(result, pos, 0) // disk number
+  pos = pos + 2
+  write_uint16_le(result, pos, 0) // disk with central directory
+  pos = pos + 2
+  write_uint16_le(result, pos, count) // entries on this disk
+  pos = pos + 2
+  write_uint16_le(result, pos, count) // total entries
+  pos = pos + 2
+  write_uint32_le(result, pos, central_dir_size.to_int64())
+  pos = pos + 4
+  write_uint32_le(result, pos, central_dir_start.to_int64())
+  pos = pos + 4
+  write_uint16_le(result, pos, 0) // comment length
+  pos = pos + 2
+  Ok(Bytes::from_fixedarray(FixedArray::from_iter(result[0:pos].iter())))
 }
