@@ -1,0 +1,5 @@
+{
+  "name": "hexdump",
+  "version": "0.1.0",
+  "description": "Hex dump utility functions for MoonBit"
+}

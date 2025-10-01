@@ -1,1 +1,8 @@
-{}
+{
+  "test-import": [
+    {
+      "path": "bobzhang/zip/hexdump",
+      "alias": "hexdump"
+    }
+  ]
+}

@@ -4,6 +4,10 @@
     {
       "path": "bobzhang/zip",
       "alias": "lib"
+    },
+    {
+      "path": "bobzhang/zip/hexdump",
+      "alias": "hexdump"
     }
   ]
 }
