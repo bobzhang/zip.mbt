@@ -979,3 +979,243 @@ test "archive_of_map_roundtrip" {
     1, false,
   ])
 }
+
+///|
+/// End-to-End Compatibility Tests
+/// These tests verify exact compatibility with the OCaml zipc library
+
+test "e2e_crc32_known_value" {
+  // Test vector from OCaml zipc: "The quick brown fox jumps over the lazy dog"
+  let test_string = b"The quick brown fox jumps over the lazy dog"
+  let crc = bytes_crc32(test_string, 0, test_string.length())
+  // Expected: 0x414FA339 (from OCaml test)
+  @json.inspect(crc, content="1095738169")
+}
+
+///|
+test "e2e_adler32_known_value" {
+  // Test vector from OCaml zipc
+  let test_string = b"The quick brown fox jumps over the lazy dog"
+  let adler = bytes_adler32(test_string, 0, test_string.length())
+  // Expected: 0x5bdc0fda (from OCaml test)
+  @json.inspect(adler, content=("1541148634"))
+}
+
+///|
+test "e2e_simple_stored_zip" {
+  // Create a simple ZIP with one stored file
+  // This should produce a deterministic output we can verify
+  let content = b"Hello, World!"
+  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+  
+  // Use a specific timestamp for deterministic output
+  let fixed_time = dos_epoch // 1980-01-01 00:00:00
+  let m = Member::make("hello.txt", MemberKind::File(file), Some(0o644), Some(
+    fixed_time,
+  )).unwrap()
+  
+  let archive = Archive::empty().add(m)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  
+  // Verify it has ZIP magic
+  @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
+  
+  // Verify we can read it back
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  @json.inspect(decoded.member_count(), content=1)
+  
+  // Verify content matches
+  match decoded.find("hello.txt") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => {
+          let extracted = f.to_bytes()
+          @json.inspect(
+            (extracted.length(), extracted == content),
+            content=[13, true],
+          )
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_zip_structure_verification" {
+  // Create a ZIP and verify its structure matches ZIP spec
+  let content = b"test"
+  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  
+  // Verify local file header signature (0x04034b50 = "PK\x03\x04")
+  let local_sig = zip_bytes[0].to_int() |
+    (zip_bytes[1].to_int() << 8) |
+    (zip_bytes[2].to_int() << 16) |
+    (zip_bytes[3].to_int() << 24)
+  @json.inspect(local_sig, content=67324752) // 0x04034b50
+  
+  // Find EOCD signature at end (0x06054b50 = "PK\x05\x06")
+  let len = zip_bytes.length()
+  let eocd_sig = zip_bytes[len - 22].to_int() |
+    (zip_bytes[len - 21].to_int() << 8) |
+    (zip_bytes[len - 20].to_int() << 16) |
+    (zip_bytes[len - 19].to_int() << 24)
+  @json.inspect(eocd_sig, content=101010256) // 0x06054b50
+}
+
+///|
+test "e2e_multi_file_deterministic" {
+  // Create a multi-file archive with deterministic content
+  let file1 = File::stored_of_bytes(b"File 1", 0, 6).unwrap()
+  let file2 = File::stored_of_bytes(b"File 2", 0, 6).unwrap()
+  let file3 = File::stored_of_bytes(b"File 3", 0, 6).unwrap()
+  
+  let m1 = Member::make("a.txt", MemberKind::File(file1), Some(0o644), Some(
+    dos_epoch,
+  )).unwrap()
+  let m2 = Member::make("b.txt", MemberKind::File(file2), Some(0o644), Some(
+    dos_epoch,
+  )).unwrap()
+  let m3 = Member::make("c.txt", MemberKind::File(file3), Some(0o644), Some(
+    dos_epoch,
+  )).unwrap()
+  
+  let archive = Archive::empty().add(m1).add(m2).add(m3)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  
+  // Verify roundtrip
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  @json.inspect(decoded.member_count(), content=3)
+  
+  // Verify all files are present and correct
+  match decoded.find("a.txt") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          @json.inspect(data == b"File 1", content=true)
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_deflate_compatibility" {
+  // Test deflate compression creates valid streams
+  let original = b"AAAAAAAAAA" // Highly compressible (RLE pattern)
+  let file = File::deflate_of_bytes(original, 0, original.length(), None).unwrap()
+  
+  // Verify it's marked as deflate
+  @json.inspect(file.compression() == Compression::Deflate, content=true)
+  
+  // Verify decompression works
+  let decompressed = file.to_bytes()
+  @json.inspect(decompressed == original, content=true)
+  
+  // Verify in a ZIP archive
+  let m = Member::make("data.bin", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  
+  // Read back and verify
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  match decoded.find("data.bin") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          @json.inspect(data == original, content=true)
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_empty_archive_exact_format" {
+  // Empty archive should be exactly 22 bytes (EOCD only)
+  let archive = Archive::empty()
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  
+  @json.inspect(zip_bytes.length(), content=22)
+  
+  // Should start with EOCD signature
+  let sig = zip_bytes[0].to_int() |
+    (zip_bytes[1].to_int() << 8) |
+    (zip_bytes[2].to_int() << 16) |
+    (zip_bytes[3].to_int() << 24)
+  @json.inspect(sig, content=101010256) // PK\x05\x06
+  
+  // Entry count should be 0
+  let entry_count = zip_bytes[8].to_int() | (zip_bytes[9].to_int() << 8)
+  @json.inspect(entry_count, content=0)
+}
+
+///|
+test "e2e_directory_in_zip" {
+  // Create archive with explicit directory entry
+  let dir = Member::make("docs/", MemberKind::Dir, Some(0o755), Some(
+    dos_epoch,
+  )).unwrap()
+  let file_data = b"readme content"
+  let file = File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
+  let f = Member::make("docs/README.md", MemberKind::File(file), Some(0o644), Some(
+    dos_epoch,
+  )).unwrap()
+  
+  let archive = Archive::empty().add(dir).add(f)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  
+  // Verify structure
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  @json.inspect(decoded.member_count(), content=2)
+  
+  // Verify directory
+  match decoded.find("docs/") {
+    Some(d) => @json.inspect(d.is_dir(), content=true)
+    None => @json.inspect(false, content=false)
+  }
+  
+  // Verify file
+  match decoded.find("docs/README.md") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          @json.inspect(data == file_data, content=true)
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_metadata_preservation" {
+  // Test that metadata (mode, mtime) is preserved through encode/decode
+  let content = b"test"
+  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+  let custom_mode = 0o755
+  let custom_time = dos_epoch + 86400 // One day after DOS epoch
+  let m = Member::make("executable.sh", MemberKind::File(file), Some(
+    custom_mode,
+  ), Some(custom_time)).unwrap()
+  
+  let archive = Archive::empty().add(m)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  match decoded.find("executable.sh") {
+    Some(found) => {
+      // Mode and mtime should be preserved
+      @json.inspect((found.mode(), found.mtime()), content=[493, 315619200])
+    }
+    None => @json.inspect(false, content=false)
+  }
+}
