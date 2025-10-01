@@ -121,3 +121,53 @@ test "distance_value_table" {
   // Symbol 29 -> distance 24577, 13 extra bits
   @json.inspect(dist_value_of_sym[29], content=393245) // (24577 << 4) | 13
 }
+
+///|
+/// ByteBuf tests
+test "bytebuf_creation" {
+  let buf = ByteBuf::new(10, false)
+  @json.inspect(buf.length(), content=0)
+}
+
+///|
+test "bytebuf_add_byte" {
+  let buf = ByteBuf::new(10, false)
+  buf.add_byte(0x41) // 'A'
+  buf.add_byte(0x42) // 'B'
+  let result = buf.contents()
+  @json.inspect((buf.length(), result[0].to_int(), result[1].to_int()), content=[
+    2, 65, 66,
+  ])
+}
+
+///|
+test "bytebuf_grow" {
+  let buf = ByteBuf::new(2, false)
+  buf.add_byte(0x41)
+  buf.add_byte(0x42)
+  buf.add_byte(0x43) // Should trigger grow
+  // Buffer should have grown
+  @json.inspect(buf.length(), content=3)
+}
+
+///|
+test "bytebuf_recopy" {
+  let buf = ByteBuf::new(10, false)
+  buf.add_byte(0x41) // 'A'
+  buf.add_byte(0x42) // 'B'
+  buf.add_byte(0x43) // 'C'
+  // Copy bytes 0-1 (AB) to the end
+  buf.recopy(0, 2)
+  let result = buf.contents()
+  @json.inspect(
+    (
+      buf.length(),
+      result[0].to_int(),
+      result[1].to_int(),
+      result[2].to_int(),
+      result[3].to_int(),
+      result[4].to_int(),
+    ),
+    content=[5, 65, 66, 67, 65, 66],
+  )
+}

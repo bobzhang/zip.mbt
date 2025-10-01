@@ -14,11 +14,18 @@ This document tracks the port of zipc from OCaml to MoonBit.
 
 ## Module 2: zipc_deflate - Huffman Coding
 
-### Huffman Decoder
-- [ ] Decoder structure (counts, symbols, max_sym)
-- [ ] Fixed literal/length decoder (RFC 1951 3.2.6)
-- [ ] Fixed distance decoder
-- [ ] Dynamic decoder initialization
+### Deflate Constants ✅
+- [x] Literal/length symbol constants (max, counts, etc.)
+- [x] Length value table (symbol 257-285 → length 3-258)
+- [x] Distance symbol constants
+- [x] Distance value table (symbol 0-29 → distance 1-32768)
+- [x] Code length symbol order (for dynamic blocks)
+
+### Huffman Decoder ✅
+- [x] Decoder structure (counts, symbols, max_sym)
+- [x] Fixed literal/length decoder (RFC 1951 3.2.6)
+- [x] Fixed distance decoder
+- [ ] Dynamic decoder initialization from code lengths
 - [ ] Symbol decoding from bit stream
 
 ### Huffman Encoder
@@ -153,7 +160,24 @@ For each module:
 
 ## Current Status
 
-- **Completed**: Checksums (CRC-32, Adler-32)
-- **Next**: Huffman coding (foundation for inflate/deflate)
-- **Progress**: ~5% complete (~140 / ~2500 lines)
+- **Completed**: 
+  - Checksums (CRC-32, Adler-32) ✅
+  - Deflate constants and symbol tables ✅
+  - Huffman decoder structures ✅
+- **Next**: Bit stream reading and inflate implementation
+- **Progress**: ~15% complete (~530 / ~2500 lines)
 
+## Summary by Lines of Code
+
+| Module | Total Lines | Completed | Percentage |
+|--------|-------------|-----------|------------|
+| Checksums | ~140 | ~140 | 100% |
+| Deflate Constants | ~250 | ~250 | 100% |
+| Huffman Decoder | ~100 | ~50 | 50% |
+| Huffman Encoder | ~180 | 0 | 0% |
+| Inflate | ~220 | 0 | 0% |
+| Deflate | ~500 | 0 | 0% |
+| Utilities | ~200 | 0 | 0% |
+| File/Member | ~300 | 0 | 0% |
+| ZIP Archive | ~600 | 0 | 0% |
+| **Total** | **~2500** | **~530** | **~21%** |

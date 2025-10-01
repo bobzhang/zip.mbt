@@ -394,3 +394,207 @@ pub let fixed_dist_decoder : HuffmanDecoder = {
   decoder.max_sym = dist_sym_max
   decoder
 }
+
+///|
+/// Extensible byte buffer for decompression output
+/// Similar to OCaml's Buffer but with self-blit support for LZ77 back-references
+struct ByteBuf {
+  mut buffer : Array[Byte]
+  mut length : Int
+  fixed : Bool // If true, buffer cannot grow (size is known)
+}
+
+///|
+/// Create a new byte buffer
+pub fn ByteBuf::new(size : Int, fixed : Bool) -> ByteBuf {
+  let actual_size = if size == 0 && not(fixed) { 1024 } else { size }
+  { buffer: Array::make(actual_size, b'\x00'), length: 0, fixed }
+}
+
+///|
+/// Get current length of data in buffer
+pub fn ByteBuf::length(self : ByteBuf) -> Int {
+  self.length
+}
+
+///|
+/// Get contents as Bytes
+pub fn ByteBuf::contents(self : ByteBuf) -> Bytes {
+  // Convert Array to Bytes using literal syntax
+  Bytes::from_fixedarray(
+    FixedArray::from_iter(self.buffer[0:self.length].iter()),
+  )
+}
+
+///|
+/// Grow the buffer to ensure it can hold at least 'ensure' bytes
+fn ByteBuf::grow(self : ByteBuf, ensure : Int) -> Unit {
+  if self.fixed {
+    abort("Expected decompression size exceeded")
+  }
+  let mut new_len = self.buffer.length()
+  while new_len < ensure {
+    new_len = new_len * 2
+  }
+  let new_buffer = Array::make(new_len, b'\x00')
+  for i = 0; i < self.length; i = i + 1 {
+    new_buffer[i] = self.buffer[i]
+  }
+  self.buffer = new_buffer
+}
+
+///|
+/// Add a single byte to the buffer
+pub fn ByteBuf::add_byte(self : ByteBuf, byte : Int) -> Unit {
+  let new_len = self.length + 1
+  if new_len > self.buffer.length() {
+    self.grow(new_len)
+  }
+  self.buffer[self.length] = byte.to_byte()
+  self.length = new_len
+}
+
+///|
+/// Add bytes from a Bytes object
+pub fn ByteBuf::add_bytes(
+  self : ByteBuf,
+  src : Bytes,
+  start : Int,
+  len : Int,
+) -> Unit {
+  let new_len = self.length + len
+  if new_len > self.buffer.length() {
+    self.grow(new_len)
+  }
+  for i = 0; i < len; i = i + 1 {
+    self.buffer[self.length + i] = src[start + i]
+  }
+  self.length = new_len
+}
+
+///|
+/// Copy bytes from earlier in the buffer (for LZ77 back-references)
+/// This handles overlapping copies correctly (needed for RLE patterns)
+pub fn ByteBuf::recopy(self : ByteBuf, start : Int, len : Int) -> Unit {
+  let new_len = self.length + len
+  if new_len > self.buffer.length() {
+    self.grow(new_len)
+  }
+  // Always copy byte-by-byte to handle overlapping correctly
+  let dst_start = self.length
+  for i = 0; i < len; i = i + 1 {
+    self.buffer[dst_start + i] = self.buffer[start + i]
+  }
+  self.length = new_len
+}
+
+///|
+/// Inflate decoder state
+struct InflateDecoder {
+  src : Bytes // Source compressed data
+  src_max : Int // Maximum valid index in src
+  mut src_pos : Int // Current read position
+  mut src_bits : Int // Buffered bits (up to 31 bits)
+  mut src_bits_len : Int // Number of valid bits in src_bits
+  dst : ByteBuf // Output buffer
+  dyn_litlen : HuffmanDecoder // Dynamic literal/length decoder
+  dyn_dist : HuffmanDecoder // Dynamic distance decoder
+  crc_state : Crc32 // For CRC-32 computation
+  mut crc_next : Int // Position in dst for next CRC update
+}
+
+///|
+/// Create a new inflate decoder
+fn InflateDecoder::new(
+  src : Bytes,
+  start : Int,
+  len : Int,
+  decompressed_size : Int?,
+) -> InflateDecoder {
+  let src_max = start + len - 1
+  let dst = match decompressed_size {
+    Some(size) => ByteBuf::new(size, true)
+    None => ByteBuf::new(len * 3, false)
+  }
+  {
+    src,
+    src_max,
+    src_pos: start,
+    src_bits: 0,
+    src_bits_len: 0,
+    dst,
+    dyn_litlen: HuffmanDecoder::new(),
+    dyn_dist: HuffmanDecoder::new(),
+    crc_state: Crc32::init(),
+    crc_next: 0,
+  }
+}
+
+///|
+/// Read N bits from the bit stream (N < 32)
+fn InflateDecoder::read_bits(self : InflateDecoder, count : Int) -> Int {
+  let mut bits = self.src_bits
+  let mut bits_len = self.src_bits_len
+  // Refill bit buffer if needed
+  while bits_len < count {
+    if self.src_pos > self.src_max {
+      abort("Corrupted deflate stream: unexpected end of data")
+    }
+    let byte = self.src[self.src_pos].to_int()
+    bits = bits | (byte << bits_len)
+    self.src_pos = self.src_pos + 1
+    bits_len = bits_len + 8
+  }
+  // Extract requested bits
+  let result = bits & ((1 << count) - 1)
+  self.src_bits = bits >> count
+  self.src_bits_len = bits_len - count
+  result
+}
+
+///|
+/// Read an integer value: base + read_bits(bit_count)
+fn InflateDecoder::read_int(
+  self : InflateDecoder,
+  base : Int,
+  bit_count : Int,
+) -> Int {
+  if bit_count == 0 {
+    base
+  } else {
+    base + self.read_bits(bit_count)
+  }
+}
+
+///|
+/// Read a symbol using a Huffman decoder (helper)
+fn read_symbol_loop(
+  decoder_state : InflateDecoder,
+  decoder : HuffmanDecoder,
+  len : Int,
+  base : Int,
+  offs : Int,
+) -> Int {
+  let new_offs = 2 * offs + decoder_state.read_bits(1)
+  let count = decoder.counts[len]
+  if new_offs < count {
+    decoder.symbols[base + new_offs]
+  } else {
+    read_symbol_loop(
+      decoder_state,
+      decoder,
+      len + 1,
+      base + count,
+      new_offs - count,
+    )
+  }
+}
+
+///|
+/// Read a symbol using a Huffman decoder
+fn InflateDecoder::read_symbol(
+  self : InflateDecoder,
+  decoder : HuffmanDecoder,
+) -> Int {
+  read_symbol_loop(self, decoder, 1, 0, 0)
+}
