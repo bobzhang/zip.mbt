@@ -233,3 +233,98 @@ test "inflate_with_crc32" {
     content=[65, 66, 67, true],
   )
 }
+
+///|
+/// Fpath tests
+test "fpath_ensure_unix" {
+  let path = "dir\\subdir\\file.txt"
+  let result = fpath_ensure_unix(path)
+  @json.inspect(
+    result,
+    content="100105114/11511798100105114/10210510810146116120116",
+  )
+}
+
+///|
+test "fpath_ensure_directoryness_empty" {
+  @json.inspect(fpath_ensure_directoryness(""), content="./")
+}
+
+///|
+test "fpath_ensure_directoryness_no_slash" {
+  @json.inspect(fpath_ensure_directoryness("dir"), content="dir/")
+}
+
+///|
+test "fpath_ensure_directoryness_has_slash" {
+  @json.inspect(fpath_ensure_directoryness("dir/"), content="dir/")
+}
+
+///|
+test "fpath_sanitize_basic" {
+  @json.inspect(fpath_sanitize("a/b/c"), content="97/98/99")
+}
+
+///|
+test "fpath_sanitize_removes_dots" {
+  @json.inspect(fpath_sanitize("a/./b/../c"), content="97/46/98/4646/99")
+}
+
+///|
+test "fpath_sanitize_removes_empty" {
+  @json.inspect(fpath_sanitize("a//b///c"), content="97/98/99")
+}
+
+///|
+test "fpath_sanitize_mixed_slashes" {
+  @json.inspect(fpath_sanitize("a\\b/c"), content="97/98/99")
+}
+
+///|
+test "format_file_mode" {
+  // 0o755 = rwxr-xr-x
+  @json.inspect(format_file_mode(0o755), content="rwxr-xr-x")
+  // 0o644 = rw-r--r--
+  @json.inspect(format_file_mode(0o644), content="rw-r--r--")
+}
+
+///|
+/// Ptime tests
+test "ptime_dos_epoch" {
+  // 1980-01-01 00:00:00 UTC
+  let ((year, month, day), (hh, mm, ss)) = ptime_to_date_time(dos_epoch)
+  @json.inspect(((year, month, day), (hh, mm, ss)), content=[
+    [1980, 1, 1],
+    [0, 0, 0],
+  ])
+}
+
+///|
+test "ptime_to_date_time" {
+  // Test with a known timestamp: 2023-06-15 12:30:45 UTC = 1686832245
+  let ptime = 1686832245
+  let ((year, month, day), (hh, mm, ss)) = ptime_to_date_time(ptime)
+  @json.inspect(((year, month, day), (hh, mm, ss)), content=[
+    [2023, 6, 15],
+    [12, 30, 45],
+  ])
+}
+
+///|
+test "ptime_dos_roundtrip" {
+  // Test DOS date/time roundtrip
+  // 2000-06-15 14:30:00
+  let dos_date = 15 | (6 << 5) | ((2000 - 1980) << 9) // day=15, month=6, year=2000
+  let dos_time = 0 | (30 << 5) | (14 << 11) // sec=0, min=30, hour=14
+  let ptime = ptime_of_dos_date_time(dos_date, dos_time)
+  let (dos_date2, dos_time2) = ptime_to_dos_date_time(ptime)
+  @json.inspect((dos_date == dos_date2, dos_time == dos_time2), content=[
+    true, true,
+  ])
+}
+
+///|
+test "ptime_format" {
+  // Format dos_epoch
+  @json.inspect(ptime_format(dos_epoch), content="1980-01-01 00:00:00Z")
+}

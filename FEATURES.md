@@ -25,7 +25,7 @@ This document tracks the port of zipc from OCaml to MoonBit.
 - [x] Decoder structure (counts, symbols, max_sym)
 - [x] Fixed literal/length decoder (RFC 1951 3.2.6)
 - [x] Fixed distance decoder
-- [ ] Dynamic decoder initialization from code lengths
+- [x] Dynamic decoder initialization from code lengths
 - [x] Symbol decoding from bit stream
 
 ### Huffman Encoder
@@ -36,7 +36,7 @@ This document tracks the port of zipc from OCaml to MoonBit.
 - [ ] Fixed distance encoder
 - [ ] Dynamic encoder from frequencies
 
-## Module 3: zipc_deflate - Inflate (Decompression)
+## Module 3: zipc_deflate - Inflate (Decompression) ✅
 
 ### Bit Stream Reading ✅
 - [x] Bit buffer for reading
@@ -44,19 +44,19 @@ This document tracks the port of zipc from OCaml to MoonBit.
 - [x] Read symbol with Huffman decoder
 - [x] Byte buffer for output (ByteBuf)
 
-### Block Decompression
-- [ ] Read uncompressed blocks
-- [ ] Read fixed Huffman blocks
-- [ ] Read dynamic Huffman blocks
-- [ ] Decode literal/length symbols
-- [ ] Decode distance symbols
-- [ ] Back-reference copying
+### Block Decompression ✅
+- [x] Read uncompressed blocks
+- [x] Read fixed Huffman blocks
+- [x] Read dynamic Huffman blocks
+- [x] Decode literal/length symbols
+- [x] Decode distance symbols
+- [x] Back-reference copying with overlapping support
 
-### High-level API
-- [ ] inflate() - decompress deflate stream
-- [ ] inflate_and_crc_32() - with CRC-32
-- [ ] inflate_and_adler_32() - with Adler-32
-- [ ] zlib_decompress() - decompress zlib format
+### High-level API ✅
+- [x] inflate() - decompress deflate stream
+- [x] inflate_and_crc_32() - with CRC-32
+- [x] inflate_and_adler_32() - with Adler-32
+- [ ] zlib_decompress() - decompress zlib format (need header/trailer)
 
 ## Module 4: zipc_deflate - Deflate (Compression)
 
@@ -153,22 +153,27 @@ This document tracks the port of zipc from OCaml to MoonBit.
 ## Testing Strategy
 
 For each module:
-1. Unit tests for basic functionality
-2. Property tests where applicable
-3. Integration tests with real ZIP files
-4. Roundtrip tests (encode → decode)
-5. Compatibility tests with standard ZIP tools
+1. Unit tests for basic functionality ✓
+2. Property tests where applicable (pending)
+3. Integration tests with real ZIP files (pending)
+4. Roundtrip tests (encode → decode) (pending)
+5. Compatibility tests with standard ZIP tools (pending)
 
-## Current Status
+## Current Status - 4 Commits
 
-- **Completed**: 
-  - Checksums (CRC-32, Adler-32) ✅
-  - Deflate constants and symbol tables ✅
-  - Huffman decoder structures ✅
-  - Bit stream reading ✅
-  - ByteBuf for output ✅
-- **Next**: Block decompression (uncompressed, fixed, dynamic)
-- **Progress**: ~30% complete (~750 / ~2500 lines)
+### Completed Modules:
+1. **Checksums** (CRC-32, Adler-32) ✅ - 100%
+2. **Deflate Constants & Symbol Tables** ✅ - 100%
+3. **Huffman Decoder** ✅ - 100%
+4. **Bit Stream Reading** ✅ - 100%
+5. **Inflate (Decompression)** ✅ - 95% (missing zlib wrapper)
+
+### Next Priority:
+**Option A**: Complete inflate with zlib_decompress() - small addition
+**Option B**: Jump to ZIP archive utilities (Fpath, Ptime) to enable File/Member
+**Option C**: Implement deflate (compression) - larger undertaking
+
+**Progress**: ~1150 / ~2690 lines (~43%)
 
 ## Summary by Lines of Code
 
@@ -176,12 +181,19 @@ For each module:
 |--------|-------------|-----------|------------|
 | Checksums | ~140 | ~140 | 100% |
 | Deflate Constants | ~250 | ~250 | 100% |
-| Huffman Decoder | ~100 | ~80 | 80% |
-| Bit Stream Reading | ~200 | ~200 | 100% |
+| Huffman Decoder | ~150 | ~150 | 100% |
+| Bit Stream & ByteBuf | ~200 | ~200 | 100% |
+| Inflate Blocks | ~220 | ~210 | 95% |
 | Huffman Encoder | ~180 | 0 | 0% |
-| Inflate | ~220 | 80 | 36% |
-| Deflate | ~500 | 0 | 0% |
-| Utilities | ~200 | 0 | 0% |
+| Deflate/LZ77 | ~500 | 0 | 0% |
+| Utilities (Fpath/Ptime) | ~200 | 0 | 0% |
 | File/Member | ~300 | 0 | 0% |
 | ZIP Archive | ~600 | 0 | 0% |
-| **Total** | **~2690** | **~750** | **~28%** |
+| **Total** | **~2740** | **~1150** | **~42%** |
+
+## Files
+
+- `zip.mbt`: 899 lines (main library)
+- `zip_test.mbt`: 244 lines (20 tests, all passing)
+- `FEATURES.md`: This tracking document
+- `MIGRATION.md`: Migration notes
