@@ -1955,16 +1955,38 @@ pub fn deflate_fixed(
 
 ///|
 /// Create deflate-compressed file data from bytes
-/// Note: Currently uses uncompressed deflate blocks (stored format)
-/// Full LZ77+Huffman deflate compression is TODO
+/// Uses actual LZ77+Huffman compression (fixed Huffman)
 pub fn File::deflate_of_bytes(
   bytes : Bytes,
   start : Int,
   len : Int,
-  _level : DeflateLevel?,
+  level : DeflateLevel?,
 ) -> Result[File, String] {
-  // For now, ignore level and always use stored blocks
-  let compressed = deflate_stored(bytes, start, len)
+  // Determine compression parameters based on level
+  let (good_match, max_chain) = match level {
+    Some(DeflateLevel::None) => {
+      // No compression, use stored blocks
+      let compressed = deflate_stored(bytes, start, len)
+      let crc = bytes_crc32(bytes, start, len)
+      return File::make(
+        compressed,
+        0,
+        compressed.length(),
+        Compression::Deflate,
+        len,
+        crc,
+        None,
+        None,
+        None,
+      )
+    }
+    Some(DeflateLevel::Fast) => (4, 128) // Fast: low effort
+    Some(DeflateLevel::Default) | None => (8, 1024) // Default: balanced
+    Some(DeflateLevel::Best) => (32, 4096) // Best: max effort
+  }
+  
+  // Use LZ77 + Fixed Huffman compression
+  let compressed = deflate_fixed(bytes, start, len, true, good_match, max_chain)
   let crc = bytes_crc32(bytes, start, len)
   File::make(
     compressed,

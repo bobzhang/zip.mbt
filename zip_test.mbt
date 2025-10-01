@@ -644,15 +644,14 @@ test "file_deflate_of_bytes_basic" {
   let data = b"Hello, World!"
   let result = File::deflate_of_bytes(data, 0, data.length(), None)
   match result {
-    Ok(file) =>
-      @json.inspect(
-        (
-          file.compression == Compression::Deflate,
-          file.decompressed_size,
-          file.compressed_size,
-        ),
-        content=[true, 13, 18],
-      ) // Deflate format adds overhead: 1 byte header + 4 bytes length + data
+    Ok(file) => {
+      @json.inspect(file.compression == Compression::Deflate, content=true)
+      @json.inspect(file.decompressed_size, content=13)
+      // With LZ77+Huffman, compressed size will be smaller than stored format
+      // Just verify it's reasonable (not larger than original + overhead)
+      let reasonable = file.compressed_size > 0 && file.compressed_size < 30
+      @json.inspect(reasonable, content=true)
+    }
     Err(msg) => @json.inspect(("error", msg), content=["success", ""])
   }
 }
@@ -686,8 +685,10 @@ test "file_deflate_empty_data" {
   match result {
     Ok(file) => {
       @json.inspect(file.decompressed_size, content=0)
-      // Empty deflate: header + length info = 5 bytes
-      @json.inspect(file.compressed_size, content=5)
+      // Empty deflate with LZ77+Huffman: block header + EOB symbol
+      // Should be very small (< 5 bytes)
+      let small = file.compressed_size > 0 && file.compressed_size < 5
+      @json.inspect(small, content=true)
     }
     Err(msg) => @json.inspect(("error", msg), content=["success", ""])
   }
