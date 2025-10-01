@@ -1470,6 +1470,332 @@ pub let fixed_dist_encoder : HuffmanEncoder = {
 }
 
 ///|
+/// Build optimal Huffman code lengths from frequency counts
+/// Uses a simplified Huffman tree algorithm with length limiting
+/// Returns array of code lengths (0 = unused symbol)
+fn build_optimal_code_lengths(
+  freqs : Array[Int],
+  max_sym : Int,
+  max_code_len : Int
+) -> Array[Int] {
+  let lengths = Array::make(max_sym + 1, 0)
+  
+  // Count non-zero frequencies
+  let mut count = 0
+  for i = 0; i <= max_sym; i = i + 1 {
+    if freqs[i] > 0 {
+      count = count + 1
+    }
+  }
+  
+  // Trivial cases
+  if count == 0 {
+    return lengths // All zeros
+  }
+  if count == 1 {
+    // Single symbol gets length 1
+    for i = 0; i <= max_sym; i = i + 1 {
+      if freqs[i] > 0 {
+        lengths[i] = 1
+        break
+      }
+    }
+    return lengths
+  }
+  
+  // Build Huffman tree using greedy algorithm
+  // Create heap nodes: (frequency, symbol_id, left_child, right_child)
+  // Use -1 for leaf nodes (no children)
+  let nodes = Array::make((max_sym + 1) * 2, (0, 0, -1, -1))
+  let mut n_nodes = 0
+  
+  // Add leaf nodes for non-zero frequencies
+  for i = 0; i <= max_sym; i = i + 1 {
+    if freqs[i] > 0 {
+      // Cap frequency to avoid overflow
+      let freq = if freqs[i] > 65535 { 65535 } else { freqs[i] }
+      nodes[n_nodes] = (freq, i, -1, -1)
+      n_nodes = n_nodes + 1
+    }
+  }
+  
+  // Build tree by repeatedly combining two nodes with smallest frequencies
+  let mut next_internal_id = max_sym + 1
+  
+  while n_nodes > 1 {
+    // Find two minimum frequency nodes
+    let mut min1_idx = 0
+    let mut min1_freq = nodes[0].0
+    for i = 1; i < n_nodes; i = i + 1 {
+      if nodes[i].0 < min1_freq {
+        min1_idx = i
+        min1_freq = nodes[i].0
+      }
+    }
+    
+    // Move min1 to end and remove from active set
+    let node1 = nodes[min1_idx]
+    nodes[min1_idx] = nodes[n_nodes - 1]
+    n_nodes = n_nodes - 1
+    
+    // Find second minimum
+    let mut min2_idx = 0
+    let mut min2_freq = nodes[0].0
+    for i = 1; i < n_nodes; i = i + 1 {
+      if nodes[i].0 < min2_freq {
+        min2_idx = i
+        min2_freq = nodes[i].0
+      }
+    }
+    
+    let node2 = nodes[min2_idx]
+    
+    // Create parent node with combined frequency
+    let parent_freq = node1.0 + node2.0
+    let parent = (parent_freq, next_internal_id, node1.1, node2.1)
+    
+    // Replace node2 with parent
+    nodes[min2_idx] = parent
+    next_internal_id = next_internal_id + 1
+  }
+  
+  // Compute depths by traversing tree recursively
+  fn compute_depths(
+    nodes : Array[(Int, Int, Int, Int)],
+    node_id : Int,
+    depth : Int,
+    lengths : Array[Int],
+    max_sym : Int
+  ) -> Unit {
+    if node_id <= max_sym {
+      // Leaf node
+      let clamped_depth = if depth > max_code_len { max_code_len } else { depth }
+      lengths[node_id] = clamped_depth
+    } else {
+      // Internal node - find it and recurse on children
+      let mut found = false
+      for i = 0; i < nodes.length() && not(found); i = i + 1 {
+        if nodes[i].1 == node_id {
+          compute_depths(nodes, nodes[i].2, depth + 1, lengths, max_sym)
+          compute_depths(nodes, nodes[i].3, depth + 1, lengths, max_sym)
+          found = true
+        }
+      }
+    }
+  }
+  
+  // Start from root (the last remaining node)
+  let root_id = nodes[0].1
+  compute_depths(nodes, root_id, 0, lengths, max_sym)
+  
+  lengths
+}
+
+///|
+/// Build canonical Huffman codes from code lengths
+/// Returns a HuffmanEncoder with proper codes assigned
+fn build_canonical_huffman(
+  lengths : Array[Int],
+  max_sym : Int
+) -> HuffmanEncoder {
+  let encoder = HuffmanEncoder::new()
+  
+  // Count codes of each length
+  let count = Array::make(16, 0)
+  for i = 0; i <= max_sym; i = i + 1 {
+    let len = lengths[i]
+    if len > 0 {
+      count[len] = count[len] + 1
+    }
+  }
+  
+  // Compute first code for each length (canonical Huffman)
+  count[0] = 0
+  let next_code = Array::make(16, 0)
+  let mut code = 0
+  for len = 1; len <= 15; len = len + 1 {
+    code = (code + count[len - 1]) << 1
+    next_code[len] = code
+  }
+  
+  // Assign codes to symbols
+  for sym = 0; sym <= max_sym; sym = sym + 1 {
+    let len = lengths[sym]
+    if len > 0 {
+      let c = next_code[len]
+      let bits = reverse_bits(c, len)
+      encoder.set(sym, sym_info_make(bits, len))
+      next_code[len] = c + 1
+    }
+  }
+  
+  encoder
+}
+
+///|
+/// Code length order for dynamic Huffman (RFC 1951 3.2.7)
+let codelen_order : Array[Int] = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]
+
+///|
+/// Encode code lengths with run-length compression
+/// Returns (encoded_symbols, frequencies, symbol_count)
+/// Symbols 0-15: literal code length
+/// Symbol 16: repeat previous 3-6 times (2 extra bits)
+/// Symbol 17: repeat zero 3-10 times (3 extra bits)
+/// Symbol 18: repeat zero 11-138 times (7 extra bits)
+fn encode_code_lengths(
+  litlen_lengths : Array[Int],
+  dist_lengths : Array[Int],
+  hlit : Int,
+  hdist : Int
+) -> (Array[Int], Array[Int], Int) {
+  // Concatenate litlen and dist lengths
+  let litlen_count = hlit + 257
+  let dist_count = hdist + 1
+  let total = litlen_count + dist_count
+  
+  let all_lengths = Array::make(total, 0)
+  for i = 0; i < litlen_count; i = i + 1 {
+    all_lengths[i] = litlen_lengths[i]
+  }
+  for i = 0; i < dist_count; i = i + 1 {
+    all_lengths[litlen_count + i] = dist_lengths[i]
+  }
+  
+  // Run-length encode
+  // Store symbol in lower 8 bits, extra bits in upper bits
+  let codelen_syms = Array::make(total + 100, 0) // Extra space for RLE overhead
+  let codelen_freqs = Array::make(19, 0) // 19 codelen symbols
+  let mut sym_count = 0
+  
+  let mut i = 0
+  while i < total {
+    let len = all_lengths[i]
+    
+    if len == 0 {
+      // Count consecutive zeros
+      let mut zero_count = 1
+      while i + zero_count < total && all_lengths[i + zero_count] == 0 && zero_count < 138 {
+        zero_count = zero_count + 1
+      }
+      
+      if zero_count < 3 {
+        // Output as literal
+        codelen_syms[sym_count] = 0
+        codelen_freqs[0] = codelen_freqs[0] + 1
+        sym_count = sym_count + 1
+        i = i + 1
+      } else if zero_count <= 10 {
+        // Use symbol 17 (repeat zero 3-10 times)
+        let extra = zero_count - 3
+        codelen_syms[sym_count] = 17 | (extra << 8)
+        codelen_freqs[17] = codelen_freqs[17] + 1
+        sym_count = sym_count + 1
+        i = i + zero_count
+      } else {
+        // Use symbol 18 (repeat zero 11-138 times)
+        let extra = zero_count - 11
+        codelen_syms[sym_count] = 18 | (extra << 8)
+        codelen_freqs[18] = codelen_freqs[18] + 1
+        sym_count = sym_count + 1
+        i = i + zero_count
+      }
+    } else {
+      // Non-zero length - output as literal first
+      codelen_syms[sym_count] = len
+      codelen_freqs[len] = codelen_freqs[len] + 1
+      sym_count = sym_count + 1
+      i = i + 1
+      
+      // Check for repeats of the same non-zero length (up to max 6)
+      let mut repeat_count = 0
+      let max_look = (i + 5).min(total) // Look ahead up to 6 total
+      while i + repeat_count < max_look && all_lengths[i + repeat_count] == len {
+        repeat_count = repeat_count + 1
+      }
+      
+      if repeat_count >= 3 {
+        // Use symbol 16 (repeat previous 3-6 times)
+        // Already output the first one, so repeat_count is how many MORE to repeat
+        let extra = repeat_count - 3
+        codelen_syms[sym_count] = 16 | (extra << 8)
+        codelen_freqs[16] = codelen_freqs[16] + 1
+        sym_count = sym_count + 1
+        i = i + repeat_count
+      }
+      // If repeat_count < 3, just continue - they'll be output as literals in next iterations
+    }
+  }
+  
+  (codelen_syms, codelen_freqs, sym_count)
+}
+
+///|
+/// Write dynamic Huffman block header
+fn write_dynamic_header(
+  writer : BitWriter,
+  litlen_encoder : HuffmanEncoder,
+  dist_encoder : HuffmanEncoder,
+  codelen_encoder : HuffmanEncoder,
+  codelen_syms : Array[Int],
+  sym_count : Int,
+  hlit : Int,
+  hdist : Int
+) -> Unit {
+  // Find last non-zero codelen code length (in the special order)
+  let mut hclen_idx = 18
+  while hclen_idx > 0 {
+    let sym = codelen_order[hclen_idx]
+    if sym_info_code_length(codelen_encoder.get(sym)) > 0 {
+      break
+    }
+    hclen_idx = hclen_idx - 1
+  }
+  
+  // HCLEN is the number of code length codes minus 4
+  // hclen_idx + 1 is the count of codes to write
+  let hclen = if hclen_idx < 0 { 0 } else { hclen_idx + 1 - 4 }
+  
+  // Write HLIT (5 bits) - number of litlen codes minus 257
+  writer.write_bits(hlit, 5)
+  
+  // Write HDIST (5 bits) - number of dist codes minus 1
+  writer.write_bits(hdist, 5)
+  
+  // Write HCLEN (4 bits) - number of codelen codes minus 4
+  writer.write_bits(hclen, 4)
+  
+  // Write codelen code lengths (3 bits each, in special order)
+  for i = 0; i <= hclen_idx; i = i + 1 {
+    let sym = codelen_order[i]
+    let len = sym_info_code_length(codelen_encoder.get(sym))
+    writer.write_bits(len, 3)
+  }
+  
+  // Write encoded litlen and dist code lengths
+  for i = 0; i < sym_count; i = i + 1 {
+    let sym_with_extra = codelen_syms[i]
+    let sym = sym_with_extra & 0xFF
+    let extra_bits = sym_with_extra >> 8
+    
+    let info = codelen_encoder.get(sym)
+    let code = sym_info_code(info)
+    let code_len = sym_info_code_length(info)
+    
+    writer.write_bits(code, code_len)
+    
+    // Write extra bits for symbols 16, 17, 18
+    if sym == 16 {
+      writer.write_bits(extra_bits, 2)
+    } else if sym == 17 {
+      writer.write_bits(extra_bits, 3)
+    } else if sym == 18 {
+      writer.write_bits(extra_bits, 7)
+    }
+  }
+}
+
+///|
 /// Convert a match length (3-258) to the corresponding literal/length symbol (257-285)
 pub fn length_to_symbol(length : Int) -> Int {
   // Binary search would be more efficient but this is simple
@@ -1586,6 +1912,46 @@ pub fn write_length_distance(
     let extra = distance - dist_base
     writer.write_bits(extra, dist_extra_bits)
   }
+}
+
+///|
+/// Frequency counter for dynamic Huffman code construction
+/// Tracks symbol frequencies during LZ77 compression
+struct FrequencyCounter {
+  litlen_freqs : Array[Int] // 286 symbols (0-285)
+  dist_freqs : Array[Int] // 30 symbols (0-29)
+}
+
+///|
+/// Create a new frequency counter
+fn FrequencyCounter::new() -> FrequencyCounter {
+  { litlen_freqs: Array::make(286, 0), dist_freqs: Array::make(30, 0) }
+}
+
+///|
+/// Record a literal symbol
+fn FrequencyCounter::add_literal(self : FrequencyCounter, lit : Int) -> Unit {
+  self.litlen_freqs[lit] = self.litlen_freqs[lit] + 1
+}
+
+///|
+/// Record a length symbol
+fn FrequencyCounter::add_length(self : FrequencyCounter, length : Int) -> Unit {
+  let sym = length_to_symbol(length)
+  self.litlen_freqs[sym] = self.litlen_freqs[sym] + 1
+}
+
+///|
+/// Record a distance symbol
+fn FrequencyCounter::add_distance(self : FrequencyCounter, dist : Int) -> Unit {
+  let sym = distance_to_symbol(dist)
+  self.dist_freqs[sym] = self.dist_freqs[sym] + 1
+}
+
+///|
+/// Record end-of-block symbol (always exactly one per block)
+fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
+  self.litlen_freqs[256] = 1
 }
 
 ///|
@@ -1949,6 +2315,242 @@ pub fn deflate_fixed(
   }
   
   compress_loop(start, 0)
+  writer.flush()
+  output.contents()
+}
+
+///|
+/// Deflate compression with LZ77 + Dynamic Huffman
+/// This provides better compression than fixed Huffman by building
+/// optimal Huffman trees for each block based on symbol frequencies
+pub fn deflate_dynamic(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  is_final : Bool,
+  good_match : Int,
+  max_chain : Int
+) -> Bytes {
+  if len == 0 {
+    // Empty input, just write end-of-block with fixed Huffman
+    let output = ByteBuf::new(10, false)
+    let writer = BitWriter::new(output)
+    let header = if is_final { 0b011 } else { 0b010 }
+    writer.write_bits(header, 3)
+    write_literal_symbol(writer, fixed_litlen_encoder, litlen_end_of_block_sym)
+    writer.flush()
+    return output.contents()
+  }
+  
+  // Step 1: Run LZ77 compression and collect symbol frequencies
+  let hash_head = Array::make(lz77_hash_size, lz77_no_pos)
+  let hash_prev = Array::make(lz77_window_size, 0)
+  let freqs = FrequencyCounter::new()
+  
+  // Store symbols for later output
+  let max_symbols = len + 1000 // Extra space for LZ77 symbols
+  let symbols = Array::make(max_symbols, 0)
+  let mut sym_idx = 0
+  
+  let max_pos = start + len - lz77_min_match_len
+  
+  fn compress_and_count(pos : Int, prev_bref : Int) -> Unit {
+    if pos > max_pos {
+      // Handle end of input
+      let prev_len = backref_len(prev_bref)
+      let final_pos = if prev_len == 0 {
+        pos
+      } else {
+        // Record pending match
+        let dist = backref_dist(prev_bref)
+        freqs.add_length(prev_len)
+        freqs.add_distance(dist)
+        symbols[sym_idx] = prev_bref
+        sym_idx = sym_idx + 1
+        pos - 1 + prev_len
+      }
+      
+      // Record remaining literals
+      let end = start + len
+      for i = final_pos; i < end; i = i + 1 {
+        let byte = bytes[i].to_int()
+        freqs.add_literal(byte)
+        symbols[sym_idx] = byte // Literal has dist=0
+        sym_idx = sym_idx + 1
+      }
+      
+      // Add end-of-block
+      freqs.add_end_of_block()
+    } else {
+      if pos + 4 > start + len {
+        // Not enough bytes for hash
+        if prev_bref > 0 {
+          let prev_len = backref_len(prev_bref)
+          let dist = backref_dist(prev_bref)
+          freqs.add_length(prev_len)
+          freqs.add_distance(dist)
+          symbols[sym_idx] = prev_bref
+          sym_idx = sym_idx + 1
+          compress_and_count(pos - 1 + prev_len, 0)
+        } else {
+          let byte = bytes[pos].to_int()
+          freqs.add_literal(byte)
+          symbols[sym_idx] = byte
+          sym_idx = sym_idx + 1
+          compress_and_count(pos + 1, 0)
+        }
+        return
+      }
+      
+      let hash = hash4(bytes, pos)
+      let max_match = (start + len - pos).min(lz77_max_match_len)
+      let prev_len = backref_len(prev_bref)
+      
+      let cur_bref = find_backref(
+        bytes,
+        hash_head,
+        hash_prev,
+        pos,
+        hash,
+        prev_len,
+        max_match,
+        good_match,
+        max_chain
+      )
+      let cur_len = backref_len(cur_bref)
+      
+      insert_hash(hash_head, hash_prev, hash, pos)
+      
+      if prev_len > 0 && prev_len >= cur_len {
+        // Use previous match
+        let dist = backref_dist(prev_bref)
+        freqs.add_length(prev_len)
+        freqs.add_distance(dist)
+        symbols[sym_idx] = prev_bref
+        sym_idx = sym_idx + 1
+        
+        let next = pos - 1 + prev_len
+        let last = (next - 1).min(max_pos)
+        for j = pos + 1; j <= last; j = j + 1 {
+          if j + 3 < start + len {
+            let h = hash4(bytes, j)
+            insert_hash(hash_head, hash_prev, h, j)
+          }
+        }
+        
+        compress_and_count(next, 0)
+      } else if cur_len == 0 {
+        // No match
+        if prev_len > 0 {
+          let byte = bytes[pos - 1].to_int()
+          freqs.add_literal(byte)
+          symbols[sym_idx] = byte
+          sym_idx = sym_idx + 1
+        } else {
+          let byte = bytes[pos].to_int()
+          freqs.add_literal(byte)
+          symbols[sym_idx] = byte
+          sym_idx = sym_idx + 1
+        }
+        compress_and_count(pos + 1, 0)
+      } else {
+        // Lazy matching
+        if prev_len > 0 {
+          let byte = bytes[pos - 1].to_int()
+          freqs.add_literal(byte)
+          symbols[sym_idx] = byte
+          sym_idx = sym_idx + 1
+        }
+        compress_and_count(pos + 1, cur_bref)
+      }
+    }
+  }
+  
+  compress_and_count(start, 0)
+  
+  // Step 2: Build optimal Huffman trees from frequencies
+  let litlen_lengths = build_optimal_code_lengths(freqs.litlen_freqs, 285, 15)
+  let litlen_encoder = build_canonical_huffman(litlen_lengths, 285)
+  
+  // Find max non-zero litlen symbol
+  let mut litlen_max = 285
+  while litlen_max > 256 && litlen_lengths[litlen_max] == 0 {
+    litlen_max = litlen_max - 1
+  }
+  let hlit = litlen_max - 257
+  
+  // Build distance tree
+  let dist_lengths = build_optimal_code_lengths(freqs.dist_freqs, 29, 15)
+  let mut dist_encoder = build_canonical_huffman(dist_lengths, 29)
+  
+  // Find max non-zero dist symbol
+  let mut dist_max = 29
+  while dist_max > 0 && dist_lengths[dist_max] == 0 {
+    dist_max = dist_max - 1
+  }
+  
+  // Handle empty distance tree (no matches, only literals)
+  let hdist = if dist_max == 0 && dist_lengths[0] == 0 {
+    // Patch with a single code of length 1 for symbol 0
+    dist_lengths[0] = 1  // Update the lengths array
+    dist_encoder = HuffmanEncoder::new()
+    dist_encoder.set(0, sym_info_make(0, 1))
+    0 // HDIST = 0 means 1 code
+  } else {
+    dist_max - 1
+  }
+  
+  // Step 3: Encode code lengths
+  let (codelen_syms, codelen_freqs, codelen_count) = encode_code_lengths(
+    litlen_lengths,
+    dist_lengths,
+    hlit,
+    hdist
+  )
+  
+  // Step 4: Build codelen Huffman tree
+  let codelen_lengths = build_optimal_code_lengths(codelen_freqs, 18, 7)
+  let codelen_encoder = build_canonical_huffman(codelen_lengths, 18)
+  
+  // Step 5: Write dynamic block
+  let output = ByteBuf::new(len * 2, false)
+  let writer = BitWriter::new(output)
+  
+  // Write block header (BFINAL + BTYPE=10 for dynamic Huffman)
+  let header = if is_final { 0b101 } else { 0b100 }
+  writer.write_bits(header, 3)
+  
+  // Write dynamic header
+  write_dynamic_header(
+    writer,
+    litlen_encoder,
+    dist_encoder,
+    codelen_encoder,
+    codelen_syms,
+    codelen_count,
+    hlit,
+    hdist
+  )
+  
+  // Step 6: Write block symbols using dynamic Huffman codes
+  for i = 0; i < sym_idx; i = i + 1 {
+    let sym = symbols[i]
+    let dist = backref_dist(sym)
+    
+    if dist == 0 {
+      // Literal
+      let lit = backref_len(sym)
+      write_literal_symbol(writer, litlen_encoder, lit)
+    } else {
+      // Match (length + distance)
+      let length = backref_len(sym)
+      write_length_distance(writer, litlen_encoder, dist_encoder, length, dist)
+    }
+  }
+  
+  // Write end-of-block
+  write_literal_symbol(writer, litlen_encoder, litlen_end_of_block_sym)
+  
   writer.flush()
   output.contents()
 }
