@@ -1537,3 +1537,270 @@ test "e2e_ziptest_roundtrip_compatibility" {
   let decoded = Archive::of_bytes(zip_bytes).unwrap()
   @json.inspect(decoded.member_count(), content=2)
 }
+
+///|
+/// BitWriter tests
+test "bitwriter_basic" {
+  let buf = ByteBuf::new(16, false)
+  let writer = BitWriter::new(buf)
+  // Write 3 bits: 0b101 (5)
+  writer.write_bits(0b101, 3)
+  // Write 5 bits: 0b11010 (26)
+  writer.write_bits(0b11010, 5)
+  // Total: 8 bits = 0b11010101 = 0xD5 = 213
+  writer.flush()
+  let result = buf.contents()
+  @json.inspect((result.length(), result[0].to_int()), content=[1, 213])
+}
+
+///|
+test "bitwriter_multi_byte" {
+  let buf = ByteBuf::new(16, false)
+  let writer = BitWriter::new(buf)
+  // Write 0xFF (8 bits)
+  writer.write_bits(0xFF, 8)
+  // Write 0xAB (8 bits)
+  writer.write_bits(0xAB, 8)
+  // Write 3 bits: 0b101
+  writer.write_bits(0b101, 3)
+  writer.flush()
+  let result = buf.contents()
+  @json.inspect(
+    (result.length(), result[0].to_int(), result[1].to_int(), result[2].to_int()),
+    content=[3, 255, 171, 5],
+  )
+}
+
+///|
+test "bitwriter_flush_partial" {
+  let buf = ByteBuf::new(16, false)
+  let writer = BitWriter::new(buf)
+  // Write 5 bits (incomplete byte)
+  writer.write_bits(0b10101, 5)
+  writer.flush()
+  let result = buf.contents()
+  // Should pad with 3 zero bits: 0b00010101 = 0x15 = 21
+  @json.inspect((result.length(), result[0].to_int()), content=[1, 21])
+}
+
+///|
+test "bitwriter_align_to_byte" {
+  let buf = ByteBuf::new(16, false)
+  let writer = BitWriter::new(buf)
+  writer.write_bits(0xFF, 8)
+  writer.write_bits(0b101, 3) // 3 bits pending
+  writer.align_to_byte() // Discard the 3 bits
+  writer.write_bits(0xAB, 8)
+  writer.flush()
+  let result = buf.contents()
+  // Should have: 0xFF, 0xAB (3 bits discarded)
+  @json.inspect((result.length(), result[0].to_int(), result[1].to_int()), content=[
+    2, 255, 171,
+  ])
+}
+
+///|
+test "bitwriter_write_byte_aligned" {
+  let buf = ByteBuf::new(16, false)
+  let writer = BitWriter::new(buf)
+  writer.write_bits(0xFF, 8)
+  writer.write_byte(0x42) // Should work when aligned
+  writer.write_uint16_le(0x1234)
+  writer.flush()
+  let result = buf.contents()
+  @json.inspect(
+    (
+      result.length(),
+      result[0].to_int(),
+      result[1].to_int(),
+      result[2].to_int(),
+      result[3].to_int(),
+    ),
+    content=[4, 255, 66, 52, 18],
+  )
+}
+
+///|
+/// Huffman encoder tests
+test "huffman_encoder_creation" {
+  let encoder = HuffmanEncoder::new()
+  @json.inspect((encoder.codes.length(), encoder.max_sym), content=[288,0])
+}
+
+///|
+test "huffman_encoder_set_get" {
+  let encoder = HuffmanEncoder::new()
+  // Set code for symbol 65 ('A'): code=0b101, length=3
+  let info = sym_info_make(0b101, 3)
+  encoder.set(65, info)
+  let retrieved = encoder.get(65)
+  @json.inspect(
+    (sym_info_code(retrieved), sym_info_code_length(retrieved), encoder.max_sym),
+    content=[5, 3, 65],
+  )
+}
+
+///|
+test "fixed_litlen_encoder_symbols" {
+  // Test a few key symbols from fixed Huffman table
+  // Symbol 0: 8 bits
+  let info0 = fixed_litlen_encoder.get(0)
+  @json.inspect(sym_info_code_length(info0), content=8)
+  
+  // Symbol 143: 8 bits (last of 0-143 range)
+  let info143 = fixed_litlen_encoder.get(143)
+  @json.inspect(sym_info_code_length(info143), content=8)
+  
+  // Symbol 144: 9 bits (first of 144-255 range)
+  let info144 = fixed_litlen_encoder.get(144)
+  @json.inspect(sym_info_code_length(info144), content=9)
+  
+  // Symbol 255: 9 bits (last of 144-255 range)
+  let info255 = fixed_litlen_encoder.get(255)
+  @json.inspect(sym_info_code_length(info255), content=9)
+  
+  // Symbol 256 (end of block): 7 bits
+  let info256 = fixed_litlen_encoder.get(256)
+  @json.inspect(sym_info_code_length(info256), content=7)
+  
+  // Symbol 279: 7 bits (last of 256-279 range)
+  let info279 = fixed_litlen_encoder.get(279)
+  @json.inspect(sym_info_code_length(info279), content=7)
+  
+  // Symbol 280: 8 bits
+  let info280 = fixed_litlen_encoder.get(280)
+  @json.inspect(sym_info_code_length(info280), content=8)
+  
+  // Max symbol
+  @json.inspect(fixed_litlen_encoder.max_sym, content=285)
+}
+
+///|
+test "fixed_dist_encoder_all_5_bits" {
+  // All distance symbols should be 5 bits
+  for i = 0; i < 32; i = i + 1 {
+    let info = fixed_dist_encoder.get(i)
+    let len = sym_info_code_length(info)
+    if len != 5 {
+      abort("Distance symbol \{i} should have length 5, got \{len}")
+    }
+  }
+  @json.inspect(fixed_dist_encoder.max_sym, content=29)
+}
+
+///|
+test "sym_info_packing" {
+  // Test that sym_info correctly packs and unpacks code and length
+  let code = 0b11010110 // 214
+  let length = 9
+  let info = sym_info_make(code, length)
+  @json.inspect(
+    (sym_info_code(info), sym_info_code_length(info)),
+    content=[214, 9],
+  )
+  
+  // Test with maximum values
+  let max_code = (1 << 15) - 1 // 15-bit max code
+  let max_length = 15
+  let info_max = sym_info_make(max_code, max_length)
+  @json.inspect(
+    (sym_info_code(info_max), sym_info_code_length(info_max)),
+    content=[32767, 15],
+  )
+}
+
+///|
+/// Symbol conversion tests
+test "length_to_symbol_basic" {
+  // Test key ranges
+  @json.inspect(length_to_symbol(3), content=257) // Min length
+  @json.inspect(length_to_symbol(10), content=264)
+  @json.inspect(length_to_symbol(11), content=265)
+  @json.inspect(length_to_symbol(18), content=268)
+  @json.inspect(length_to_symbol(258), content=285) // Max length
+}
+
+///|
+test "distance_to_symbol_basic" {
+  // Test key ranges
+  @json.inspect(distance_to_symbol(1), content=0) // Min distance
+  @json.inspect(distance_to_symbol(4), content=3)
+  @json.inspect(distance_to_symbol(5), content=4)
+  @json.inspect(distance_to_symbol(256), content=15)
+  @json.inspect(distance_to_symbol(32768), content=29) // Max distance
+}
+
+///|
+/// Test deflate with fixed Huffman (literals only, no LZ77 yet)
+test "deflate_fixed_literals_hello" {
+  let data = b"hello"
+  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
+  
+  // Should be able to decompress it
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[1].to_int(),
+      decompressed[2].to_int(),
+      decompressed[3].to_int(),
+      decompressed[4].to_int(),
+    ),
+    content=[5, 104, 101, 108, 108, 111],
+  ) // "hello" = h(104) e(101) l(108) l(108) o(111)
+  
+  // Compressed should be larger than original (no LZ77 yet)
+  // Each byte becomes a Huffman code (8 or 9 bits) plus end-of-block
+  let is_larger = compressed.length() > data.length()
+  @json.inspect(is_larger, content=true)
+}
+
+///|
+test "deflate_fixed_literals_empty" {
+  let data = b""
+  let compressed = deflate_fixed_literals_only(data, 0, 0, true)
+  
+  // Should decompress to empty
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(0))
+  @json.inspect(decompressed.length(), content=0)
+}
+
+///|
+test "deflate_fixed_literals_longer" {
+  let data = b"The quick brown fox jumps over the lazy dog"
+  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
+  
+  // Should decompress correctly
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  @json.inspect(
+    (
+      decompressed.length() == data.length(),
+      decompressed[0].to_int(), // 'T'
+      decompressed[4].to_int(), // 'q'
+      decompressed[42].to_int(), // 'g'
+    ),
+    content=[true, 84, 113, 103],
+  )
+}
+
+///|
+test "deflate_fixed_literals_roundtrip" {
+  // Test with various byte values
+  let data = b"\x00\x01\x7f\x80\xff"
+  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  
+  // Check each byte
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[1].to_int(),
+      decompressed[2].to_int(),
+      decompressed[3].to_int(),
+      decompressed[4].to_int(),
+    ),
+    content=[5, 0, 1, 127, 128, 255],
+  )
+}

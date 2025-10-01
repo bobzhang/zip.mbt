@@ -1278,6 +1278,444 @@ fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes {
 }
 
 ///|
+/// Bit-level output writer for deflate compression
+/// Accumulates bits and writes complete bytes to the output buffer
+pub(all) struct BitWriter {
+  dst : ByteBuf // Output buffer
+  mut bits : Int // Accumulated bits (up to 31 bits)
+  mut bits_len : Int // Number of valid bits in 'bits'
+}
+
+///|
+/// Create a new BitWriter
+pub fn BitWriter::new(dst : ByteBuf) -> BitWriter {
+  { dst, bits: 0, bits_len: 0 }
+}
+
+///|
+/// Write N bits to the output stream (N <= 16)
+/// Bits are written LSB first (as required by deflate format)
+pub fn BitWriter::write_bits(self : BitWriter, value : Int, count : Int) -> Unit {
+  self.bits = self.bits | (value << self.bits_len)
+  self.bits_len = self.bits_len + count
+  // Flush complete bytes
+  while self.bits_len >= 8 {
+    self.dst.add_byte(self.bits & 0xFF)
+    self.bits = self.bits >> 8
+    self.bits_len = self.bits_len - 8
+  }
+}
+
+///|
+/// Flush any remaining bits to output (pad with zeros)
+pub fn BitWriter::flush(self : BitWriter) -> Unit {
+  if self.bits_len > 0 {
+    self.dst.add_byte(self.bits & 0xFF)
+    self.bits = 0
+    self.bits_len = 0
+  }
+}
+
+///|
+/// Align to byte boundary (flush and discard partial bits)
+pub fn BitWriter::align_to_byte(self : BitWriter) -> Unit {
+  if self.bits_len > 0 {
+    self.bits = 0
+    self.bits_len = 0
+  }
+}
+
+///|
+/// Write a byte directly to output (should be byte-aligned)
+pub fn BitWriter::write_byte(self : BitWriter, byte : Int) -> Unit {
+  if self.bits_len != 0 {
+    abort("BitWriter::write_byte called when not byte-aligned")
+  }
+  self.dst.add_byte(byte)
+}
+
+///|
+/// Write a 16-bit little-endian value directly (should be byte-aligned)
+pub fn BitWriter::write_uint16_le(self : BitWriter, value : Int) -> Unit {
+  if self.bits_len != 0 {
+    abort("BitWriter::write_uint16_le called when not byte-aligned")
+  }
+  self.dst.add_byte(value & 0xFF)
+  self.dst.add_byte((value >> 8) & 0xFF)
+}
+
+///|
+/// Huffman Encoder for deflate compression
+/// Stores symbol-to-code mappings (code and code length)
+
+///|
+/// Symbol info packs code and code length into a single Int
+/// Bits layout: code (upper bits) | code_length (lower 5 bits)
+/// This allows efficient storage and access
+pub typealias Int as SymInfo
+
+///|
+pub fn sym_info_make(code : Int, code_length : Int) -> SymInfo {
+  (code << 5) | code_length
+}
+
+///|
+pub fn sym_info_code(info : SymInfo) -> Int {
+  info >> 5
+}
+
+///|
+pub fn sym_info_code_length(info : SymInfo) -> Int {
+  info & 0x1F
+}
+
+///|
+/// Huffman encoder - array of symbol info indexed by symbol
+pub struct HuffmanEncoder {
+  codes : Array[SymInfo] // codes[symbol] = sym_info for that symbol
+  mut max_sym : Int // Maximum symbol that has a code
+}
+
+///|
+/// Create a new Huffman encoder
+pub fn HuffmanEncoder::new() -> HuffmanEncoder {
+  // Need room for all possible symbols including fixed codes (0-287)
+  { codes: Array::make(litlen_sym_fixed_max + 1, 0), max_sym: 0 }
+}
+
+///|
+/// Get symbol info for a given symbol
+pub fn HuffmanEncoder::get(self : HuffmanEncoder, symbol : Int) -> SymInfo {
+  self.codes[symbol]
+}
+
+///|
+/// Set symbol info for a given symbol
+pub fn HuffmanEncoder::set(
+  self : HuffmanEncoder,
+  symbol : Int,
+  info : SymInfo,
+) -> Unit {
+  self.codes[symbol] = info
+  if sym_info_code_length(info) > 0 && symbol > self.max_sym {
+    self.max_sym = symbol
+  }
+}
+
+///|
+/// Helper function to reverse bits (for Huffman codes)
+fn reverse_bits(value : Int, length : Int) -> Int {
+  let mut result = 0
+  let mut v = value
+  for _i = 0; _i < length; _i = _i + 1 {
+    result = (result << 1) | (v & 1)
+    v = v >> 1
+  }
+  result
+}
+
+///|
+/// Fixed Huffman encoder for literal/length symbols (RFC 1951 3.2.6)
+/// Precomputed codes for fast compression
+pub let fixed_litlen_encoder : HuffmanEncoder = {
+  let encoder = HuffmanEncoder::new()
+  // RFC 1951 3.2.6: Fixed Huffman codes
+  // Symbols   0-143: 8 bits, codes 00110000-10111111  (0x30-0xBF)
+  // Symbols 144-255: 9 bits, codes 110010000-111111111 (0x190-0x1FF)
+  // Symbols 256-279: 7 bits, codes 0000000-0010111    (0x00-0x17)
+  // Symbols 280-287: 8 bits, codes 11000000-11000111  (0xC0-0xC7)
+  
+  // Symbols 256-279: 7 bits (0000000-0010111)
+  for i = 256; i <= 279; i = i + 1 {
+    let code = reverse_bits(i - 256, 7)
+    encoder.set(i, sym_info_make(code, 7))
+  }
+  
+  // Symbols 0-143: 8 bits (00110000-10111111)
+  for i = 0; i <= 143; i = i + 1 {
+    let code = reverse_bits(0x30 + i, 8)
+    encoder.set(i, sym_info_make(code, 8))
+  }
+  
+  // Symbols 280-287: 8 bits (11000000-11000111)
+  for i = 280; i <= 287; i = i + 1 {
+    let code = reverse_bits(0xC0 + (i - 280), 8)
+    encoder.set(i, sym_info_make(code, 8))
+  }
+  
+  // Symbols 144-255: 9 bits (110010000-111111111)
+  for i = 144; i <= 255; i = i + 1 {
+    let code = reverse_bits(0x190 + (i - 144), 9)
+    encoder.set(i, sym_info_make(code, 9))
+  }
+  
+  encoder.max_sym = litlen_sym_max
+  encoder
+}
+
+///|
+/// Fixed Huffman encoder for distance symbols (RFC 1951 3.2.6)
+/// All 32 distance symbols use 5 bits
+pub let fixed_dist_encoder : HuffmanEncoder = {
+  let encoder = HuffmanEncoder::new()
+  
+  // All 32 symbols (0-31) use 5 bits
+  for i = 0; i < 32; i = i + 1 {
+    let code = reverse_bits(i, 5)
+    encoder.set(i, sym_info_make(code, 5))
+  }
+  
+  encoder.max_sym = dist_sym_max
+  encoder
+}
+
+///|
+/// Convert a match length (3-258) to the corresponding literal/length symbol (257-285)
+pub fn length_to_symbol(length : Int) -> Int {
+  // Binary search would be more efficient but this is simple
+  // Length range: 3-258 -> Symbols: 257-285
+  if length <= 10 {
+    // Symbols 257-264: lengths 3-10
+    257 + (length - 3)
+  } else if length <= 18 {
+    // Symbols 265-268: 11,13,15,17 (base + 0 or 1)
+    265 + ((length - 11) / 2)
+  } else if length <= 34 {
+    // Symbols 269-272: 19,23,27,31 (base + 0-3)
+    269 + ((length - 19) / 4)
+  } else if length <= 66 {
+    // Symbols 273-276: 35,43,51,59 (base + 0-7)
+    273 + ((length - 35) / 8)
+  } else if length <= 130 {
+    // Symbols 277-280: 67,83,99,115 (base + 0-15)
+    277 + ((length - 67) / 16)
+  } else if length <= 257 {
+    // Symbols 281-284: 131,163,195,227 (base + 0-31)
+    281 + ((length - 131) / 32)
+  } else {
+    // Symbol 285: length 258
+    285
+  }
+}
+
+///|
+/// Convert a distance (1-32768) to the corresponding distance symbol (0-29)
+pub fn distance_to_symbol(dist : Int) -> Int {
+  // Distance table is more regular: each pair of symbols doubles the range
+  if dist <= 4 {
+    dist - 1 // Symbols 0-3: distances 1-4
+  } else if dist <= 8 {
+    4 + ((dist - 5) >> 1) // Symbols 4-5
+  } else if dist <= 16 {
+    6 + ((dist - 9) >> 2) // Symbols 6-7
+  } else if dist <= 32 {
+    8 + ((dist - 17) >> 3) // Symbols 8-9
+  } else if dist <= 64 {
+    10 + ((dist - 33) >> 4) // Symbols 10-11
+  } else if dist <= 128 {
+    12 + ((dist - 65) >> 5) // Symbols 12-13
+  } else if dist <= 256 {
+    14 + ((dist - 129) >> 6) // Symbols 14-15
+  } else if dist <= 512 {
+    16 + ((dist - 257) >> 7) // Symbols 16-17
+  } else if dist <= 1024 {
+    18 + ((dist - 513) >> 8) // Symbols 18-19
+  } else if dist <= 2048 {
+    20 + ((dist - 1025) >> 9) // Symbols 20-21
+  } else if dist <= 4096 {
+    22 + ((dist - 2049) >> 10) // Symbols 22-23
+  } else if dist <= 8192 {
+    24 + ((dist - 4097) >> 11) // Symbols 24-25
+  } else if dist <= 16384 {
+    26 + ((dist - 8193) >> 12) // Symbols 26-27
+  } else {
+    28 + ((dist - 16385) >> 13) // Symbols 28-29
+  }
+}
+
+///|
+/// Write a literal or end-of-block symbol using fixed Huffman
+pub fn write_literal_symbol(
+  writer : BitWriter,
+  encoder : HuffmanEncoder,
+  symbol : Int,
+) -> Unit {
+  let info = encoder.get(symbol)
+  let code = sym_info_code(info)
+  let len = sym_info_code_length(info)
+  writer.write_bits(code, len)
+}
+
+///|
+/// Write a length/distance pair using fixed Huffman
+pub fn write_length_distance(
+  writer : BitWriter,
+  litlen_encoder : HuffmanEncoder,
+  dist_encoder : HuffmanEncoder,
+  length : Int,
+  distance : Int,
+) -> Unit {
+  // Write length symbol
+  let len_sym = length_to_symbol(length)
+  let len_info = litlen_encoder.get(len_sym)
+  let len_code = sym_info_code(len_info)
+  let len_code_len = sym_info_code_length(len_info)
+  writer.write_bits(len_code, len_code_len)
+  
+  // Write extra bits for length
+  let len_value = length_value_of_length_sym(len_sym)
+  let len_base = length_value_base(len_value)
+  let len_extra_bits = length_value_extra_bits(len_value)
+  if len_extra_bits > 0 {
+    let extra = length - len_base
+    writer.write_bits(extra, len_extra_bits)
+  }
+  
+  // Write distance symbol
+  let dist_sym = distance_to_symbol(distance)
+  let dist_info = dist_encoder.get(dist_sym)
+  let dist_code = sym_info_code(dist_info)
+  let dist_code_len = sym_info_code_length(dist_info)
+  writer.write_bits(dist_code, dist_code_len)
+  
+  // Write extra bits for distance
+  let dist_value = dist_value_of_sym[dist_sym]
+  let dist_base = dist_value_base(dist_value)
+  let dist_extra_bits = dist_value_extra_bits(dist_value)
+  if dist_extra_bits > 0 {
+    let extra = distance - dist_base
+    writer.write_bits(extra, dist_extra_bits)
+  }
+}
+
+///|
+/// Deflate Level None: Write uncompressed data as fixed Huffman literals
+/// This is valid compression but produces larger output than LZ77+Huffman
+/// Used as a stepping stone before implementing full LZ77
+pub fn deflate_fixed_literals_only(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  is_final : Bool,
+) -> Bytes {
+  let output = ByteBuf::new(len * 2, false) // Estimate 2x size for safety
+  let writer = BitWriter::new(output)
+  
+  // Write block header: BFINAL (1 bit) + BTYPE (2 bits) = 01 for fixed Huffman
+  let header = if is_final { 0b011 } else { 0b010 } // BFINAL=1/0, BTYPE=01
+  writer.write_bits(header, 3)
+  
+  // Write all bytes as literals using fixed Huffman codes
+  for i = 0; i < len; i = i + 1 {
+    let byte = bytes[start + i].to_int()
+    write_literal_symbol(writer, fixed_litlen_encoder, byte)
+  }
+  
+  // Write end-of-block symbol (256)
+  write_literal_symbol(writer, fixed_litlen_encoder, litlen_end_of_block_sym)
+  
+  writer.flush()
+  output.contents()
+}
+
+// ============================================================================
+// LZ77 String Matching (for deflate compression)
+// ============================================================================
+
+// LZ77 constants
+let lz77_min_match_len : Int = 3 // Minimum match length
+let lz77_max_match_len : Int = 258 // Maximum match length (same as length_max)
+let lz77_max_match_dist : Int = 32768 // Maximum back-reference distance
+let lz77_window_size : Int = 32768 // Sliding window size
+let lz77_hash_bit_size : Int = 15 // Hash table size = 2^15 = 32768
+let lz77_hash_size : Int = 32768 // 1 << lz77_hash_bit_size
+let lz77_no_pos : Int = -1 // Marker for no position
+
+///|
+/// Compute rolling hash of 4 bytes starting at position i
+/// Uses Fibonacci hashing: multiply by golden ratio and take upper bits
+pub fn hash4(bytes : Bytes, i : Int) -> Int {
+  // Read 4 bytes as little-endian Int32
+  let b0 = bytes[i].to_int()
+  let b1 = bytes[i + 1].to_int()
+  let b2 = bytes[i + 2].to_int()
+  let b3 = bytes[i + 3].to_int()
+  let v = b0.lor(b1 << 8).lor(b2 << 16).lor(b3 << 24)
+  
+  // Fibonacci hash: multiply by golden ratio approximation
+  let hmul = 0x9E3779B1 // 2^32 / phi, where phi = golden ratio
+  let product = v * hmul
+  
+  // Take upper bits (shift right to get most significant bits)
+  (product >> (32 - lz77_hash_bit_size)).land(0x7FFF) // Keep 15 bits
+}
+
+///|
+/// Insert position into hash chain
+pub fn insert_hash(hash_head : Array[Int], hash_prev : Array[Int], hash : Int, pos : Int) -> Unit {
+  hash_prev[pos.mod(lz77_window_size)] = hash_head[hash]
+  hash_head[hash] = pos
+}
+
+///|
+/// Match bytes backward from positions i and j for len bytes
+/// Returns -1 if all match, or the count of remaining unmatched bytes
+fn match_bwd(bytes : Bytes, i : Int, j : Int, len : Int) -> Int {
+  if len < 0 {
+    return len
+  }
+  if bytes[i].to_int() == bytes[j].to_int() {
+    match_bwd(bytes, i - 1, j - 1, len - 1)
+  } else {
+    len
+  }
+}
+
+///|
+/// Match bytes forward from positions i and j, up to max_match_len
+/// Returns the length of the match
+pub fn match_fwd(bytes : Bytes, i : Int, j : Int, len : Int, max_match_len : Int) -> Int {
+  if len >= max_match_len {
+    return len
+  }
+  if i >= bytes.length() || j >= bytes.length() {
+    return len
+  }
+  if bytes[i].to_int() == bytes[j].to_int() {
+    match_fwd(bytes, i + 1, j + 1, len + 1, max_match_len)
+  } else {
+    len
+  }
+}
+
+///|
+/// Find match length between positions i and j
+/// Only returns a length if it's strictly longer than prev_match_len
+/// Uses bidirectional matching: check backward first, then forward
+pub fn find_match_length(
+  bytes : Bytes,
+  i : Int,
+  j : Int,
+  prev_match_len : Int,
+  max_match_len : Int
+) -> Int {
+  let newi = i + prev_match_len
+  let newj = j + prev_match_len
+  
+  if newi >= bytes.length() || newj >= bytes.length() {
+    return 0
+  }
+  
+  // Check backward from prev_match_len position
+  if match_bwd(bytes, newi, newj, prev_match_len) < 0 {
+    // Backward match succeeded, try forward
+    match_fwd(bytes, newi + 1, newj + 1, prev_match_len + 1, max_match_len)
+  } else {
+    0 // Backward match failed
+  }
+}
+
+///|
 /// Create deflate-compressed file data from bytes
 /// Note: Currently uses uncompressed deflate blocks (stored format)
 /// Full LZ77+Huffman deflate compression is TODO
