@@ -1808,6 +1808,152 @@ pub fn find_backref(
 }
 
 ///|
+/// Deflate compression with LZ77 + Fixed Huffman
+/// This is the main compression function that implements:
+/// - LZ77 string matching with hash chains
+/// - Lazy matching for better compression
+/// - Fixed Huffman encoding
+pub fn deflate_fixed(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  is_final : Bool,
+  good_match : Int,
+  max_chain : Int
+) -> Bytes {
+  if len == 0 {
+    // Empty input, just write end-of-block
+    let output = ByteBuf::new(10, false)
+    let writer = BitWriter::new(output)
+    let header = if is_final { 0b011 } else { 0b010 }
+    writer.write_bits(header, 3)
+    write_literal_symbol(writer, fixed_litlen_encoder, litlen_end_of_block_sym)
+    writer.flush()
+    return output.contents()
+  }
+  
+  // Initialize hash tables
+  let hash_head = Array::make(lz77_hash_size, lz77_no_pos)
+  let hash_prev = Array::make(lz77_window_size, 0)
+  
+  // Output buffer
+  let output = ByteBuf::new(len * 2, false)
+  let writer = BitWriter::new(output)
+  
+  // Write block header
+  let header = if is_final { 0b011 } else { 0b010 }
+  writer.write_bits(header, 3)
+  
+  // Compression loop with lazy matching
+  let max_pos = start + len - lz77_min_match_len
+  
+  fn compress_loop(pos : Int, prev_bref : Int) -> Unit {
+    if pos > max_pos {
+      // Handle end of input
+      let prev_len = backref_len(prev_bref)
+      let final_pos = if prev_len == 0 {
+        pos
+      } else {
+        // Write pending match
+        let dist = backref_dist(prev_bref)
+        write_length_distance(writer, fixed_litlen_encoder, fixed_dist_encoder, prev_len, dist)
+        pos - 1 + prev_len
+      }
+      
+      // Write remaining literals
+      let end = start + len
+      for i = final_pos; i < end; i = i + 1 {
+        let byte = bytes[i].to_int()
+        write_literal_symbol(writer, fixed_litlen_encoder, byte)
+      }
+      
+      // Write end-of-block
+      write_literal_symbol(writer, fixed_litlen_encoder, litlen_end_of_block_sym)
+    } else {
+      // Check if we have enough bytes to compute hash
+      if pos + 4 > start + len {
+        // Not enough bytes for hash, just output as literal
+        if prev_bref > 0 {
+          let prev_len = backref_len(prev_bref)
+          let dist = backref_dist(prev_bref)
+          write_length_distance(writer, fixed_litlen_encoder, fixed_dist_encoder, prev_len, dist)
+          compress_loop(pos - 1 + prev_len, 0)
+        } else {
+          let byte = bytes[pos].to_int()
+          write_literal_symbol(writer, fixed_litlen_encoder, byte)
+          compress_loop(pos + 1, 0)
+        }
+        return
+      }
+      
+      // Search for match at current position
+      let hash = hash4(bytes, pos)
+      let max_match = (start + len - pos).min(lz77_max_match_len)
+      let prev_len = backref_len(prev_bref)
+      
+      let cur_bref = find_backref(
+        bytes,
+        hash_head,
+        hash_prev,
+        pos,
+        hash,
+        prev_len,
+        max_match,
+        good_match,
+        max_chain
+      )
+      let cur_len = backref_len(cur_bref)
+      
+      // Insert current position into hash
+      insert_hash(hash_head, hash_prev, hash, pos)
+      
+      // Lazy matching: decide whether to use previous or current match
+      if prev_len > 0 && prev_len >= cur_len {
+        // Previous match is better, use it
+        let dist = backref_dist(prev_bref)
+        write_length_distance(writer, fixed_litlen_encoder, fixed_dist_encoder, prev_len, dist)
+        
+        // Insert skipped positions into hash
+        let next = pos - 1 + prev_len
+        let last = (next - 1).min(max_pos)
+        for j = pos + 1; j <= last; j = j + 1 {
+          if j + 3 < start + len {
+            let h = hash4(bytes, j)
+            insert_hash(hash_head, hash_prev, h, j)
+          }
+        }
+        
+        compress_loop(next, 0)
+      } else if cur_len == 0 {
+        // No match found
+        if prev_len > 0 {
+          // Output previous position as literal (rejected lazy match)
+          let byte = bytes[pos - 1].to_int()
+          write_literal_symbol(writer, fixed_litlen_encoder, byte)
+        } else {
+          // No previous match either, output current as literal
+          let byte = bytes[pos].to_int()
+          write_literal_symbol(writer, fixed_litlen_encoder, byte)
+        }
+        compress_loop(pos + 1, 0)
+      } else {
+        // Found a match, defer decision to next iteration (lazy matching)
+        if prev_len > 0 {
+          // Reject previous match, output as literal
+          let byte = bytes[pos - 1].to_int()
+          write_literal_symbol(writer, fixed_litlen_encoder, byte)
+        }
+        compress_loop(pos + 1, cur_bref)
+      }
+    }
+  }
+  
+  compress_loop(start, 0)
+  writer.flush()
+  output.contents()
+}
+
+///|
 /// Create deflate-compressed file data from bytes
 /// Note: Currently uses uncompressed deflate blocks (stored format)
 /// Full LZ77+Huffman deflate compression is TODO

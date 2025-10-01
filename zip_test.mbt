@@ -1897,3 +1897,149 @@ test "lz77_find_backref_no_match" {
   @json.inspect(bref, content=0) // No match
 }
 
+// ============================================================================
+// Full LZ77 + Huffman Compression Tests
+// ============================================================================
+
+///|
+test "deflate_fixed_empty" {
+  let data = b""
+  let compressed = deflate_fixed(data, 0, 0, true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(0))
+  @json.inspect(decompressed.length(), content=0)
+}
+
+///|
+test "deflate_fixed_simple" {
+  let data = b"hello"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[1].to_int(),
+      decompressed[2].to_int(),
+      decompressed[3].to_int(),
+      decompressed[4].to_int(),
+    ),
+    content=[5, 104, 101, 108, 108, 111],
+  )
+}
+
+///|
+test "deflate_fixed_with_repetition" {
+  // String with obvious repetition that LZ77 should compress
+  let data = b"abcabcabcabc"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  
+  // Should decompress correctly
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(), // 'a'
+      decompressed[3].to_int(), // 'a'
+      decompressed[6].to_int(), // 'a'
+      decompressed[9].to_int(), // 'a'
+    ),
+    content=[12, 97, 97, 97, 97],
+  )
+  
+  // Compressed should be smaller than original due to LZ77
+  let is_smaller = compressed.length() < data.length()
+  @json.inspect(is_smaller, content=true)
+}
+
+///|
+test "deflate_fixed_longer_text" {
+  let data = b"The quick brown fox jumps over the lazy dog. The quick brown fox."
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  
+  // Verify length and some key characters
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(), // 'T'
+      decompressed[46].to_int(), // 'h' (in "The" second time)
+      decompressed[decompressed.length() - 1].to_int(), // '.'
+    ),
+    content=[65, 84, 104, 46],
+  )
+}
+
+///|
+test "deflate_fixed_all_same" {
+  // Highly compressible: all same byte
+  let buf = ByteBuf::new(100, false)
+  for i = 0; i < 100; i = i + 1 {
+    buf.add_byte(0x61) // 'a'
+  }
+  let data = buf.contents()
+  
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  
+  // Should decompress to correct length
+  @json.inspect(decompressed.length(), content=100)
+  
+  // Should be highly compressed (much smaller)
+  let ratio = compressed.length() < 20
+  @json.inspect(ratio, content=true)
+}
+
+///|
+test "deflate_fixed_binary_data" {
+  // Test with various byte values including null bytes
+  let data = b"\x00\x01\x02\x03\x00\x01\x02\x03\xff\xfe\xfd"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[4].to_int(), // Should match [0] due to repetition
+      decompressed[10].to_int(),
+    ),
+    content=[11, 0, 0, 253],
+  )
+}
+
+///|
+test "deflate_fixed_no_compression_benefit" {
+  // Random-looking data that won't compress well
+  let data = b"abcdefghijklmnop"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  
+  // Should still decompress correctly even if not smaller
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[15].to_int(),
+    ),
+    content=[16, 97, 112],
+  )
+}
+
+///|
+test "deflate_fixed_substring_matches" {
+  // Test lazy matching with overlapping potential matches
+  let data = b"aaabbbaaabbbccc"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+  
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(), // 'a'
+      decompressed[6].to_int(), // 'a' (second occurrence)
+      decompressed[12].to_int(), // 'c'
+    ),
+    content=[15, 97, 97, 99],
+  )
+}
