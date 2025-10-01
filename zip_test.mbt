@@ -2044,3 +2044,86 @@ test "deflate_fixed_substring_matches" {
     content=[15, 97, 97, 99],
   )
 }
+
+// ============================================================================
+// End-to-End Integration Tests
+// ============================================================================
+
+///|
+test "complete_zip_workflow_with_compression" {
+  // Demonstrate complete ZIP workflow with real compression
+  
+  // 1. Create multiple files with different characteristics
+  let text1 = b"The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  let text2 = b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" // Highly compressible
+  let text3 = b"Random data: x7f3k9m2p"
+  
+  // 2. Compress files
+  let file1 = File::deflate_of_bytes(text1, 0, text1.length(), None).unwrap()
+  let file2 = File::deflate_of_bytes(text2, 0, text2.length(), None).unwrap()
+  let file3 = File::deflate_of_bytes(text3, 0, text3.length(), None).unwrap()
+  
+  // 3. Create members
+  let m1 = Member::make("doc.txt", MemberKind::File(file1), None, None).unwrap()
+  let m2 = Member::make("repeated.txt", MemberKind::File(file2), None, None).unwrap()
+  let m3 = Member::make("random.txt", MemberKind::File(file3), None, None).unwrap()
+  
+  // 4. Build archive
+  let archive = Archive::empty().add(m1).add(m2).add(m3)
+  
+  // 5. Serialize to ZIP format
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  
+  // 6. Verify it's a valid ZIP (deserialize)
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  
+  // 7. Extract and verify each file
+  match decoded.find("doc.txt") {
+    Some(member) => match member.kind() {
+      MemberKind::File(f) => {
+        let data = f.to_bytes()
+        @json.inspect(
+          (data.length(), data[0].to_int()),
+          content=[89, 84],
+        ) // 'T'
+      }
+      _ => ()
+    }
+    None => ()
+  }
+  
+  match decoded.find("repeated.txt") {
+    Some(member) => match member.kind() {
+      MemberKind::File(f) => {
+        let data = f.to_bytes()
+        // Verify it decompressed correctly
+        @json.inspect(
+          (data.length(), data[0].to_int(), data[39].to_int()),
+          content=[40, 97, 97],
+        )
+        
+        // Verify actual compression happened
+        let ratio = f.compressed_size() < 15 // Should be < 40% of original
+        @json.inspect(ratio, content=true)
+      }
+      _ => ()
+    }
+    None => ()
+  }
+  
+  match decoded.find("random.txt") {
+    Some(member) => match member.kind() {
+      MemberKind::File(f) => {
+        let data = f.to_bytes()
+        @json.inspect(data.length(), content=21)
+      }
+      _ => ()
+    }
+    None => ()
+  }
+  
+  // 8. Verify archive has all members
+  let count = decoded.fold(fn(_m, acc) { acc + 1 }, 0)
+  @json.inspect(count, content=3)
+}
+
