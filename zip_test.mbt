@@ -328,3 +328,66 @@ test "ptime_format" {
   // Format dos_epoch
   @json.inspect(ptime_format(dos_epoch), content="1980-01-01 00:00:00Z")
 }
+
+///|
+/// File and Compression tests
+test "compression_conversions" {
+  // Test to_int
+  @json.inspect(Compression::Stored.to_int(), content=0)
+  @json.inspect(Compression::Deflate.to_int(), content=8)
+
+  // Test from_int
+  @json.inspect(Compression::from_int(0) == Compression::Stored, content=true)
+  @json.inspect(Compression::from_int(8) == Compression::Deflate, content=true)
+  @json.inspect(
+    Compression::from_int(99) == Compression::Other(99),
+    content=true,
+  )
+}
+
+///|
+test "file_stored_simple" {
+  let data = b"test data"
+  let file = File::stored_of_bytes(data, 0, data.length())
+  @json.inspect(
+    (
+      file.compression == Compression::Stored,
+      file.decompressed_size,
+      file.compressed_size,
+      file.can_extract(),
+    ),
+    content=[true, 9, 9, true],
+  )
+}
+
+///|
+test "file_to_bytes_stored" {
+  let data = b"hello"
+  let file = File::stored_of_bytes(data, 0, data.length())
+  let result = file.to_bytes()
+  @json.inspect((result[0].to_int(), result[1].to_int(), result.length()), content=[
+    104, 101, 5,
+  ])
+}
+
+///|
+test "file_is_encrypted" {
+  let data = b"test"
+  let file = File::stored_of_bytes(data, 0, data.length())
+  @json.inspect(file.is_encrypted(), content=false)
+
+  // Create a file with encrypted flag set
+  let encrypted_file = File::make(
+    data,
+    0,
+    data.length(),
+    Compression::Stored,
+    data.length(),
+    0L,
+    None,
+    None,
+    Some(gp_flag_encrypted),
+  )
+  @json.inspect(encrypted_file.is_encrypted(), content=true)
+  @json.inspect(encrypted_file.can_extract(), content=false)
+}

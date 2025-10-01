@@ -1112,3 +1112,178 @@ pub fn ptime_format(ptime : Ptime) -> String {
   pad2(ss) +
   "Z"
 }
+
+///|
+/// Compression formats supported in ZIP archives
+pub(all) enum Compression {
+  Stored // No compression
+  Deflate // Deflate compression (RFC 1951)
+  Bzip2 // Bzip2 (not supported)
+  Lzma // LZMA (not supported)
+  Xz // XZ (not supported)
+  Zstd // Zstandard (not supported)
+  Other(Int) // Unknown compression method
+} derive(Eq, Show)
+
+///|
+/// Convert compression format to ZIP method number
+pub fn Compression::to_int(self : Compression) -> Int {
+  match self {
+    Stored => 0
+    Deflate => 8
+    Bzip2 => 12
+    Lzma => 14
+    Zstd => 93
+    Xz => 95
+    Other(n) => n
+  }
+}
+
+///|
+/// Convert ZIP method number to compression format
+pub fn Compression::from_int(compression_method : Int) -> Compression {
+  match compression_method {
+    0 => Stored
+    8 => Deflate
+    12 => Bzip2
+    14 => Lzma
+    93 => Zstd
+    95 => Xz
+    n => Other(n)
+  }
+}
+
+///|
+/// File data in a ZIP archive
+pub struct File {
+  version_made_by : UInt16
+  version_needed_to_extract : UInt16
+  gp_flags : UInt16
+  compression : Compression
+  start : Int // Start offset in compressed_bytes
+  compressed_size : Int // Size in compressed_bytes
+  compressed_bytes : Bytes // The actual compressed data
+  decompressed_size : Int // Expected size when decompressed
+  decompressed_crc32 : UInt32 // Expected CRC-32 of decompressed data
+}
+
+///|
+/// Default values for ZIP file metadata
+pub let gp_flag_encrypted : Int = 0x1
+
+///|
+pub let gp_flag_utf8 : Int = 0x800
+
+///|
+let gp_flag_default : Int = gp_flag_utf8
+
+///|
+let version_made_by_default : Int = (3 << 8) | 20 // UNIX + PKZIP 2.0
+
+///|
+let version_needed_default : Int = 20 // PKZIP 2.0
+
+///|
+/// Maximum file size in non-ZIP64 archives
+pub let max_file_size : Int64 = 4294967295L // 2^32 - 1 (4GB)
+
+///|
+/// Create file data from compressed bytes
+pub fn File::make(
+  compressed_bytes : Bytes,
+  start : Int,
+  compressed_size : Int,
+  compression : Compression,
+  decompressed_size : Int,
+  decompressed_crc32 : UInt32,
+  version_made_by : Int?,
+  version_needed : Int?,
+  gp_flags : Int?,
+) -> File {
+  if compressed_size.to_int64() > max_file_size ||
+    decompressed_size.to_int64() > max_file_size {
+    abort(
+      "Maximum ZIP file size \{max_file_size} exceeded: compressed=\{compressed_size}, decompressed=\{decompressed_size}",
+    )
+  }
+  {
+    version_made_by: version_made_by.unwrap_or(version_made_by_default),
+    version_needed_to_extract: version_needed.unwrap_or(version_needed_default),
+    gp_flags: gp_flags.unwrap_or(gp_flag_default),
+    compression,
+    start,
+    compressed_size,
+    compressed_bytes,
+    decompressed_size,
+    decompressed_crc32,
+  }
+}
+
+///|
+/// Create stored (uncompressed) file data from bytes
+pub fn File::stored_of_bytes(bytes : Bytes, start : Int, len : Int) -> File {
+  let crc = bytes_crc32(bytes, start, len)
+  File::make(bytes, start, len, Stored, len, crc, None, None, None)
+}
+
+///|
+/// Check if file is encrypted
+pub fn File::is_encrypted(self : File) -> Bool {
+  (self.gp_flags & gp_flag_encrypted) != 0
+}
+
+///|
+/// Check if we can extract (decompress) this file
+pub fn File::can_extract(self : File) -> Bool {
+  if self.is_encrypted() {
+    false
+  } else {
+    match self.compression {
+      Stored | Deflate => true
+      _ => false
+    }
+  }
+}
+
+///|
+/// Decompress file data without CRC check
+pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt32) {
+  if self.is_encrypted() {
+    abort("Encrypted files are not supported")
+  }
+  match self.compression {
+    Stored => {
+      // Just extract the bytes, no decompression needed
+      let result_arr = Array::make(self.compressed_size, b'\x00')
+      for i = 0; i < self.compressed_size; i = i + 1 {
+        result_arr[i] = self.compressed_bytes[self.start + i]
+      }
+      let result = Bytes::from_fixedarray(
+        FixedArray::from_iter(result_arr[0:].iter()),
+      )
+      let crc = bytes_crc32(result, 0, result.length())
+      (result, crc)
+    }
+    Deflate =>
+      inflate_and_crc32(
+        self.compressed_bytes,
+        self.start,
+        self.compressed_size,
+        Some(self.decompressed_size),
+      )
+    _ => abort("Compression format \{self.compression} not supported")
+  }
+}
+
+///|
+/// Decompress file data with CRC check
+pub fn File::to_bytes(self : File) -> Bytes {
+  let (result, found_crc) = self.to_bytes_no_crc_check()
+  let expected_crc = self.decompressed_crc32
+  if found_crc != expected_crc {
+    abort(
+      "CRC-32 mismatch: expected \{expected_crc.to_hex_string()}, found \{found_crc.to_hex_string()}",
+    )
+  }
+  result
+}
