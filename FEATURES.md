@@ -26,7 +26,7 @@ This document tracks the port of zipc from OCaml to MoonBit.
 - [x] Fixed literal/length decoder (RFC 1951 3.2.6)
 - [x] Fixed distance decoder
 - [ ] Dynamic decoder initialization from code lengths
-- [ ] Symbol decoding from bit stream
+- [x] Symbol decoding from bit stream
 
 ### Huffman Encoder
 - [ ] Encoder structure (symbol info array)
@@ -38,10 +38,11 @@ This document tracks the port of zipc from OCaml to MoonBit.
 
 ## Module 3: zipc_deflate - Inflate (Decompression)
 
-### Bit Stream Reading
-- [ ] Bit buffer for reading
-- [ ] Read N bits from stream
-- [ ] Byte-aligned reading
+### Bit Stream Reading ✅
+- [x] Bit buffer for reading
+- [x] Read N bits from stream
+- [x] Read symbol with Huffman decoder
+- [x] Byte buffer for output (ByteBuf)
 
 ### Block Decompression
 - [ ] Read uncompressed blocks
@@ -164,8 +165,10 @@ For each module:
   - Checksums (CRC-32, Adler-32) ✅
   - Deflate constants and symbol tables ✅
   - Huffman decoder structures ✅
-- **Next**: Bit stream reading and inflate implementation
-- **Progress**: ~15% complete (~530 / ~2500 lines)
+  - Bit stream reading ✅
+  - ByteBuf for output ✅
+- **Next**: Block decompression (uncompressed, fixed, dynamic)
+- **Progress**: ~30% complete (~750 / ~2500 lines)
 
 ## Summary by Lines of Code
 
@@ -173,11 +176,12 @@ For each module:
 |--------|-------------|-----------|------------|
 | Checksums | ~140 | ~140 | 100% |
 | Deflate Constants | ~250 | ~250 | 100% |
-| Huffman Decoder | ~100 | ~50 | 50% |
+| Huffman Decoder | ~100 | ~80 | 80% |
+| Bit Stream Reading | ~200 | ~200 | 100% |
 | Huffman Encoder | ~180 | 0 | 0% |
-| Inflate | ~220 | 0 | 0% |
+| Inflate | ~220 | 80 | 36% |
 | Deflate | ~500 | 0 | 0% |
 | Utilities | ~200 | 0 | 0% |
 | File/Member | ~300 | 0 | 0% |
 | ZIP Archive | ~600 | 0 | 0% |
-| **Total** | **~2500** | **~530** | **~21%** |
+| **Total** | **~2690** | **~750** | **~28%** |

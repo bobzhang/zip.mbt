@@ -11,4 +11,4 @@ and keep doing it in a incremental way.
 # Align features
 
 Maintain a checklist of which features are missed in the MoonBit library, and try to add tests and 
-implement them one by one
+implement them one by one until you finish all features.

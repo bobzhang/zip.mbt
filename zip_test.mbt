@@ -171,3 +171,65 @@ test "bytebuf_recopy" {
     content=[5, 65, 66, 67, 65, 66],
   )
 }
+
+///|
+/// ByteBuf recopy overlapping (RLE pattern)
+test "bytebuf_recopy_overlapping" {
+  let buf = ByteBuf::new(10, false)
+  buf.add_byte(0x41) // 'A'
+  // Copy 1 byte from position 0, repeated 5 times (overlapping)
+  buf.recopy(0, 5)
+  let result = buf.contents()
+  // Should produce "AAAAAA" (6 total A's)
+  @json.inspect(
+    (
+      buf.length(),
+      result[0].to_int(),
+      result[1].to_int(),
+      result[2].to_int(),
+      result[5].to_int(),
+    ),
+    content=[6, 65, 65, 65, 65],
+  )
+}
+
+///|
+/// Inflate tests - uncompressed block
+test "inflate_uncompressed_block" {
+  // Create a simple uncompressed deflate stream
+  // Format: final_bit(1) + type(00) + padding + length + ~length + data
+  // Data: "ABC" (3 bytes)
+  let compressed = Bytes::from_fixedarray([
+    0b00000001, // final=1, type=00 (uncompressed)
+     3, 0, // length = 3 (little-endian)
+     252, 255, // ~length = 0xFFFC (complement of 3)
+     0x41, 0x42, 0x43, // "ABC"
+  ])
+  let result = inflate(compressed, 0, compressed.length(), None)
+  @json.inspect((result[0].to_int(), result[1].to_int(), result[2].to_int()), content=[
+    65, 66, 67,
+  ])
+}
+
+///|
+/// Test inflate with CRC-32 computation
+test "inflate_with_crc32" {
+  // Same uncompressed block as above
+  let compressed = Bytes::from_fixedarray([
+    0b00000001, // final=1, type=00 (uncompressed)
+     3, 0, // length = 3
+     252, 255, // ~length
+     0x41, 0x42, 0x43, // "ABC"
+  ])
+  let (result, crc) = inflate_and_crc32(
+    compressed,
+    0,
+    compressed.length(),
+    None,
+  )
+  // Verify data and that CRC is computed
+  @json.inspect(
+    (result[0].to_int(), result[1].to_int(), result[2].to_int(), crc > 0L),
+    content=[65, 66, 67, true],
+  )
+}
