@@ -155,9 +155,9 @@ fn read_symbol_loop(
   offs : Int,
 ) -> Int {
   let new_offs = 2 * offs + decoder_state.read_bits(1)
-  let count = decoder.counts[len]
+  let count = decoder.count(len)
   if new_offs < count {
-    decoder.symbols[base + new_offs]
+    decoder.symbol(base + new_offs)
   } else {
     read_symbol_loop(
       decoder_state,
@@ -191,9 +191,9 @@ fn read_block_symbols(
     } else if sym == litlen_end_of_block_sym {
       // End of block
       return
-    } else if sym > litlen_decoder.max_sym ||
+    } else if sym > litlen_decoder.max_sym() ||
       sym > litlen_sym_max ||
-      litlen_decoder.max_sym == -1 {
+      litlen_decoder.max_sym() == -1 {
       abort("Corrupted deflate stream: invalid literal/length symbol")
     } else {
       // Length symbol - read the length
@@ -204,7 +204,7 @@ fn read_block_symbols(
 
       // Read the distance
       let dist_sym = decoder.read_symbol(dist_decoder)
-      if dist_sym > dist_decoder.max_sym || dist_sym > dist_sym_max {
+      if dist_sym > dist_decoder.max_sym() || dist_sym > dist_sym_max {
         abort("Corrupted deflate stream: invalid distance symbol")
       }
       let dist_value = dist_value_of_sym[dist_sym]
@@ -282,7 +282,7 @@ fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
   decoder.dyn_litlen.init_from_lengths(
     codelen_lengths, 0, max_codelen_sym_count,
   )
-  if decoder.dyn_litlen.max_sym == -1 {
+  if decoder.dyn_litlen.max_sym() == -1 {
     abort("Corrupted deflate stream: empty code length code")
   }
 
@@ -292,7 +292,7 @@ fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
   let total = hlit + hdist
   while num < total {
     let sym = decoder.read_symbol(decoder.dyn_litlen)
-    if sym > decoder.dyn_litlen.max_sym {
+    if sym > decoder.dyn_litlen.max_sym() {
       abort("Corrupted deflate stream: invalid code length symbol")
     }
     let (repeat, value) = match sym {

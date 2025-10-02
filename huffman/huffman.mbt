@@ -6,13 +6,13 @@
 
 ///|
 /// Constants for DEFLATE Huffman coding
-pub let litlen_sym_max : Int = 285  // Maximum literal/length symbol
-pub let litlen_sym_fixed_max : Int = 287  // Max for fixed Huffman
-pub let dist_sym_max : Int = 29  // Maximum distance symbol
+let litlen_sym_max : Int = 285  // Maximum literal/length symbol
+let litlen_sym_fixed_max : Int = 287  // Max for fixed Huffman
+let dist_sym_max : Int = 29  // Maximum distance symbol
 
 ///|
 /// Huffman decoder for inflate (decompression)
-pub struct HuffmanDecoder {
+struct HuffmanDecoder {
   counts : Array[Int] // counts[i] = number of codes of length i
   symbols : Array[Int] // symbols sorted by code
   mut max_sym : Int // maximum symbol seen
@@ -91,6 +91,36 @@ pub fn HuffmanDecoder::init_from_lengths(
 }
 
 ///|
+/// Get the max_sym field (maximum symbol seen)
+pub fn HuffmanDecoder::max_sym(self : HuffmanDecoder) -> Int {
+  self.max_sym
+}
+
+///|
+/// Get count for a specific code length
+pub fn HuffmanDecoder::count(self : HuffmanDecoder, len : Int) -> Int {
+  self.counts[len]
+}
+
+///|
+/// Get symbol at a specific index
+pub fn HuffmanDecoder::symbol(self : HuffmanDecoder, index : Int) -> Int {
+  self.symbols[index]
+}
+
+///|
+/// Get the length of counts array
+pub fn HuffmanDecoder::counts_length(self : HuffmanDecoder) -> Int {
+  self.counts.length()
+}
+
+///|
+/// Get the length of symbols array
+pub fn HuffmanDecoder::symbols_length(self : HuffmanDecoder) -> Int {
+  self.symbols.length()
+}
+
+///|
 /// Fixed Huffman decoder for literal/length symbols (RFC 1951 3.2.6)
 pub let fixed_litlen_decoder : HuffmanDecoder = {
   let decoder = HuffmanDecoder::new()
@@ -159,7 +189,7 @@ pub fn sym_info_code_length(info : SymInfo) -> Int {
 ///|
 /// Huffman encoder for deflate compression
 /// Stores symbol-to-code mappings
-pub struct HuffmanEncoder {
+struct HuffmanEncoder {
   codes : Array[SymInfo] // codes[symbol] = sym_info for that symbol
   mut max_sym : Int // Maximum symbol that has a code
 }
@@ -169,6 +199,18 @@ pub struct HuffmanEncoder {
 pub fn HuffmanEncoder::new() -> HuffmanEncoder {
   // Need room for all possible symbols including fixed codes (0-287)
   { codes: Array::make(litlen_sym_fixed_max + 1, 0), max_sym: 0 }
+}
+
+///|
+/// Get the max_sym field (maximum symbol that has a code)
+pub fn HuffmanEncoder::max_sym(self : HuffmanEncoder) -> Int {
+  self.max_sym
+}
+
+///|
+/// Get the length of codes array
+pub fn HuffmanEncoder::codes_length(self : HuffmanEncoder) -> Int {
+  self.codes.length()
 }
 
 ///|

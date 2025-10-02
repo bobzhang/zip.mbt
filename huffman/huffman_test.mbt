@@ -3,7 +3,7 @@
 test "huffman_decoder_creation" {
   let decoder = HuffmanDecoder::new()
   @json.inspect(
-    (decoder.counts.length(), decoder.symbols.length(), decoder.max_sym),
+    (decoder.counts_length(), decoder.symbols_length(), decoder.max_sym()),
     content=[16, 288, 0],
   )
 }
@@ -13,10 +13,10 @@ test "fixed_litlen_decoder_setup" {
   // Check that fixed literal/length decoder is properly initialized
   @json.inspect(
     (
-      fixed_litlen_decoder.counts[7], // 256-279: 24 symbols
-      fixed_litlen_decoder.counts[8], // 0-143 + 280-287: 152 symbols
-      fixed_litlen_decoder.counts[9], // 144-255: 112 symbols
-      fixed_litlen_decoder.max_sym,
+      fixed_litlen_decoder.count(7), // 256-279: 24 symbols
+      fixed_litlen_decoder.count(8), // 0-143 + 280-287: 152 symbols
+      fixed_litlen_decoder.count(9), // 144-255: 112 symbols
+      fixed_litlen_decoder.max_sym(),
     ),
     content=[24, 152, 112, 285],
   )
@@ -25,7 +25,7 @@ test "fixed_litlen_decoder_setup" {
 ///|
 test "fixed_dist_decoder_setup" {
   @json.inspect(
-    (fixed_dist_decoder.counts[5], fixed_dist_decoder.max_sym),
+    (fixed_dist_decoder.count(5), fixed_dist_decoder.max_sym()),
     content=[32, 29],
   )
 }
@@ -34,7 +34,7 @@ test "fixed_dist_decoder_setup" {
 /// Huffman encoder tests
 test "huffman_encoder_creation" {
   let encoder = HuffmanEncoder::new()
-  @json.inspect((encoder.codes.length(), encoder.max_sym), content=[288,0])
+  @json.inspect((encoder.codes_length(), encoder.max_sym()), content=[288,0])
 }
 
 ///|
@@ -45,7 +45,7 @@ test "huffman_encoder_set_get" {
   encoder.set(65, info)
   let retrieved = encoder.get(65)
   @json.inspect(
-    (sym_info_code(retrieved), sym_info_code_length(retrieved), encoder.max_sym),
+    (sym_info_code(retrieved), sym_info_code_length(retrieved), encoder.max_sym()),
     content=[5, 3, 65],
   )
 }

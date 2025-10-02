@@ -2,8 +2,6 @@
 package "bobzhang/zip/huffman"
 
 // Values
-let dist_sym_max : Int
-
 let fixed_dist_decoder : HuffmanDecoder
 
 let fixed_dist_encoder : HuffmanEncoder
@@ -11,10 +9,6 @@ let fixed_dist_encoder : HuffmanEncoder
 let fixed_litlen_decoder : HuffmanDecoder
 
 let fixed_litlen_encoder : HuffmanEncoder
-
-let litlen_sym_fixed_max : Int
-
-let litlen_sym_max : Int
 
 fn reverse_bits(Int, Int) -> Int
 
@@ -27,19 +21,19 @@ fn sym_info_make(Int, Int) -> Int
 // Errors
 
 // Types and methods
-pub struct HuffmanDecoder {
-  counts : Array[Int]
-  symbols : Array[Int]
-  mut max_sym : Int
-}
+type HuffmanDecoder
+fn HuffmanDecoder::count(Self, Int) -> Int
+fn HuffmanDecoder::counts_length(Self) -> Int
 fn HuffmanDecoder::init_from_lengths(Self, Array[Int], Int, Int) -> Unit
+fn HuffmanDecoder::max_sym(Self) -> Int
 fn HuffmanDecoder::new() -> Self
+fn HuffmanDecoder::symbol(Self, Int) -> Int
+fn HuffmanDecoder::symbols_length(Self) -> Int
 
-pub struct HuffmanEncoder {
-  codes : Array[Int]
-  mut max_sym : Int
-}
+type HuffmanEncoder
+fn HuffmanEncoder::codes_length(Self) -> Int
 fn HuffmanEncoder::get(Self, Int) -> Int
+fn HuffmanEncoder::max_sym(Self) -> Int
 fn HuffmanEncoder::new() -> Self
 fn HuffmanEncoder::set(Self, Int, Int) -> Unit
 
