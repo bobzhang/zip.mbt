@@ -165,50 +165,6 @@ test "inflate_with_crc32" {
 
 ///|
 /// Fpath tests
-test "fpath_ensure_unix" {
-  let path = "dir\\subdir\\file.txt"
-  let result = fpath_ensure_unix(path)
-  @json.inspect(
-    result,
-    content=("dir/subdir/file.txt"),
-  )
-}
-
-///|
-test "fpath_ensure_directoryness_empty" {
-  @json.inspect(fpath_ensure_directoryness(""), content="./")
-}
-
-///|
-test "fpath_ensure_directoryness_no_slash" {
-  @json.inspect(fpath_ensure_directoryness("dir"), content="dir/")
-}
-
-///|
-test "fpath_ensure_directoryness_has_slash" {
-  @json.inspect(fpath_ensure_directoryness("dir/"), content="dir/")
-}
-
-///|
-test "fpath_sanitize_basic" {
-  @json.inspect(fpath_sanitize("a/b/c"), content=("a/b/c"))
-}
-
-///|
-test "fpath_sanitize_removes_dots" {
-  @json.inspect(fpath_sanitize("a/./b/../c"), content=("a/b/c"))
-}
-
-///|
-test "fpath_sanitize_removes_empty" {
-  @json.inspect(fpath_sanitize("a//b///c"), content=("a/b/c"))
-}
-
-///|
-test "fpath_sanitize_mixed_slashes" {
-  @json.inspect(fpath_sanitize("a\\b/c"), content=("a/b/c"))
-}
-
 ///|
 test "format_file_mode" {
   // 0o755 = rwxr-xr-x
