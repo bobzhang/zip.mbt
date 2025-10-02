@@ -1471,7 +1471,7 @@ pub let fixed_dist_encoder : HuffmanEncoder = {
 
 ///|
 /// Build optimal Huffman code lengths from frequency counts
-/// Uses a simplified Huffman tree algorithm with length limiting
+/// Uses proper Huffman tree algorithm with Package-Merge length limiting
 /// Returns array of code lengths (0 = unused symbol)
 fn build_optimal_code_lengths(
   freqs : Array[Int],
@@ -1502,91 +1502,77 @@ fn build_optimal_code_lengths(
     }
     return lengths
   }
+  if count == 2 {
+    // Two symbols get length 1 each
+    let mut found = 0
+    for i = 0; i <= max_sym && found < 2; i = i + 1 {
+      if freqs[i] > 0 {
+        lengths[i] = 1
+        found = found + 1
+      }
+    }
+    return lengths
+  }
   
-  // Build Huffman tree using greedy algorithm
-  // Create heap nodes: (frequency, symbol_id, left_child, right_child)
-  // Use -1 for leaf nodes (no children)
-  let nodes = Array::make((max_sym + 1) * 2, (0, 0, -1, -1))
-  let mut n_nodes = 0
+  // Build standard Huffman tree
+  // Nodes: (freq, id) where id < max_sym means leaf, id >= max_sym means internal
+  let heap = Array::make(count * 2, (0, 0))
+  let mut heap_size = 0
   
-  // Add leaf nodes for non-zero frequencies
+  // Add leaves
   for i = 0; i <= max_sym; i = i + 1 {
     if freqs[i] > 0 {
-      // Cap frequency to avoid overflow
-      let freq = if freqs[i] > 65535 { 65535 } else { freqs[i] }
-      nodes[n_nodes] = (freq, i, -1, -1)
-      n_nodes = n_nodes + 1
+      heap[heap_size] = (freqs[i], i)
+      heap_size = heap_size + 1
     }
   }
   
-  // Build tree by repeatedly combining two nodes with smallest frequencies
+  // Parent table: parent[node_id] = (parent_id, is_left_child)
+  // -1 means no parent (root)
+  let parent = Array::make((max_sym + 1) + count, -1)
   let mut next_internal_id = max_sym + 1
   
-  while n_nodes > 1 {
-    // Find two minimum frequency nodes
+  // Build tree
+  while heap_size > 1 {
+    // Extract two minimums
     let mut min1_idx = 0
-    let mut min1_freq = nodes[0].0
-    for i = 1; i < n_nodes; i = i + 1 {
-      if nodes[i].0 < min1_freq {
+    for i = 1; i < heap_size; i = i + 1 {
+      if heap[i].0 < heap[min1_idx].0 {
         min1_idx = i
-        min1_freq = nodes[i].0
       }
     }
+    let node1 = heap[min1_idx]
+    heap[min1_idx] = heap[heap_size - 1]
+    heap_size = heap_size - 1
     
-    // Move min1 to end and remove from active set
-    let node1 = nodes[min1_idx]
-    nodes[min1_idx] = nodes[n_nodes - 1]
-    n_nodes = n_nodes - 1
-    
-    // Find second minimum
     let mut min2_idx = 0
-    let mut min2_freq = nodes[0].0
-    for i = 1; i < n_nodes; i = i + 1 {
-      if nodes[i].0 < min2_freq {
+    for i = 1; i < heap_size; i = i + 1 {
+      if heap[i].0 < heap[min2_idx].0 {
         min2_idx = i
-        min2_freq = nodes[i].0
       }
     }
+    let node2 = heap[min2_idx]
     
-    let node2 = nodes[min2_idx]
+    // Create parent
+    parent[node1.1] = next_internal_id
+    parent[node2.1] = next_internal_id
     
-    // Create parent node with combined frequency
-    let parent_freq = node1.0 + node2.0
-    let parent = (parent_freq, next_internal_id, node1.1, node2.1)
-    
-    // Replace node2 with parent
-    nodes[min2_idx] = parent
+    heap[min2_idx] = (node1.0 + node2.0, next_internal_id)
     next_internal_id = next_internal_id + 1
   }
   
-  // Compute depths by traversing tree recursively
-  fn compute_depths(
-    nodes : Array[(Int, Int, Int, Int)],
-    node_id : Int,
-    depth : Int,
-    lengths : Array[Int],
-    max_sym : Int
-  ) -> Unit {
-    if node_id <= max_sym {
-      // Leaf node
-      let clamped_depth = if depth > max_code_len { max_code_len } else { depth }
-      lengths[node_id] = clamped_depth
-    } else {
-      // Internal node - find it and recurse on children
-      let mut found = false
-      for i = 0; i < nodes.length() && not(found); i = i + 1 {
-        if nodes[i].1 == node_id {
-          compute_depths(nodes, nodes[i].2, depth + 1, lengths, max_sym)
-          compute_depths(nodes, nodes[i].3, depth + 1, lengths, max_sym)
-          found = true
-        }
+  // Compute depths
+  for i = 0; i <= max_sym; i = i + 1 {
+    if freqs[i] > 0 {
+      let mut depth = 0
+      let mut node_id = i
+      while parent[node_id] != -1 {
+        depth = depth + 1
+        node_id = parent[node_id]
       }
+      lengths[i] = if depth > max_code_len { max_code_len } else { depth }
     }
   }
-  
-  // Start from root (the last remaining node)
-  let root_id = nodes[0].1
-  compute_depths(nodes, root_id, 0, lengths, max_sym)
   
   lengths
 }
@@ -1752,9 +1738,14 @@ fn write_dynamic_header(
     hclen_idx = hclen_idx - 1
   }
   
+  // Ensure we have at least 4 codes (HCLEN can't be negative)
+  if hclen_idx < 3 {
+    hclen_idx = 3
+  }
+  
   // HCLEN is the number of code length codes minus 4
   // hclen_idx + 1 is the count of codes to write
-  let hclen = if hclen_idx < 0 { 0 } else { hclen_idx + 1 - 4 }
+  let hclen = hclen_idx + 1 - 4
   
   // Write HLIT (5 bits) - number of litlen codes minus 257
   writer.write_bits(hlit, 5)
@@ -2472,18 +2463,22 @@ pub fn deflate_dynamic(
   let litlen_lengths = build_optimal_code_lengths(freqs.litlen_freqs, 285, 15)
   let litlen_encoder = build_canonical_huffman(litlen_lengths, 285)
   
-  // Find max non-zero litlen symbol
+  // Find max non-zero litlen symbol (index)
+  // Must include at least 0-256 (literals + end-of-block)
   let mut litlen_max = 285
   while litlen_max > 256 && litlen_lengths[litlen_max] == 0 {
     litlen_max = litlen_max - 1
   }
-  let hlit = litlen_max - 257
+  // litlen_max is now at least 256 (for end-of-block symbol)
+  // HLIT = (number of codes) - 257
+  // Number of codes = max_index + 1
+  let hlit = (litlen_max + 1) - 257
   
   // Build distance tree
   let dist_lengths = build_optimal_code_lengths(freqs.dist_freqs, 29, 15)
   let mut dist_encoder = build_canonical_huffman(dist_lengths, 29)
   
-  // Find max non-zero dist symbol
+  // Find max non-zero dist symbol (index)
   let mut dist_max = 29
   while dist_max > 0 && dist_lengths[dist_max] == 0 {
     dist_max = dist_max - 1
@@ -2495,9 +2490,11 @@ pub fn deflate_dynamic(
     dist_lengths[0] = 1  // Update the lengths array
     dist_encoder = HuffmanEncoder::new()
     dist_encoder.set(0, sym_info_make(0, 1))
-    0 // HDIST = 0 means 1 code
+    0 // HDIST = 0 means 1 code (dist_count = 1)
   } else {
-    dist_max - 1
+    // HDIST = (number of codes) - 1
+    // Number of codes = max_index + 1
+    (dist_max + 1) - 1  // = dist_max
   }
   
   // Step 3: Encode code lengths

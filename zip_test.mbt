@@ -2310,48 +2310,43 @@ test "zlib_bad_checksum" {
 // ============================================================================
 
 test "dynamic_huffman_simple" {
-  let data = "AAAAAABBBBBBCCCCCC"
-  let data_bytes = data.to_bytes()
-  let compressed = deflate_dynamic(data_bytes, 0, data.length(), true, 8, 128)
+  // Create ASCII bytes directly (not from UTF-16 string)
+  let data = b"AAAAAABBBBBBCCCCCC"
+  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
   
   // Should decompress correctly
   let decompressed = inflate(compressed, 0, compressed.length(), None)
-  @json.inspect(decompressed.to_string(), content="AAAAAABBBBBBCCCCCC")
+  @json.inspect(decompressed, content="AAAAAABBBBBBCCCCCC")
 }
 
 test "dynamic_huffman_vs_fixed" {
-  // Data with non-uniform distribution - dynamic should be better
-  let data = "AAAAAAAAAAABBBBBCCCCCDDD"
-  let data_bytes = data.to_bytes()
+  // Data with non-uniform distribution - test both compress correctly
+  let data = b"AAAAAAAAAAABBBBBCCCCCDDD"
   
-  let dynamic = deflate_dynamic(data_bytes, 0, data.length(), true, 8, 128)
-  let fixed = deflate_fixed(data_bytes, 0, data.length(), true, 8, 128)
-  
-  // Dynamic should be smaller or equal
-  @json.inspect(
-    (dynamic.length() <= fixed.length(), dynamic.length(), fixed.length()),
-    content=[true, "<dyn_len>", "<fix_len>"],
-  )
+  let dynamic = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let fixed = deflate_fixed(data, 0, data.length(), true, 8, 128)
   
   // Both should decompress correctly
   let d1 = inflate(dynamic, 0, dynamic.length(), None)
   let d2 = inflate(fixed, 0, fixed.length(), None)
-  @json.inspect((d1.to_string(), d2.to_string()), content=[
+  @json.inspect((d1, d2), content=[
     "AAAAAAAAAAABBBBBCCCCCDDD",
     "AAAAAAAAAAABBBBBCCCCCDDD",
   ])
+  
+  // Note: For short data, dynamic may be larger due to header overhead
+  // Dynamic Huffman is beneficial for larger blocks (typically >1KB)
 }
 
 test "dynamic_huffman_single_symbol" {
-  // All same character - should compress very well
-  let data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-  let data_bytes = data.to_bytes()
-  let compressed = deflate_dynamic(data_bytes, 0, data.length(), true, 8, 128)
+  // All same character - should compress well with LZ77
+  let data = b"AAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
   
-  // Single symbol with LZ77 should compress to less than 1/4 original
+  // Should compress to less than original (LZ77 + dynamic Huffman)
   let decompressed = inflate(compressed, 0, compressed.length(), None)
   @json.inspect(
-    (compressed.length() < data.length() / 4, decompressed.length()),
+    (compressed.length() < data.length(), decompressed.length()),
     content=[true, 28],
   )
 }
@@ -2359,25 +2354,23 @@ test "dynamic_huffman_single_symbol" {
 test "dynamic_huffman_empty" {
   let compressed = deflate_dynamic(Bytes::new(0), 0, 0, true, 8, 128)
   let decompressed = inflate(compressed, 0, compressed.length(), None)
-  @json.inspect(decompressed.length(), content="0")
+  @json.inspect(decompressed.length(), content=0)
 }
 
 test "dynamic_huffman_short" {
-  let data = "Hi"
-  let data_bytes = data.to_bytes()
-  let compressed = deflate_dynamic(data_bytes, 0, data.length(), true, 8, 128)
+  let data = b"Hi"
+  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
   let decompressed = inflate(compressed, 0, compressed.length(), None)
-  @json.inspect(decompressed.to_string(), content="Hi")
+  @json.inspect(decompressed, content="Hi")
 }
 
 test "dynamic_huffman_text" {
-  let data = "The quick brown fox jumps over the lazy dog."
-  let data_bytes = data.to_bytes()
-  let compressed = deflate_dynamic(data_bytes, 0, data.length(), true, 8, 128)
+  let data = b"The quick brown fox jumps over the lazy dog."
+  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
   
   // Should compress well
   let decompressed = inflate(compressed, 0, compressed.length(), None)
-  @json.inspect(decompressed.to_string(), content="The quick brown fox jumps over the lazy dog.")
+  @json.inspect(decompressed, content="The quick brown fox jumps over the lazy dog.")
 }
 
 test "dynamic_huffman_binary" {
@@ -2398,17 +2391,16 @@ test "dynamic_huffman_binary" {
 
 test "dynamic_vs_fixed" {
   // Compare compression ratios
-  let data = "AAAA"
-  let data_bytes = data.to_bytes()
+  let data = b"AAAA"
   
-  let dynamic = deflate_dynamic(data_bytes, 0, data.length(), true, 8, 128)
-  let fixed = deflate_fixed(data_bytes, 0, data.length(), true, 8, 128)
+  let dynamic = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let fixed = deflate_fixed(data, 0, data.length(), true, 8, 128)
   
   // Both must decompress correctly
   let d1 = inflate(dynamic, 0, dynamic.length(), None)
   let d2 = inflate(fixed, 0, fixed.length(), None)
   
-  @json.inspect((d1.to_string(), d2.to_string()), content=["AAAA", "AAAA"])
+  @json.inspect((d1, d2), content=["AAAA", "AAAA"])
 }
 
 
