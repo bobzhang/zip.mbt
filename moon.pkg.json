@@ -1,7 +1,8 @@
 {
   "import": [
     "bobzhang/zip/buffer",
-    "bobzhang/zip/bitstream"
+    "bobzhang/zip/bitstream",
+    "bobzhang/zip/types"
   ],
   "test-import": [
      "bobzhang/zip/hexdump"
