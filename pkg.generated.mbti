@@ -6,6 +6,12 @@ import(
 )
 
 // Values
+fn adler32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(Int64, Bytes), String]
+
+fn backref_dist(Int) -> Int
+
+fn backref_len(Int) -> Int
+
 fn bytes_adler32(Bytes, Int, Int) -> Int64
 
 fn bytes_crc32(Bytes, Int, Int) -> Int64
@@ -16,13 +22,33 @@ fn check_adler32(Int64, Int64) -> Result[Unit, String]
 
 fn check_crc32(Int64, Int64) -> Result[Unit, String]
 
+fn crc32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(Int64, Bytes), String]
+
+fn deflate(Bytes, Int, Int, DeflateLevel?) -> Result[Bytes, String]
+
+fn deflate_dynamic(Bytes, Int, Int, Bool, Int, Int) -> Bytes
+
+fn deflate_fixed(Bytes, Int, Int, Bool, Int, Int) -> Bytes
+
+fn deflate_fixed_literals_only(Bytes, Int, Int, Bool) -> Bytes
+
 let dist_value_of_sym : Array[Int]
+
+fn distance_to_symbol(Int) -> Int
 
 let dos_epoch : Int
 
+fn find_backref(Bytes, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> Int
+
+fn find_match_length(Bytes, Int, Int, Int, Int) -> Int
+
 let fixed_dist_decoder : HuffmanDecoder
 
+let fixed_dist_encoder : HuffmanEncoder
+
 let fixed_litlen_decoder : HuffmanDecoder
+
+let fixed_litlen_encoder : HuffmanEncoder
 
 fn format_file_mode(Int) -> String
 
@@ -36,13 +62,23 @@ let gp_flag_encrypted : Int
 
 let gp_flag_utf8 : Int
 
+fn hash4(Bytes, Int) -> Int
+
 fn inflate(Bytes, Int, Int, Int?) -> Bytes
 
 fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
 
 fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
 
+fn insert_hash(Array[Int], Array[Int], Int, Int) -> Unit
+
+fn length_to_symbol(Int) -> Int
+
 let length_value_of_sym_table : Array[Int]
+
+fn make_backref(Int, Int) -> Int
+
+fn match_fwd(Bytes, Int, Int, Int, Int) -> Int
 
 let max_file_size : Int64
 
@@ -57,6 +93,20 @@ fn ptime_of_dos_date_time(Int, Int) -> Int
 fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
 
 fn ptime_to_dos_date_time(Int) -> (Int, Int)
+
+fn sym_info_code(Int) -> Int
+
+fn sym_info_code_length(Int) -> Int
+
+fn sym_info_make(Int, Int) -> Int
+
+fn write_length_distance(BitWriter, HuffmanEncoder, HuffmanEncoder, Int, Int) -> Unit
+
+fn write_literal_symbol(BitWriter, HuffmanEncoder, Int) -> Unit
+
+fn zlib_compress(Bytes, Int, Int, DeflateLevel?) -> (Int64, Bytes)
+
+fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, Int64), String]
 
 // Errors
 
@@ -88,6 +138,18 @@ fn Archive::to_array(Self) -> Array[Member]
 fn Archive::to_bytes(Self, String?) -> Result[Bytes, String]
 fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, Member]
 fn Archive::write_bytes(Self, Bytes, Int, String?) -> Result[Int, String]
+
+pub(all) struct BitWriter {
+  dst : ByteBuf
+  mut bits : Int
+  mut bits_len : Int
+}
+fn BitWriter::align_to_byte(Self) -> Unit
+fn BitWriter::flush(Self) -> Unit
+fn BitWriter::new(ByteBuf) -> Self
+fn BitWriter::write_bits(Self, Int, Int) -> Unit
+fn BitWriter::write_byte(Self, Int) -> Unit
+fn BitWriter::write_uint16_le(Self, Int) -> Unit
 
 type ByteBuf
 fn ByteBuf::add_byte(Self, Int) -> Unit
@@ -129,6 +191,7 @@ pub enum DeflateLevel {
   Best
 }
 impl Eq for DeflateLevel
+impl Show for DeflateLevel
 
 pub struct File {
   version_made_by : Int
@@ -159,12 +222,22 @@ fn File::to_bytes_no_crc_check(Self) -> (Bytes, Int64)
 fn File::version_made_by(Self) -> Int
 fn File::version_needed_to_extract(Self) -> Int
 
+type FrequencyCounter
+
 pub struct HuffmanDecoder {
   counts : Array[Int]
   symbols : Array[Int]
   mut max_sym : Int
 }
 fn HuffmanDecoder::new() -> Self
+
+pub struct HuffmanEncoder {
+  codes : Array[Int]
+  mut max_sym : Int
+}
+fn HuffmanEncoder::get(Self, Int) -> Int
+fn HuffmanEncoder::new() -> Self
+fn HuffmanEncoder::set(Self, Int, Int) -> Unit
 
 pub struct Member {
   path : String
@@ -193,6 +266,8 @@ pub typealias Int as FileMode
 pub typealias String as Fpath
 
 pub typealias Int as Ptime
+
+pub typealias Int as SymInfo
 
 // Traits
 

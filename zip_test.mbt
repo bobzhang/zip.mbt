@@ -241,7 +241,7 @@ test "fpath_ensure_unix" {
   let result = fpath_ensure_unix(path)
   @json.inspect(
     result,
-    content="100105114/11511798100105114/10210510810146116120116",
+    content=("dir/subdir/file.txt"),
   )
 }
 
@@ -262,22 +262,22 @@ test "fpath_ensure_directoryness_has_slash" {
 
 ///|
 test "fpath_sanitize_basic" {
-  @json.inspect(fpath_sanitize("a/b/c"), content="97/98/99")
+  @json.inspect(fpath_sanitize("a/b/c"), content=("a/b/c"))
 }
 
 ///|
 test "fpath_sanitize_removes_dots" {
-  @json.inspect(fpath_sanitize("a/./b/../c"), content="97/46/98/4646/99")
+  @json.inspect(fpath_sanitize("a/./b/../c"), content=("a/b/c"))
 }
 
 ///|
 test "fpath_sanitize_removes_empty" {
-  @json.inspect(fpath_sanitize("a//b///c"), content="97/98/99")
+  @json.inspect(fpath_sanitize("a//b///c"), content=("a/b/c"))
 }
 
 ///|
 test "fpath_sanitize_mixed_slashes" {
-  @json.inspect(fpath_sanitize("a\\b/c"), content="97/98/99")
+  @json.inspect(fpath_sanitize("a\\b/c"), content=("a/b/c"))
 }
 
 ///|
@@ -398,17 +398,13 @@ test "member_make_file" {
   let data = b"test"
   let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
-  @json.inspect((m.path(), m.is_file(), m.is_dir(), m.mode()), content=[
-    "11610111511646116120116", true, false, 420,
-  ]) // 0o644 = 420
+  @json.inspect((m.path(), m.is_file(), m.is_dir(), m.mode()), content=(["test.txt",true,false,420])) // 0o644 = 420
 }
 
 ///|
 test "member_make_dir" {
   let m = Member::make("mydir", MemberKind::Dir, None, None).unwrap()
-  @json.inspect((m.path(), m.is_dir(), m.is_file(), m.mode()), content=[
-    "109121100105114/", true, false, 493,
-  ]) // 0o755 = 493
+  @json.inspect((m.path(), m.is_dir(), m.is_file(), m.mode()), content=(["mydir/",true,false,493])) // 0o755 = 493
 }
 
 ///|
@@ -416,7 +412,7 @@ test "member_ensure_unix_path" {
   let data = b"x"
   let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = Member::make("dir\\file.txt", MemberKind::File(file), None, None).unwrap()
-  @json.inspect(m.path(), content="100105114/10210510810146116120116")
+  @json.inspect(m.path(), content=("dir/file.txt"))
 }
 
 ///|
@@ -454,7 +450,7 @@ test "member_format" {
       formatted.contains("rw-"),
       formatted.contains("test.txt"),
     ),
-    content=[true, true, false],
+    content=[true,true,true],
   )
 }
 
@@ -479,7 +475,7 @@ test "archive_add_and_find" {
       archive.mem("file1.txt"),
       archive.mem("file3.txt"),
     ),
-    content=[false, 2, false, false],
+    content=[false,2,true,false],
   )
 }
 
@@ -491,7 +487,7 @@ test "archive_find_member" {
   let archive = Archive::empty().add(m)
   match archive.find("test.txt") {
     Some(found) =>
-      @json.inspect(found.path(), content="11610111511646116120116")
+      @json.inspect(found.path(), content=("test.txt"))
     None => @json.inspect("not found", content="not found")
   }
 }
@@ -505,7 +501,7 @@ test "archive_remove" {
   let archive = Archive::empty().add(m1).add(m2).remove("file1.txt")
   @json.inspect(
     (archive.member_count(), archive.mem("file1.txt"), archive.mem("file2.txt")),
-    content=[2, false, false],
+    content=[1,false,true],
   )
 }
 
@@ -548,7 +544,7 @@ test "archive_fold" {
     },
     "",
   )
-  @json.inspect(paths, content="9746116120116,9846116120116,9946116120116")
+  @json.inspect(paths, content=("a.txt,b.txt,c.txt"))
 }
 
 ///|
@@ -703,7 +699,7 @@ test "archive_encoding_size" {
   let archive = Archive::empty().add(m)
   let size = archive.encoding_size()
   // Local header (30) + path (8) + data (4) + central dir (46) + path (8) + EOCD (22) = 118
-  @json.inspect(size, content=148)
+  @json.inspect(size, content=118)
 }
 
 ///|
@@ -852,7 +848,7 @@ test "archive_roundtrip_multiple_files" {
           decoded.mem("docs/file2.txt"),
           decoded.mem("readme.txt"),
         ),
-        content=[3, false, false, false],
+        content=[3,true,true,true],
       )
     Err(msg) => @json.inspect(("error", msg), content=["success", ""])
   }
@@ -912,9 +908,7 @@ test "archive_roundtrip_deflate" {
           match found.kind() {
             MemberKind::File(f) => {
               let extracted = f.to_bytes()
-              @json.inspect((extracted.length(), extracted[0] == data[0]), content=[
-                32, true,
-              ])
+              @json.inspect((extracted.length(), extracted[0] == data[0]), content=[31,true])
             }
             _ => @json.inspect("wrong kind", content="file")
           }
@@ -964,7 +958,7 @@ test "archive_to_map" {
   let map = archive.to_map()
   @json.inspect(
     (map.contains("a.txt"), map.contains("b.txt"), map.contains("c.txt")),
-    content=[false, false, false],
+    content=[true,true,false],
   )
 }
 
@@ -976,9 +970,7 @@ test "archive_of_map_roundtrip" {
   let original = Archive::empty().add(m)
   let map = original.to_map()
   let restored = Archive::of_map(map)
-  @json.inspect((restored.member_count(), restored.mem("test.txt")), content=[
-    1, false,
-  ])
+  @json.inspect((restored.member_count(), restored.mem("test.txt")), content=[1,true])
 }
 
 ///|
@@ -1485,39 +1477,7 @@ test "e2e_ziptest_roundtrip_compatibility" {
   let archive = Archive::empty().add(member1).add(member2)
   let zip_bytes = archive.to_bytes(None).unwrap()
   // FIXME:(upstream) use mulitple line instead
-  @json.inspect(@hexdump.hex_dump(zip_bytes).split("\n").to_array(), content=[
-    "00000000  50 4b 03 04 14 00 00 08  00 00 00 00 21 00 54 2a   |PK..........!.T*|",
-    "00000010  30 fd 0d 00 00 00 0d 00  00 00 48 00 00 00 31 00   |0.........H...1.|",
-    "00000020  32 00 32 00 31 00 30 00  35 00 31 00 31 00 32 00   |2.2.1.0.5.1.1.2.|",
-    "00000030  31 00 31 00 36 00 31 00  30 00 31 00 31 00 31 00   |1.1.6.1.0.1.1.1.|",
-    "00000040  35 00 31 00 31 00 36 00  34 00 37 00 39 00 37 00   |5.1.1.6.4.7.9.7.|",
-    "00000050  34 00 36 00 31 00 31 00  36 00 31 00 32 00 30 00   |4.6.1.1.6.1.2.0.|",
-    "00000060  31 00 31 00 36 00 74 68  69 73 20 69 73 20 61 2e   |1.1.6.this is a.|",
-    "00000070  74 78 74 50 4b 03 04 14  00 00 08 00 00 00 00 21   |txtPK..........!|",
-    "00000080  00 84 50 90 ba 0d 00 00  00 0d 00 00 00 48 00 00   |..P..........H..|",
-    "00000090  00 31 00 32 00 32 00 31  00 30 00 35 00 31 00 31   |.1.2.2.1.0.5.1.1|",
-    "000000a0  00 32 00 31 00 31 00 36  00 31 00 30 00 31 00 31   |.2.1.1.6.1.0.1.1|",
-    "000000b0  00 31 00 35 00 31 00 31  00 36 00 34 00 37 00 39   |.1.5.1.1.6.4.7.9|",
-    "000000c0  00 38 00 34 00 36 00 31  00 31 00 36 00 31 00 32   |.8.4.6.1.1.6.1.2|",
-    "000000d0  00 30 00 31 00 31 00 36  00 74 68 69 73 20 69 73   |.0.1.1.6.this is|",
-    "000000e0  20 62 2e 74 78 74 50 4b  01 02 14 03 14 00 00 08   | b.txtPK........|",
-    "000000f0  00 00 00 00 21 00 54 2a  30 fd 0d 00 00 00 0d 00   |....!.T*0.......|",
-    "00000100  00 00 48 00 00 00 00 00  00 00 00 00 00 00 a4 01   |..H.............|",
-    "00000110  00 00 00 00 31 00 32 00  32 00 31 00 30 00 35 00   |....1.2.2.1.0.5.|",
-    "00000120  31 00 31 00 32 00 31 00  31 00 36 00 31 00 30 00   |1.1.2.1.1.6.1.0.|",
-    "00000130  31 00 31 00 31 00 35 00  31 00 31 00 36 00 34 00   |1.1.1.5.1.1.6.4.|",
-    "00000140  37 00 39 00 37 00 34 00  36 00 31 00 31 00 36 00   |7.9.7.4.6.1.1.6.|",
-    "00000150  31 00 32 00 30 00 31 00  31 00 36 00 50 4b 01 02   |1.2.0.1.1.6.PK..|",
-    "00000160  14 03 14 00 00 08 00 00  00 00 21 00 84 50 90 ba   |..........!..P..|",
-    "00000170  0d 00 00 00 0d 00 00 00  48 00 00 00 00 00 00 00   |........H.......|",
-    "00000180  00 00 00 00 a4 01 73 00  00 00 31 00 32 00 32 00   |......s...1.2.2.|",
-    "00000190  31 00 30 00 35 00 31 00  31 00 32 00 31 00 31 00   |1.0.5.1.1.2.1.1.|",
-    "000001a0  36 00 31 00 30 00 31 00  31 00 31 00 35 00 31 00   |6.1.0.1.1.1.5.1.|",
-    "000001b0  31 00 36 00 34 00 37 00  39 00 38 00 34 00 36 00   |1.6.4.7.9.8.4.6.|",
-    "000001c0  31 00 31 00 36 00 31 00  32 00 30 00 31 00 31 00   |1.1.6.1.2.0.1.1.|",
-    "000001d0  36 00 50 4b 05 06 00 00  00 00 02 00 02 00 ec 00   |6.PK............|",
-    "000001e0  00 00 e6 00 00 00 00 00                            |........|", "",
-  ])
+  @json.inspect(@hexdump.hex_dump(zip_bytes).split("\n").to_array(), content=(["00000000  50 4b 03 04 14 00 00 08  00 00 00 00 21 00 54 2a   |PK..........!.T*|","00000010  30 fd 0d 00 00 00 0d 00  00 00 0d 00 00 00 7a 69   |0.............zi|","00000020  70 74 65 73 74 2f 61 2e  74 78 74 74 68 69 73 20   |ptest/a.txtthis |","00000030  69 73 20 61 2e 74 78 74  50 4b 03 04 14 00 00 08   |is a.txtPK......|","00000040  00 00 00 00 21 00 84 50  90 ba 0d 00 00 00 0d 00   |....!..P........|","00000050  00 00 0d 00 00 00 7a 69  70 74 65 73 74 2f 62 2e   |......ziptest/b.|","00000060  74 78 74 74 68 69 73 20  69 73 20 62 2e 74 78 74   |txtthis is b.txt|","00000070  50 4b 01 02 14 03 14 00  00 08 00 00 00 00 21 00   |PK............!.|","00000080  54 2a 30 fd 0d 00 00 00  0d 00 00 00 0d 00 00 00   |T*0.............|","00000090  00 00 00 00 00 00 00 00  a4 01 00 00 00 00 7a 69   |..............zi|","000000a0  70 74 65 73 74 2f 61 2e  74 78 74 50 4b 01 02 14   |ptest/a.txtPK...|","000000b0  03 14 00 00 08 00 00 00  00 21 00 84 50 90 ba 0d   |.........!..P...|","000000c0  00 00 00 0d 00 00 00 0d  00 00 00 00 00 00 00 00   |................|","000000d0  00 00 00 a4 01 38 00 00  00 7a 69 70 74 65 73 74   |.....8...ziptest|","000000e0  2f 62 2e 74 78 74 50 4b  05 06 00 00 00 00 02 00   |/b.txtPK........|","000000f0  02 00 76 00 00 00 70 00  00 00 00 00               |..v...p.....|",""]))
   // Verify the structure matches what external zip tools expect
   // Check ZIP magic at start
   let local_sig = zip_bytes[0].to_int() |
@@ -2115,7 +2075,7 @@ test "complete_zip_workflow_with_compression" {
     Some(member) => match member.kind() {
       MemberKind::File(f) => {
         let data = f.to_bytes()
-        @json.inspect(data.length(), content=21)
+        @json.inspect(data.length(), content=22)
       }
       _ => ()
     }
