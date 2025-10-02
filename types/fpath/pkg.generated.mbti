@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip/types/fpath"
+
+// Values
+fn ensure_directoryness(String) -> String
+
+fn ensure_unix(String) -> String
+
+fn sanitize(String) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub typealias String as Fpath
+
+// Traits
+

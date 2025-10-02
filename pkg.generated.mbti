@@ -2,6 +2,8 @@
 package "bobzhang/zip"
 
 import(
+  "bobzhang/zip/bitstream"
+  "bobzhang/zip/types"
   "moonbitlang/core/immut/sorted_map"
 )
 
@@ -100,9 +102,9 @@ fn sym_info_code_length(Int) -> Int
 
 fn sym_info_make(Int, Int) -> Int
 
-fn write_length_distance(BitWriter, HuffmanEncoder, HuffmanEncoder, Int, Int) -> Unit
+fn write_length_distance(@bitstream.BitWriter, HuffmanEncoder, HuffmanEncoder, Int, Int) -> Unit
 
-fn write_literal_symbol(BitWriter, HuffmanEncoder, Int) -> Unit
+fn write_literal_symbol(@bitstream.BitWriter, HuffmanEncoder, Int) -> Unit
 
 fn zlib_compress(Bytes, Int, Int, DeflateLevel?) -> (Int64, Bytes)
 
@@ -111,15 +113,6 @@ fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, Int64), String]
 // Errors
 
 // Types and methods
-pub struct Adler32 {
-  value : Int64
-}
-fn Adler32::finish(Self) -> Int64
-fn Adler32::init() -> Self
-fn Adler32::update_bytes(Self, Bytes, Int, Int) -> Self
-impl Eq for Adler32
-impl Show for Adler32
-
 pub struct Archive {
   members : @sorted_map.SortedMap[String, Member]
 }
@@ -139,51 +132,6 @@ fn Archive::to_bytes(Self, String?) -> Result[Bytes, String]
 fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, Member]
 fn Archive::write_bytes(Self, Bytes, Int, String?) -> Result[Int, String]
 
-pub(all) struct BitWriter {
-  dst : ByteBuf
-  mut bits : Int
-  mut bits_len : Int
-}
-fn BitWriter::align_to_byte(Self) -> Unit
-fn BitWriter::flush(Self) -> Unit
-fn BitWriter::new(ByteBuf) -> Self
-fn BitWriter::write_bits(Self, Int, Int) -> Unit
-fn BitWriter::write_byte(Self, Int) -> Unit
-fn BitWriter::write_uint16_le(Self, Int) -> Unit
-
-type ByteBuf
-fn ByteBuf::add_byte(Self, Int) -> Unit
-fn ByteBuf::add_bytes(Self, Bytes, Int, Int) -> Unit
-fn ByteBuf::contents(Self) -> Bytes
-fn ByteBuf::length(Self) -> Int
-fn ByteBuf::new(Int, Bool) -> Self
-fn ByteBuf::recopy(Self, Int, Int) -> Unit
-
-pub(all) enum Compression {
-  Stored
-  Deflate
-  Bzip2
-  Lzma
-  Xz
-  Zstd
-  Other(Int)
-}
-fn Compression::from_int(Int) -> Self
-fn Compression::to_int(Self) -> Int
-fn Compression::to_string(Self) -> String
-impl Eq for Compression
-impl Show for Compression
-
-pub struct Crc32 {
-  value : Int64
-}
-fn Crc32::finish(Self) -> Int64
-fn Crc32::init() -> Self
-fn Crc32::update_byte(Self, Int) -> Self
-fn Crc32::update_bytes(Self, Bytes, Int, Int) -> Self
-impl Eq for Crc32
-impl Show for Crc32
-
 pub enum DeflateLevel {
   None
   Fast
@@ -197,7 +145,7 @@ pub struct File {
   version_made_by : Int
   version_needed_to_extract : Int
   gp_flags : Int
-  compression : Compression
+  compression : @types.Compression
   start : Int
   compressed_size : Int
   compressed_bytes : Bytes
@@ -208,13 +156,13 @@ fn File::can_extract(Self) -> Bool
 fn File::compressed_bytes(Self) -> Bytes
 fn File::compressed_bytes_to_bytes(Self) -> Bytes
 fn File::compressed_size(Self) -> Int
-fn File::compression(Self) -> Compression
+fn File::compression(Self) -> @types.Compression
 fn File::decompressed_crc32(Self) -> Int64
 fn File::decompressed_size(Self) -> Int
 fn File::deflate_of_bytes(Bytes, Int, Int, DeflateLevel?) -> Result[Self, String]
 fn File::gp_flags(Self) -> Int
 fn File::is_encrypted(Self) -> Bool
-fn File::make(Bytes, Int, Int, Compression, Int, Int64, Int?, Int?, Int?) -> Result[Self, String]
+fn File::make(Bytes, Int, Int, @types.Compression, Int, Int64, Int?, Int?, Int?) -> Result[Self, String]
 fn File::start(Self) -> Int
 fn File::stored_of_bytes(Bytes, Int, Int) -> Result[Self, String]
 fn File::to_bytes(Self) -> Bytes
@@ -261,6 +209,16 @@ pub(all) enum MemberKind {
 }
 
 // Type aliases
+pub typealias @bobzhang/zip/checksum/adler32.Adler32 as Adler32
+
+pub typealias @bitstream.BitWriter as BitWriter
+
+pub typealias @bobzhang/zip/buffer.ByteBuf as ByteBuf
+
+pub typealias @types.Compression as Compression
+
+pub typealias @bobzhang/zip/checksum/crc32.Crc32 as Crc32
+
 pub typealias Int as FileMode
 
 pub typealias String as Fpath

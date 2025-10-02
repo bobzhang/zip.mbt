@@ -1,0 +1,28 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip/bitstream"
+
+import(
+  "bobzhang/zip/buffer"
+)
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct BitWriter {
+  dst : @buffer.ByteBuf
+  mut bits : Int
+  mut bits_len : Int
+}
+fn BitWriter::align_to_byte(Self) -> Unit
+fn BitWriter::flush(Self) -> Unit
+fn BitWriter::new(@buffer.ByteBuf) -> Self
+fn BitWriter::write_bits(Self, Int, Int) -> Unit
+fn BitWriter::write_byte(Self, Int) -> Unit
+fn BitWriter::write_uint16_le(Self, Int) -> Unit
+
+// Type aliases
+
+// Traits
+

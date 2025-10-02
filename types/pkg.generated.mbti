@@ -1,0 +1,45 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip/types"
+
+// Values
+let dos_epoch : Int
+
+fn fpath_ensure_directoryness(String) -> String
+
+fn fpath_ensure_unix(String) -> String
+
+fn fpath_sanitize(String) -> String
+
+fn ptime_format(Int) -> String
+
+fn ptime_of_dos_date_time(Int, Int) -> Int
+
+fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
+
+fn ptime_to_dos_date_time(Int) -> (Int, Int)
+
+// Errors
+
+// Types and methods
+pub(all) enum Compression {
+  Stored
+  Deflate
+  Bzip2
+  Lzma
+  Xz
+  Zstd
+  Other(Int)
+}
+fn Compression::from_int(Int) -> Self
+fn Compression::to_int(Self) -> Int
+fn Compression::to_string(Self) -> String
+impl Eq for Compression
+impl Show for Compression
+
+// Type aliases
+pub typealias String as Fpath
+
+pub typealias Int as Ptime
+
+// Traits
+
