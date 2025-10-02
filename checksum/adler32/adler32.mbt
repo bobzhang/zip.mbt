@@ -13,7 +13,7 @@ fn UInt::to_hex_string(self : UInt) -> String {
   let mut result = ""
   let v = self
   for i = 0; i < 8; i = i + 1 {
-    let digit = ((v >> (28 - i * 4)) & (0xF : UInt)).reinterpret_as_int()
+    let digit = ((v >> (28 - i * 4)) & 0xF).reinterpret_as_int()
     result = result + Char::to_string(hex_digits[digit])
   }
   result
@@ -21,26 +21,25 @@ fn UInt::to_hex_string(self : UInt) -> String {
 
 ///|
 /// Adler-32 state for incremental checksum computation
-pub struct Adler32 {
-  value : UInt
-} derive(Eq, Show)
+pub struct Adler32(UInt) derive(Eq, Show)
 
 ///|
 /// Adler-32 modulus (largest prime less than 65536)
-let adler32_base : UInt = (65521 : UInt)
+let adler32_base : UInt = 65521
 
 ///|
 /// Initialize a new Adler-32 checksum computation
 /// Returns an Adler32 state initialized to 1 (the standard starting value)
 pub fn Adler32::init() -> Adler32 {
-  { value: (1 : UInt) }
+  Adler32(1)
 }
 
 ///|
 /// Finalize the Adler-32 checksum and return the result
 /// Returns the computed checksum value
 pub fn Adler32::finish(self : Adler32) -> UInt {
-  self.value
+  let Adler32(value) = self
+  value
 }
 
 ///|
@@ -55,8 +54,9 @@ pub fn Adler32::update_bytes(
   start : Int,
   len : Int,
 ) -> Adler32 {
-  let mut s1 = self.value & (0xFFFF : UInt)
-  let mut s2 = self.value >> 16
+  let Adler32(value) = self
+  let mut s1 = value & 0xFFFF
+  let mut s2 = value >> 16
   let mut pos = start
   let max = start + len
   while pos < max {
@@ -77,7 +77,7 @@ pub fn Adler32::update_bytes(
     s1 = s1 % adler32_base
     s2 = s2 % adler32_base
   }
-  { value: (s2 << 16) | s1 }
+  Adler32((s2 << 16) | s1)
 }
 
 ///|

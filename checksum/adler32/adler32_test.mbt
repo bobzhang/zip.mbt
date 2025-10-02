@@ -4,7 +4,7 @@
 /// Test Adler-32 of empty data
 test "adler32_empty" {
   let adler = bytes_adler32(b"", 0, 0)
-  @json.inspect((adler, adler == (1 : UInt)), content=[1, true])
+  @json.inspect((adler, adler == 1), content=[1, true])
 }
 
 ///|
@@ -51,8 +51,8 @@ test "adler32_single_byte" {
 ///|
 /// Test check_adler32 function
 test "adler32_check" {
-  let result_success = check_adler32((0x12345678 : UInt), (0x12345678 : UInt))
-  let result_failure = check_adler32((0x12345678 : UInt), (0x87654321 : UInt))
+  let result_success = check_adler32(0x12345678, 0x12345678)
+  let result_failure = check_adler32(0x12345678, 0x87654321)
   
   let success_ok = match result_success {
     Ok(_) => true

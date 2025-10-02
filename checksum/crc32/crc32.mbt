@@ -13,7 +13,7 @@ fn UInt::to_hex_string(self : UInt) -> String {
   let mut result = ""
   let v = self
   for i = 0; i < 8; i = i + 1 {
-    let digit = ((v >> (28 - i * 4)) & (0xF : UInt)).reinterpret_as_int()
+    let digit = ((v >> (28 - i * 4)) & 0xF).reinterpret_as_int()
     result = result + Char::to_string(hex_digits[digit])
   }
   result
@@ -21,23 +21,21 @@ fn UInt::to_hex_string(self : UInt) -> String {
 
 ///|
 /// CRC-32 state for incremental checksum computation
-pub struct Crc32 {
-  value : UInt
-} derive(Eq, Show)
+pub struct Crc32(UInt) derive(Eq, Show)
 
 ///|
 /// CRC-32 polynomial (reversed, for table-driven algorithm)
-let crc32_poly : UInt = (0xedb88320 : UInt)
+let crc32_poly : UInt = 0xedb88320
 
 ///|
 /// CRC-32 lookup table (256 entries)
 /// Pre-computed for fast table-driven CRC calculation
 let crc32_table : Array[UInt] = {
-  let table : Array[UInt] = Array::make(256, (0 : UInt))
+  let table : Array[UInt] = Array::make(256, 0)
   for i = 0; i < 256; i = i + 1 {
     let mut c = i.reinterpret_as_uint()
     for k = 0; k < 8; k = k + 1 {
-      c = if (c & (1 : UInt)) != (0 : UInt) { crc32_poly ^ (c >> 1) } else { c >> 1 }
+      c = if (c & 1) != 0 { crc32_poly ^ (c >> 1) } else { c >> 1 }
     }
     table[i] = c
   }
@@ -48,23 +46,25 @@ let crc32_table : Array[UInt] = {
 /// Initialize a new CRC-32 checksum computation
 /// Returns a Crc32 state initialized to the standard starting value
 pub fn Crc32::init() -> Crc32 {
-  { value: (0xFFFFFFFF : UInt) }
+  Crc32(0xFFFFFFFF)
 }
 
 ///|
 /// Finalize the CRC-32 checksum and return the result
 /// This XORs the internal state with 0xFFFFFFFF as per the standard
 pub fn Crc32::finish(self : Crc32) -> UInt {
-  self.value ^ (0xFFFFFFFF : UInt)
+  let Crc32(value) = self
+  value ^ 0xFFFFFFFF
 }
 
 ///|
 /// Update CRC-32 with a single byte
 /// Returns a new Crc32 state with the byte incorporated
 pub fn Crc32::update_byte(self : Crc32, byte : Int) -> Crc32 {
-  let index = ((self.value ^ byte.reinterpret_as_uint()) & (0xFF : UInt)).reinterpret_as_int()
-  let new_value = crc32_table[index] ^ (self.value >> 8)
-  { value: new_value }
+  let Crc32(value) = self
+  let index = ((value ^ byte.reinterpret_as_uint()) & 0xFF).reinterpret_as_int()
+  let new_value = crc32_table[index] ^ (value >> 8)
+  Crc32(new_value)
 }
 
 ///|
