@@ -2486,7 +2486,58 @@ test "compression_with_lz77_matches" {
     Err(e) => @json.inspect(e, content="Should not error")
   }
 }
+// ============================================================================
+// High-level DEFLATE API Compatibility Tests
+// ============================================================================
 
+///|
+test "deflate_api_basic" {
+  let data = b"Hello, DEFLATE API!"
+  match deflate(data, 0, data.length(), None) {
+    Ok(compressed) => {
+      // Should compress successfully
+      @json.inspect(compressed.length() > 0, content=true)
+      
+      // Should decompress back to original
+      let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+      @json.inspect(decompressed.length(), content=19)
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
 
+///|
+test "crc32_and_deflate_api" {
+  let data = b"Test CRC-32 with deflate"
+  match crc32_and_deflate(data, 0, data.length(), None) {
+    Ok((crc, compressed)) => {
+      // CRC should match direct calculation
+      let expected_crc = bytes_crc32(data, 0, data.length())
+      @json.inspect(crc == expected_crc, content=true)
+      
+      // Compressed data should be valid
+      let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+      @json.inspect(decompressed.length(), content=24)
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+test "adler32_and_deflate_api" {
+  let data = b"Test Adler-32 with deflate"
+  match adler32_and_deflate(data, 0, data.length(), None) {
+    Ok((adler, compressed)) => {
+      // Adler-32 should match direct calculation
+      let expected_adler = bytes_adler32(data, 0, data.length())
+      @json.inspect(adler == expected_adler, content=true)
+      
+      // Compressed data should be valid
+      let decompressed = inflate(compressed, 0, compressed.length(), Some(data.length()))
+      @json.inspect(decompressed.length(), content=26)
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
 
 

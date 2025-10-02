@@ -1233,13 +1233,12 @@ pub fn File::stored_of_bytes(
 
 ///|
 /// Deflate compression levels
-/// Note: Only None is currently implemented; others are reserved for future use
 pub enum DeflateLevel {
   None // No compression, use stored blocks only
-  Fast // Fast compression (TODO)
-  Default // Default compression (TODO)
-  Best // Best compression (TODO)
-} derive(Eq)
+  Fast // Fast compression with fixed Huffman
+  Default // Default compression with dynamic Huffman
+  Best // Best compression with maximum effort
+} derive(Eq, Show)
 
 ///|
 /// Create uncompressed deflate blocks (RFC 1951)
@@ -3613,6 +3612,71 @@ pub fn Archive::write_bytes(
         "write_bytes not supported (Bytes is immutable): use to_bytes() instead. Would write \{size} bytes at offset \{offset}",
       )
     }
+    Err(msg) => Err(msg)
+  }
+}
+
+// ============================================================================
+// High-level DEFLATE API Functions (for OCaml zipc compatibility)
+// ============================================================================
+
+///|
+/// Compress data with DEFLATE format (RFC 1951)
+/// Returns compressed bytes
+pub fn deflate(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  level : DeflateLevel?,
+) -> Result[Bytes, String] {
+  let (good_match, max_chain, use_dynamic) = match level {
+    Some(DeflateLevel::None) => {
+      // No compression, use stored blocks
+      return Ok(deflate_stored(bytes, start, len))
+    }
+    Some(DeflateLevel::Fast) => (4, 128, false) // Fast: fixed Huffman only
+    Some(DeflateLevel::Default) | None => (8, 1024, true) // Default: dynamic Huffman
+    Some(DeflateLevel::Best) => (32, 4096, true) // Best: dynamic Huffman with max effort
+  }
+  
+  // Choose between Fixed and Dynamic Huffman based on size and level
+  let compressed = if use_dynamic && len >= 256 {
+    deflate_dynamic(bytes, start, len, true, good_match, max_chain)
+  } else {
+    deflate_fixed(bytes, start, len, true, good_match, max_chain)
+  }
+  
+  Ok(compressed)
+}
+
+///|
+/// Compress data with DEFLATE and compute CRC-32 of input
+/// Returns (CRC-32 checksum, compressed bytes)
+pub fn crc32_and_deflate(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  level : DeflateLevel?,
+) -> Result[(UInt32, Bytes), String] {
+  let crc = bytes_crc32(bytes, start, len)
+  match deflate(bytes, start, len, level) {
+    Ok(compressed) => Ok((crc, compressed))
+    Err(msg) => Err(msg)
+  }
+}
+
+///|
+/// Compress data with DEFLATE and compute Adler-32 of input
+/// Returns (Adler-32 checksum, compressed bytes)
+pub fn adler32_and_deflate(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  level : DeflateLevel?,
+) -> Result[(UInt32, Bytes), String] {
+  let adler = bytes_adler32(bytes, start, len)
+  match deflate(bytes, start, len, level) {
+    Ok(compressed) => Ok((adler, compressed))
     Err(msg) => Err(msg)
   }
 }
