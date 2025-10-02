@@ -2554,7 +2554,7 @@ pub fn deflate_dynamic(
 
 ///|
 /// Create deflate-compressed file data from bytes
-/// Uses actual LZ77+Huffman compression (fixed Huffman)
+/// Uses LZ77 + Huffman compression with optimal block type selection
 pub fn File::deflate_of_bytes(
   bytes : Bytes,
   start : Int,
@@ -2562,7 +2562,7 @@ pub fn File::deflate_of_bytes(
   level : DeflateLevel?,
 ) -> Result[File, String] {
   // Determine compression parameters based on level
-  let (good_match, max_chain) = match level {
+  let (good_match, max_chain, use_dynamic) = match level {
     Some(DeflateLevel::None) => {
       // No compression, use stored blocks
       let compressed = deflate_stored(bytes, start, len)
@@ -2579,13 +2579,22 @@ pub fn File::deflate_of_bytes(
         None,
       )
     }
-    Some(DeflateLevel::Fast) => (4, 128) // Fast: low effort
-    Some(DeflateLevel::Default) | None => (8, 1024) // Default: balanced
-    Some(DeflateLevel::Best) => (32, 4096) // Best: max effort
+    Some(DeflateLevel::Fast) => (4, 128, false) // Fast: fixed Huffman only
+    Some(DeflateLevel::Default) | None => (8, 1024, true) // Default: dynamic Huffman
+    Some(DeflateLevel::Best) => (32, 4096, true) // Best: dynamic Huffman with max effort
   }
   
-  // Use LZ77 + Fixed Huffman compression
-  let compressed = deflate_fixed(bytes, start, len, true, good_match, max_chain)
+  // Choose between Fixed and Dynamic Huffman
+  // Dynamic Huffman provides better compression but has header overhead
+  // For small data (<256 bytes), fixed Huffman is often better
+  let compressed = if use_dynamic && len >= 256 {
+    // Use Dynamic Huffman for better compression on larger data
+    deflate_dynamic(bytes, start, len, true, good_match, max_chain)
+  } else {
+    // Use Fixed Huffman for small data or Fast level
+    deflate_fixed(bytes, start, len, true, good_match, max_chain)
+  }
+  
   let crc = bytes_crc32(bytes, start, len)
   File::make(
     compressed,

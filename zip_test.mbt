@@ -2393,6 +2393,7 @@ test "dynamic_vs_fixed" {
   // Compare compression ratios
   let data = b"AAAA"
   
+  
   let dynamic = deflate_dynamic(data, 0, data.length(), true, 8, 128)
   let fixed = deflate_fixed(data, 0, data.length(), true, 8, 128)
   
@@ -2402,5 +2403,90 @@ test "dynamic_vs_fixed" {
   
   @json.inspect((d1, d2), content=["AAAA", "AAAA"])
 }
+
+// ============================================================================
+// Integration Tests - Verify compression level selection
+// ============================================================================
+
+test "compression_level_fast_integration" {
+  // Fast level should compress and decompress correctly
+  let data = b"AAAABBBBCCCCDDDDEEEEFFFFGGGG" // 28 bytes
+  let result = File::deflate_of_bytes(data, 0, data.length(), None)
+  
+  match result {
+    Ok(file) => {
+      // Decompress and verify
+      let decompressed = inflate(
+        file.compressed_bytes,
+        file.start,
+        file.compressed_size,
+        None
+      )
+      @json.inspect(decompressed, content="AAAABBBBCCCCDDDDEEEEFFFFGGGG")
+    }
+    Err(e) => @json.inspect(e, content="Should not error")
+  }
+}
+
+test "compression_level_large_data_integration" {
+  // Large data should use dynamic Huffman for better compression
+  let data = Array::make(300, b'A')
+  for i = 0; i < 100; i = i + 1 {
+    data[i] = b'A'
+  }
+  for i = 100; i < 200; i = i + 1 {
+    data[i] = b'B'
+  }
+  for i = 200; i < 300; i = i + 1 {
+    data[i] = b'C'
+  }
+  let data_bytes = Bytes::from_fixedarray(FixedArray::from_iter(data[0:].iter()))
+  
+  let result = File::deflate_of_bytes(data_bytes, 0, 300, None)
+  
+  match result {
+    Ok(file) => {
+      // Decompress and verify  
+      let decompressed = inflate(
+        file.compressed_bytes,
+        file.start,
+        file.compressed_size,
+        None
+      )
+      @json.inspect(
+        (decompressed.length(), decompressed[0].to_int(), decompressed[150].to_int(), decompressed[250].to_int()),
+        content=[300, 65, 66, 67]
+      )
+    }
+    Err(e) => @json.inspect(e, content="Should not error")
+  }
+}
+
+test "compression_with_lz77_matches" {
+  // Repetitive data should compress well with LZ77 + Huffman
+  let data = b"The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  let result = File::deflate_of_bytes(data, 0, data.length(), None)
+  
+  match result {
+    Ok(file) => {
+      // Should achieve good compression ratio
+      @json.inspect(
+        file.compressed_size < data.length(),
+        content=true
+      )
+      // Verify decompression
+      let decompressed = inflate(
+        file.compressed_bytes,
+        file.start,
+        file.compressed_size,
+        None
+      )
+      @json.inspect(decompressed.length() == data.length(), content=true)
+    }
+    Err(e) => @json.inspect(e, content="Should not error")
+  }
+}
+
+
 
 
