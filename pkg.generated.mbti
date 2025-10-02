@@ -2,7 +2,6 @@
 package "bobzhang/zip"
 
 import(
-  "bobzhang/zip/bitstream"
   "bobzhang/zip/huffman"
   "bobzhang/zip/types"
   "moonbitlang/core/immut/sorted_map"
@@ -105,10 +104,6 @@ fn sym_info_code_length(Int) -> Int
 
 fn sym_info_make(Int, Int) -> Int
 
-fn write_length_distance(@bitstream.BitWriter, @huffman.HuffmanEncoder, @huffman.HuffmanEncoder, Int, Int) -> Unit
-
-fn write_literal_symbol(@bitstream.BitWriter, @huffman.HuffmanEncoder, Int) -> Unit
-
 fn zlib_compress(Bytes, Int, Int, DeflateLevel?) -> (Int64, Bytes)
 
 fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, Int64), String]
@@ -173,8 +168,6 @@ fn File::to_bytes_no_crc_check(Self) -> (Bytes, Int64)
 fn File::version_made_by(Self) -> Int
 fn File::version_needed_to_extract(Self) -> Int
 
-type FrequencyCounter
-
 pub struct Member {
   path : String
   kind : MemberKind
@@ -199,7 +192,7 @@ pub(all) enum MemberKind {
 // Type aliases
 pub typealias @bobzhang/zip/checksum/adler32.Adler32 as Adler32
 
-pub typealias @bitstream.BitWriter as BitWriter
+pub typealias @bobzhang/zip/bitstream.BitWriter as BitWriter
 
 pub typealias @bobzhang/zip/buffer.ByteBuf as ByteBuf
 

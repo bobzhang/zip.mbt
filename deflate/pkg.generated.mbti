@@ -1,0 +1,87 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip/deflate"
+
+import(
+  "bobzhang/zip/bitstream"
+  "bobzhang/zip/buffer"
+  "bobzhang/zip/huffman"
+)
+
+// Values
+fn build_canonical_huffman(Array[Int], Int) -> @huffman.HuffmanEncoder
+
+fn build_optimal_code_lengths(Array[Int], Int, Int) -> Array[Int]
+
+let codelen_order : Array[Int]
+
+fn deflate_dynamic(Bytes, Int, Int, Bool, Int, Int) -> Bytes
+
+fn deflate_fixed(Bytes, Int, Int, Bool, Int, Int) -> Bytes
+
+fn deflate_fixed_literals_only(Bytes, Int, Int, Bool) -> Bytes
+
+fn deflate_stored(Bytes, Int, Int) -> Bytes
+
+let dist_sym_max : Int
+
+let dist_value_of_sym : Array[Int]
+
+fn distance_to_symbol(Int) -> Int
+
+fn encode_code_lengths(Array[Int], Array[Int], Int, Int) -> (Array[Int], Array[Int], Int)
+
+fn inflate(Bytes, Int, Int, Int?) -> Bytes
+
+fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
+
+fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
+
+fn length_to_symbol(Int) -> Int
+
+fn length_value_of_length_sym(Int) -> Int
+
+let litlen_end_of_block_sym : Int
+
+let litlen_first_len_sym : Int
+
+let litlen_sym_max : Int
+
+let max_codelen_sym_count : Int
+
+let max_dist_sym_count : Int
+
+fn write_dynamic_header(@bitstream.BitWriter, @huffman.HuffmanEncoder, @huffman.HuffmanEncoder, @huffman.HuffmanEncoder, Array[Int], Int, Int, Int) -> Unit
+
+fn write_length_distance(@bitstream.BitWriter, @huffman.HuffmanEncoder, @huffman.HuffmanEncoder, Int, Int) -> Unit
+
+fn write_literal_symbol(@bitstream.BitWriter, @huffman.HuffmanEncoder, Int) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct FrequencyCounter {
+  litlen_freqs : Array[Int]
+  dist_freqs : Array[Int]
+}
+fn FrequencyCounter::add_distance(Self, Int) -> Unit
+fn FrequencyCounter::add_end_of_block(Self) -> Unit
+fn FrequencyCounter::add_length(Self, Int) -> Unit
+fn FrequencyCounter::add_literal(Self, Int) -> Unit
+fn FrequencyCounter::new() -> Self
+
+pub struct InflateDecoder {
+  src : Bytes
+  src_max : Int
+  mut src_pos : Int
+  mut src_bits : Int
+  mut src_bits_len : Int
+  dst : @buffer.ByteBuf
+  dyn_litlen : @huffman.HuffmanDecoder
+  dyn_dist : @huffman.HuffmanDecoder
+}
+fn InflateDecoder::new(Bytes, Int, Int, Int?) -> Self
+
+// Type aliases
+
+// Traits
+

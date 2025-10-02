@@ -1,0 +1,42 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip/lz77"
+
+// Values
+fn backref_dist(Int) -> Int
+
+fn backref_len(Int) -> Int
+
+fn find_backref(Bytes, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> Int
+
+fn find_match_length(Bytes, Int, Int, Int, Int) -> Int
+
+fn hash4(Bytes, Int) -> Int
+
+let hash_bit_size : Int
+
+let hash_size : Int
+
+fn insert_hash(Array[Int], Array[Int], Int, Int) -> Unit
+
+fn make_backref(Int, Int) -> Int
+
+fn match_fwd(Bytes, Int, Int, Int, Int) -> Int
+
+let max_match_dist : Int
+
+let max_match_len : Int
+
+let min_match_len : Int
+
+let no_pos : Int
+
+let window_size : Int
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
