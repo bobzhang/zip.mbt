@@ -1,0 +1,6 @@
+{
+  "is-main": false,
+  "import": [
+    "bobzhang/zip/buffer"
+  ]
+}
