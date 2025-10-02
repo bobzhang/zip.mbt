@@ -5,7 +5,8 @@
     "bobzhang/zip/types",
     "bobzhang/zip/checksum/crc32",
     "bobzhang/zip/checksum/adler32",
-    "bobzhang/zip/huffman"
+    "bobzhang/zip/huffman",
+    "bobzhang/zip/lz77"
   ],
   "test-import": [
      "bobzhang/zip/hexdump"
