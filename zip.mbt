@@ -886,18 +886,25 @@ pub typealias String as Fpath
 pub typealias Int as FileMode
 
 ///|
+/// Convert string to UTF-8 bytes for ZIP encoding
+fn string_to_utf8_bytes(s : String) -> Bytes {
+  @encoding/utf8.encode(s)
+}
+
+///|
 /// Convert backslashes to forward slashes (for Windows paths)
 pub fn fpath_ensure_unix(path : Fpath) -> Fpath {
-  let mut result = ""
+  let chars : Array[Char] = []
   for i = 0; i < path.length(); i = i + 1 {
-    let c = path[i]
+    let code = path[i]
+    let c = code.unsafe_to_char()
     if c == '\\' {
-      result = result + "/"
+      let _ = chars.push('/')
     } else {
-      result = result + c.to_string()
+      let _ = chars.push(c)
     }
   }
-  result
+  String::from_array(chars)
 }
 
 ///|
@@ -922,22 +929,29 @@ pub fn fpath_sanitize(path : Fpath) -> Fpath {
 
   // Split on both / and \
   let segments : Array[String] = []
-  let mut current = ""
+  let current_chars : Array[Char] = []
   for i = 0; i < path.length(); i = i + 1 {
-    let c = path[i]
+    let code = path[i]
+    let c = code.unsafe_to_char()
     if c == '/' || c == '\\' {
-      if keep_segment(current) {
-        segments.push(current)
+      if current_chars.length() > 0 {
+        let current = String::from_array(current_chars)
+        if keep_segment(current) {
+          let _ = segments.push(current)
+        }
+        current_chars.clear()
       }
-      current = ""
     } else {
-      current = current + c.to_string()
+      let _ = current_chars.push(c)
     }
   }
 
   // Don't forget the last segment
-  if keep_segment(current) {
-    segments.push(current)
+  if current_chars.length() > 0 {
+    let current = String::from_array(current_chars)
+    if keep_segment(current) {
+      let _ = segments.push(current)
+    }
   }
 
   // Join with /
@@ -3248,7 +3262,12 @@ fn parse_central_dir_entry(
   let filename_bytes = Bytes::from_fixedarray(
     FixedArray::from_iter(filename_arr[0:].iter()),
   )
-  let path = filename_bytes.to_string()
+  // Convert UTF-8 bytes to string - decode returns String, throws on error
+  let path = try {
+    @encoding/utf8.decode(filename_bytes)
+  } catch {
+    _ => return Err("Failed to decode UTF-8 filename")
+  }
 
   // Calculate next position
   let next_pos = pos + 46 + filename_len + extra_len + comment_len
@@ -3393,7 +3412,7 @@ pub fn Archive::to_bytes(
 
   // Helper to encode a member
   let encode_member = fn(m : Member) {
-    let path_bytes = m.path().to_bytes()
+    let path_bytes = string_to_utf8_bytes(m.path())
     let path_len = path_bytes.length()
     let (dos_date, dos_time) = ptime_to_dos_date_time(m.mtime())
     match m.kind() {
@@ -3491,7 +3510,7 @@ pub fn Archive::to_bytes(
   let central_dir_start = pos
   for entry in central_dir_entries {
     let (offset, m) = entry
-    let path_bytes = m.path().to_bytes()
+    let path_bytes = string_to_utf8_bytes(m.path())
     let path_len = path_bytes.length()
     let (dos_date, dos_time) = ptime_to_dos_date_time(m.mtime())
     write_uint32_le(result, pos, zip_central_dir_sig.to_int64())
