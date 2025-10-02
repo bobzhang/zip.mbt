@@ -2,7 +2,9 @@
   "import": [
     "bobzhang/zip/buffer",
     "bobzhang/zip/bitstream",
-    "bobzhang/zip/types"
+    "bobzhang/zip/types",
+    "bobzhang/zip/checksum/crc32",
+    "bobzhang/zip/checksum/adler32"
   ],
   "test-import": [
      "bobzhang/zip/hexdump"
