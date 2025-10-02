@@ -8,36 +8,36 @@
 typealias Int as UInt16
 
 ///|
-typealias Int64 as UInt32
+
 
 ///|
 /// CRC-32 and Adler-32 checksums - Re-exported from checksum packages
 pub typealias @crc32.Crc32 as Crc32
-pub fn bytes_crc32(bytes : Bytes, start : Int, len : Int) -> UInt32 {
+pub fn bytes_crc32(bytes : Bytes, start : Int, len : Int) -> UInt {
   @crc32.bytes_crc32(bytes, start, len)
 }
-pub fn check_crc32(expect : UInt32, found : UInt32) -> Result[Unit, String] {
+pub fn check_crc32(expect : UInt, found : UInt) -> Result[Unit, String] {
   @crc32.check_crc32(expect, found)
 }
 
 pub typealias @adler32.Adler32 as Adler32
-pub fn bytes_adler32(bytes : Bytes, start : Int, len : Int) -> UInt32 {
+pub fn bytes_adler32(bytes : Bytes, start : Int, len : Int) -> UInt {
   @adler32.bytes_adler32(bytes, start, len)
 }
-pub fn check_adler32(expect : UInt32, found : UInt32) -> Result[Unit, String] {
+pub fn check_adler32(expect : UInt, found : UInt) -> Result[Unit, String] {
   @adler32.check_adler32(expect, found)
 }
 
 ///|
-/// Helper: Int64 to hex string
-fn Int64::to_hex_string(self : Int64) -> String {
+/// Helper: UInt to hex string
+fn UInt::to_hex_string(self : UInt) -> String {
   let hex_digits = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
   ]
   let mut result = ""
   let v = self
   for i = 0; i < 8; i = i + 1 {
-    let digit = (v >> (60 - i * 4)).land(0xFL).to_int()
+    let digit = ((v >> (28 - i * 4)) & (0xF : UInt)).reinterpret_as_int()
     result = result + Char::to_string(hex_digits[digit])
   }
   result
@@ -548,7 +548,7 @@ pub fn inflate_and_crc32(
   start : Int,
   len : Int,
   decompressed_size : Int?,
-) -> (Bytes, UInt32) {
+) -> (Bytes, UInt) {
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   let result = inflate_loop(decoder)
   // Compute CRC-32 of the decompressed data
@@ -565,7 +565,7 @@ pub fn inflate_and_adler32(
   start : Int,
   len : Int,
   decompressed_size : Int?,
-) -> (Bytes, UInt32) {
+) -> (Bytes, UInt) {
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   let result = inflate_loop(decoder)
   // Compute Adler-32 of the decompressed data
@@ -627,7 +627,7 @@ pub struct File {
   compressed_size : Int // Size in compressed_bytes
   compressed_bytes : Bytes // The actual compressed data
   decompressed_size : Int // Expected size when decompressed
-  decompressed_crc32 : UInt32 // Expected CRC-32 of decompressed data
+  decompressed_crc32 : UInt // Expected CRC-32 of decompressed data
 }
 
 ///|
@@ -658,7 +658,7 @@ pub fn File::make(
   compressed_size : Int,
   compression : Compression,
   decompressed_size : Int,
-  decompressed_crc32 : UInt32,
+  decompressed_crc32 : UInt,
   version_made_by : Int?,
   version_needed : Int?,
   gp_flags : Int?,
@@ -826,7 +826,7 @@ pub fn zlib_compress(
   start : Int,
   len : Int,
   level : DeflateLevel?
-) -> (UInt32, Bytes) {
+) -> (UInt, Bytes) {
   // Determine compression parameters
   let (good_match, max_chain, flevel) = match level {
     Some(DeflateLevel::None) => (4, 128, 0)
@@ -863,7 +863,7 @@ pub fn zlib_compress(
   let adler = bytes_adler32(bytes, start, len)
   
   // Write Adler-32 checksum (big-endian, 4 bytes)
-  let a32 = adler.to_int()
+  let a32 = adler.reinterpret_as_int()
   output.add_byte((a32 >> 24).land(0xFF))
   output.add_byte((a32 >> 16).land(0xFF))
   output.add_byte((a32 >> 8).land(0xFF))
@@ -880,7 +880,7 @@ pub fn zlib_decompress(
   bytes : Bytes,
   start : Int,
   len : Int
-) -> Result[(Bytes, UInt32), String] {
+) -> Result[(Bytes, UInt), String] {
   if len < 6 {
     return Err("zlib data too short (minimum 6 bytes)")
   }
@@ -928,7 +928,7 @@ pub fn zlib_decompress(
   let computed_adler = bytes_adler32(decompressed, 0, decompressed.length())
   
   // Validate checksum
-  if computed_adler.to_int() != stored_adler {
+  if computed_adler.reinterpret_as_int() != stored_adler {
     return Err("Adler-32 checksum mismatch")
   }
   
@@ -977,7 +977,7 @@ pub fn File::decompressed_size(self : File) -> Int {
 
 ///|
 /// Get decompressed CRC-32
-pub fn File::decompressed_crc32(self : File) -> UInt32 {
+pub fn File::decompressed_crc32(self : File) -> UInt {
   self.decompressed_crc32
 }
 
@@ -1020,7 +1020,7 @@ pub fn File::can_extract(self : File) -> Bool {
 
 ///|
 /// Decompress file data without CRC check
-pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt32) {
+pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) {
   if self.is_encrypted() {
     abort("Encrypted files are not supported")
   }
@@ -1329,11 +1329,11 @@ fn write_uint16_le(arr : Array[Byte], pos : Int, value : Int) -> Unit {
 
 ///|
 /// Helper to write 32-bit little-endian integer to array
-fn write_uint32_le(arr : Array[Byte], pos : Int, value : Int64) -> Unit {
-  arr[pos] = value.land(0xFFL).to_int().to_byte()
-  arr[pos + 1] = (value >> 8).land(0xFFL).to_int().to_byte()
-  arr[pos + 2] = (value >> 16).land(0xFFL).to_int().to_byte()
-  arr[pos + 3] = (value >> 24).land(0xFFL).to_int().to_byte()
+fn write_uint32_le(arr : Array[Byte], pos : Int, value : UInt) -> Unit {
+  arr[pos] = (value & (0xFF : UInt)).reinterpret_as_int().to_byte()
+  arr[pos + 1] = ((value >> 8) & (0xFF : UInt)).reinterpret_as_int().to_byte()
+  arr[pos + 2] = ((value >> 16) & (0xFF : UInt)).reinterpret_as_int().to_byte()
+  arr[pos + 3] = ((value >> 24) & (0xFF : UInt)).reinterpret_as_int().to_byte()
 }
 
 ///|
@@ -1359,11 +1359,12 @@ fn read_uint16_le(data : Bytes, pos : Int) -> Int {
 
 ///|
 /// Helper to read 32-bit little-endian integer from bytes
-fn read_uint32_le(data : Bytes, pos : Int) -> Int64 {
-  data[pos].to_int().to_int64() |
-  (data[pos + 1].to_int().to_int64() << 8) |
-  (data[pos + 2].to_int().to_int64() << 16) |
-  (data[pos + 3].to_int().to_int64() << 24)
+fn read_uint32_le(data : Bytes, pos : Int) -> UInt {
+  let b0 = data[pos].to_int().reinterpret_as_uint()
+  let b1 = data[pos + 1].to_int().reinterpret_as_uint()
+  let b2 = data[pos + 2].to_int().reinterpret_as_uint()
+  let b3 = data[pos + 3].to_int().reinterpret_as_uint()
+  b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
 }
 
 ///|
@@ -1380,7 +1381,7 @@ fn find_eocd(data : Bytes) -> Int? {
   let search_start = if len > 65557 { len - 65557 } else { 0 }
   for i = len - 22; i >= search_start; i = i - 1 {
     let sig = read_uint32_le(data, i)
-    if sig == zip_eocd_sig.to_int64() {
+    if sig == zip_eocd_sig.to_int64().to_int().reinterpret_as_uint() {
       return Some(i)
     }
   }
@@ -1404,8 +1405,8 @@ fn parse_eocd(data : Bytes, pos : Int) -> Result[(Int, Int, Int), String] {
   if entries_this_disk != entries_total {
     return Err("Inconsistent entry count in EOCD")
   }
-  let cd_size = read_uint32_le(data, pos + 12).to_int()
-  let cd_offset = read_uint32_le(data, pos + 16).to_int()
+  let cd_size = read_uint32_le(data, pos + 12).reinterpret_as_int()
+  let cd_offset = read_uint32_le(data, pos + 16).reinterpret_as_int()
   Ok((cd_offset, cd_size, entries_total))
 }
 
@@ -1420,7 +1421,7 @@ fn parse_central_dir_entry(
     return Err("Truncated central directory entry")
   }
   let sig = read_uint32_le(data, pos)
-  if sig != zip_central_dir_sig.to_int64() {
+  if sig != zip_central_dir_sig.to_int64().to_int().reinterpret_as_uint() {
     return Err("Invalid central directory signature")
   }
   let version_made_by = read_uint16_le(data, pos + 4)
@@ -1430,13 +1431,13 @@ fn parse_central_dir_entry(
   let dos_time = read_uint16_le(data, pos + 12)
   let dos_date = read_uint16_le(data, pos + 14)
   let crc32 = read_uint32_le(data, pos + 16)
-  let compressed_size = read_uint32_le(data, pos + 20).to_int()
-  let uncompressed_size = read_uint32_le(data, pos + 24).to_int()
+  let compressed_size = read_uint32_le(data, pos + 20).reinterpret_as_int()
+  let uncompressed_size = read_uint32_le(data, pos + 24).reinterpret_as_int()
   let filename_len = read_uint16_le(data, pos + 28)
   let extra_len = read_uint16_le(data, pos + 30)
   let comment_len = read_uint16_le(data, pos + 32)
   let external_attrs = read_uint32_le(data, pos + 38)
-  let local_header_offset = read_uint32_le(data, pos + 42).to_int()
+  let local_header_offset = read_uint32_le(data, pos + 42).reinterpret_as_int()
 
   // Read filename
   if data.length() < pos + 46 + filename_len {
@@ -1463,7 +1464,7 @@ fn parse_central_dir_entry(
   let is_dir = path.length() > 0 && path[path.length() - 1] == '/'
 
   // Extract file mode from external attributes (Unix: high 16 bits)
-  let mode = (external_attrs >> 16).to_int() & 0xFFFF
+  let mode = (external_attrs >> 16).reinterpret_as_int() & 0xFFFF
   let file_mode = if mode == 0 {
     if is_dir {
       0o755
@@ -1482,7 +1483,7 @@ fn parse_central_dir_entry(
     return Err("Invalid local header offset")
   }
   let local_sig = read_uint32_le(data, local_header_offset)
-  if local_sig != zip_local_file_sig.to_int64() {
+  if local_sig != zip_local_file_sig.to_int64().to_int().reinterpret_as_uint() {
     return Err("Invalid local file header signature")
   }
   let local_filename_len = read_uint16_le(data, local_header_offset + 26)
@@ -1605,7 +1606,7 @@ pub fn Archive::to_bytes(
     match m.kind() {
       Dir => {
         // Local file header for directory
-        write_uint32_le(result, pos, zip_local_file_sig.to_int64())
+        write_uint32_le(result, pos, zip_local_file_sig.to_int64().to_int().reinterpret_as_uint())
         pos = pos + 4
         write_uint16_le(result, pos, version_needed_default) // version needed
         pos = pos + 2
@@ -1617,11 +1618,11 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, dos_date)
         pos = pos + 2
-        write_uint32_le(result, pos, 0L) // CRC-32
+        write_uint32_le(result, pos, (0 : UInt)) // CRC-32
         pos = pos + 4
-        write_uint32_le(result, pos, 0L) // compressed size
+        write_uint32_le(result, pos, (0 : UInt)) // compressed size
         pos = pos + 4
-        write_uint32_le(result, pos, 0L) // uncompressed size
+        write_uint32_le(result, pos, (0 : UInt)) // uncompressed size
         pos = pos + 4
         write_uint16_le(result, pos, path_len) // file name length
         pos = pos + 2
@@ -1636,7 +1637,7 @@ pub fn Archive::to_bytes(
         let local_header_offset = pos
 
         // Local file header for file
-        write_uint32_le(result, pos, zip_local_file_sig.to_int64())
+        write_uint32_le(result, pos, zip_local_file_sig.to_int64().to_int().reinterpret_as_uint())
         pos = pos + 4
         write_uint16_le(result, pos, f.version_needed_to_extract)
         pos = pos + 2
@@ -1650,9 +1651,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint32_le(result, pos, f.decompressed_crc32)
         pos = pos + 4
-        write_uint32_le(result, pos, f.compressed_size.to_int64())
+        write_uint32_le(result, pos, f.compressed_size.to_int64().to_int().reinterpret_as_uint())
         pos = pos + 4
-        write_uint32_le(result, pos, f.decompressed_size.to_int64())
+        write_uint32_le(result, pos, f.decompressed_size.to_int64().to_int().reinterpret_as_uint())
         pos = pos + 4
         write_uint16_le(result, pos, path_len)
         pos = pos + 2
@@ -1700,7 +1701,7 @@ pub fn Archive::to_bytes(
     let path_bytes = string_to_utf8_bytes(m.path())
     let path_len = path_bytes.length()
     let (dos_date, dos_time) = ptime_to_dos_date_time(m.mtime())
-    write_uint32_le(result, pos, zip_central_dir_sig.to_int64())
+    write_uint32_le(result, pos, zip_central_dir_sig.to_int64().to_int().reinterpret_as_uint())
     pos = pos + 4
     match m.kind() {
       Dir => {
@@ -1716,11 +1717,11 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, dos_date)
         pos = pos + 2
-        write_uint32_le(result, pos, 0L) // CRC
+        write_uint32_le(result, pos, (0 : UInt)) // CRC
         pos = pos + 4
-        write_uint32_le(result, pos, 0L) // compressed size
+        write_uint32_le(result, pos, (0 : UInt)) // compressed size
         pos = pos + 4
-        write_uint32_le(result, pos, 0L) // uncompressed size
+        write_uint32_le(result, pos, (0 : UInt)) // uncompressed size
         pos = pos + 4
         write_uint16_le(result, pos, path_len)
         pos = pos + 2
@@ -1732,9 +1733,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, 0) // internal file attributes
         pos = pos + 2
-        write_uint32_le(result, pos, (m.mode() << 16).to_int64()) // external file attributes
+        write_uint32_le(result, pos, (m.mode() << 16).to_int64().to_int().reinterpret_as_uint()) // external file attributes
         pos = pos + 4
-        write_uint32_le(result, pos, offset.to_int64()) // relative offset
+        write_uint32_le(result, pos, offset.to_int64().to_int().reinterpret_as_uint()) // relative offset
         pos = pos + 4
         write_bytes(result, pos, path_bytes)
         pos = pos + path_len
@@ -1754,9 +1755,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint32_le(result, pos, f.decompressed_crc32)
         pos = pos + 4
-        write_uint32_le(result, pos, f.compressed_size.to_int64())
+        write_uint32_le(result, pos, f.compressed_size.to_int64().to_int().reinterpret_as_uint())
         pos = pos + 4
-        write_uint32_le(result, pos, f.decompressed_size.to_int64())
+        write_uint32_le(result, pos, f.decompressed_size.to_int64().to_int().reinterpret_as_uint())
         pos = pos + 4
         write_uint16_le(result, pos, path_len)
         pos = pos + 2
@@ -1768,9 +1769,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, 0) // internal file attributes
         pos = pos + 2
-        write_uint32_le(result, pos, (m.mode() << 16).to_int64()) // external file attributes
+        write_uint32_le(result, pos, (m.mode() << 16).to_int64().to_int().reinterpret_as_uint()) // external file attributes
         pos = pos + 4
-        write_uint32_le(result, pos, offset.to_int64()) // relative offset
+        write_uint32_le(result, pos, offset.to_int64().to_int().reinterpret_as_uint()) // relative offset
         pos = pos + 4
         write_bytes(result, pos, path_bytes)
         pos = pos + path_len
@@ -1780,7 +1781,7 @@ pub fn Archive::to_bytes(
   let central_dir_size = pos - central_dir_start
 
   // Write end of central directory record
-  write_uint32_le(result, pos, zip_eocd_sig.to_int64())
+  write_uint32_le(result, pos, zip_eocd_sig.to_int64().to_int().reinterpret_as_uint())
   pos = pos + 4
   write_uint16_le(result, pos, 0) // disk number
   pos = pos + 2
@@ -1790,9 +1791,9 @@ pub fn Archive::to_bytes(
   pos = pos + 2
   write_uint16_le(result, pos, count) // total entries
   pos = pos + 2
-  write_uint32_le(result, pos, central_dir_size.to_int64())
+  write_uint32_le(result, pos, central_dir_size.to_int64().to_int().reinterpret_as_uint())
   pos = pos + 4
-  write_uint32_le(result, pos, central_dir_start.to_int64())
+  write_uint32_le(result, pos, central_dir_start.to_int64().to_int().reinterpret_as_uint())
   pos = pos + 4
   write_uint16_le(result, pos, 0) // comment length
   pos = pos + 2
@@ -1863,7 +1864,7 @@ pub fn crc32_and_deflate(
   start : Int,
   len : Int,
   level : DeflateLevel?,
-) -> Result[(UInt32, Bytes), String] {
+) -> Result[(UInt, Bytes), String] {
   let crc = bytes_crc32(bytes, start, len)
   match deflate(bytes, start, len, level) {
     Ok(compressed) => Ok((crc, compressed))
@@ -1879,7 +1880,7 @@ pub fn adler32_and_deflate(
   start : Int,
   len : Int,
   level : DeflateLevel?,
-) -> Result[(UInt32, Bytes), String] {
+) -> Result[(UInt, Bytes), String] {
   let adler = bytes_adler32(bytes, start, len)
   match deflate(bytes, start, len, level) {
     Ok(compressed) => Ok((adler, compressed))

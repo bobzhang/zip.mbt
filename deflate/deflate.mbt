@@ -7,9 +7,6 @@ typealias @bitstream.BitWriter as BitWriter
 typealias @huffman.HuffmanDecoder as HuffmanDecoder
 typealias @huffman.HuffmanEncoder as HuffmanEncoder
 
-// Type aliases for checksums
-typealias Int64 as UInt32
-
 // Constants from RFC 1951
 pub let litlen_sym_max : Int = 285
 pub let litlen_end_of_block_sym : Int = 256
@@ -375,7 +372,7 @@ pub fn inflate_and_crc32(
   start : Int,
   len : Int,
   decompressed_size : Int?,
-) -> (Bytes, UInt32) {
+) -> (Bytes, UInt) {
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   let result = inflate_loop(decoder)
   // Compute CRC-32 of the decompressed data
@@ -389,7 +386,7 @@ pub fn inflate_and_adler32(
   start : Int,
   len : Int,
   decompressed_size : Int?,
-) -> (Bytes, UInt32) {
+) -> (Bytes, UInt) {
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   let result = inflate_loop(decoder)
   // Compute Adler-32 of the decompressed data

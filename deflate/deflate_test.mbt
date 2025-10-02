@@ -24,7 +24,7 @@ test "inflate_with_crc32" {
     None,
   )
   @json.inspect(
-    (result[0].to_int(), result[1].to_int(), result[2].to_int(), crc > 0L),
+    (result[0].to_int(), result[1].to_int(), result[2].to_int(), crc > 0),
     content=[65, 66, 67, true],
   )
 }
@@ -40,7 +40,7 @@ test "inflate_with_adler32" {
     None,
   )
   @json.inspect(
-    (result[0].to_int(), result[1].to_int(), result[2].to_int(), adler > 0L),
+    (result[0].to_int(), result[1].to_int(), result[2].to_int(), adler > 0),
     content=[65, 66, 67, true],
   )
 }

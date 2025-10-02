@@ -4,7 +4,7 @@
 /// Test CRC-32 of empty data
 test "crc32_empty" {
   let crc = bytes_crc32(b"", 0, 0)
-  @json.inspect((crc, crc == 0L), content=["0", true])
+  @json.inspect((crc, crc == (0 : UInt)), content=[0, true])
 }
 
 ///|
@@ -13,7 +13,7 @@ test "crc32_simple" {
   let data = b"hello world"
   let crc = bytes_crc32(data, 0, data.length())
   // CRC-32 of "hello world" should be 0x0d4a1185 (222957317 in decimal)
-  @json.inspect(crc, content="222957957")
+  @json.inspect(crc, content=222957957)
 }
 
 ///|
@@ -25,20 +25,20 @@ test "crc32_incremental" {
     .update_bytes(data, 5, 6) // " world"
     .finish()
   let crc2 = bytes_crc32(data, 0, data.length())
-  @json.inspect((crc1 == crc2, crc1), content=[true, "222957957"])
+  @json.inspect((crc1 == crc2, crc1), content=[true, 222957957])
 }
 
 ///|
 /// Test CRC-32 check function with matching values
 test "crc32_check_success" {
-  let result = check_crc32(0x12345678L, 0x12345678L)
+  let result = check_crc32((0x12345678 : UInt), (0x12345678 : UInt))
   @json.inspect(result, content={ "Ok": null })
 }
 
 ///|
 /// Test CRC-32 check function with mismatched values
 test "crc32_check_failure" {
-  let result = check_crc32(0x12345678L, 0x87654321L)
+  let result = check_crc32((0x12345678 : UInt), (0x87654321 : UInt))
   match result {
     Ok(_) => @json.inspect("should not succeed", content="\"mismatch\"")
     Err(msg) => @json.inspect(msg.contains("mismatch"), content=true)
@@ -53,7 +53,7 @@ test "crc32_update_byte" {
   crc = crc.update_byte('i'.to_int())
   let result = crc.finish()
   // Just verify it produces a non-zero result
-  @json.inspect(result != 0L, content=true)
+  @json.inspect(result != 0, content=true)
 }
 
 ///|

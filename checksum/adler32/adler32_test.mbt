@@ -4,7 +4,7 @@
 /// Test Adler-32 of empty data
 test "adler32_empty" {
   let adler = bytes_adler32(b"", 0, 0)
-  @json.inspect((adler, adler == 1L), content=["1", true])
+  @json.inspect((adler, adler == (1 : UInt)), content=[1, true])
 }
 
 ///|
@@ -13,7 +13,7 @@ test "adler32_simple" {
   let data = b"hello world"
   let adler = bytes_adler32(data, 0, data.length())
   // Adler-32 of "hello world" should be 0x26e4023c (651924540 in decimal)
-  @json.inspect(adler, content="436929629")
+  @json.inspect(adler, content=436929629)
 }
 
 ///|
@@ -25,7 +25,7 @@ test "adler32_incremental" {
     .update_bytes(data, 5, 6) // " world"
     .finish()
   let adler2 = bytes_adler32(data, 0, data.length())
-  @json.inspect((adler1 == adler2, adler1), content=[true, "436929629"])
+  @json.inspect((adler1 == adler2, adler1), content=[true, 436929629])
 }
 
 ///|
@@ -45,14 +45,14 @@ test "adler32_single_byte" {
   let adler = bytes_adler32(data, 0, 1)
   // Adler-32 starts at 1, adding 'x' (120): s1 = 121, s2 = 121
   // result = (121 << 16) | 121 = 7929977
-  @json.inspect(adler, content="7929977")
+  @json.inspect(adler, content=7929977)
 }
 
 ///|
 /// Test check_adler32 function
 test "adler32_check" {
-  let result_success = check_adler32(0x12345678L, 0x12345678L)
-  let result_failure = check_adler32(0x12345678L, 0x87654321L)
+  let result_success = check_adler32((0x12345678 : UInt), (0x12345678 : UInt))
+  let result_failure = check_adler32((0x12345678 : UInt), (0x87654321 : UInt))
   
   let success_ok = match result_success {
     Ok(_) => true

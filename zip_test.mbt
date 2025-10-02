@@ -4,7 +4,7 @@
 /// CRC-32 tests
 test "crc32_empty" {
   let crc = bytes_crc32(b"", 0, 0)
-  @json.inspect((crc, crc == 0L), content=["0", true])
+  @json.inspect((crc, crc == 0), content=[0, true])
 }
 
 ///|
@@ -12,7 +12,7 @@ test "crc32_simple" {
   let data = b"hello world"
   let crc = bytes_crc32(data, 0, data.length())
   // CRC-32 of "hello world" should be 0x0d4a1185 (222957317 in decimal)
-  @json.inspect(crc, content="222957957")
+  @json.inspect(crc, content=222957957)
 }
 
 ///|
@@ -23,14 +23,14 @@ test "crc32_incremental" {
     .update_bytes(data, 5, 6) // " world"
     .finish()
   let crc2 = bytes_crc32(data, 0, data.length())
-  @json.inspect((crc1 == crc2, crc1), content=[true, "222957957"])
+  @json.inspect((crc1 == crc2, crc1), content=[true, 222957957])
 }
 
 ///|
 /// Adler-32 tests
 test "adler32_empty" {
   let adler = bytes_adler32(b"", 0, 0)
-  @json.inspect((adler, adler == 1L), content=["1", true])
+  @json.inspect((adler, adler == 1), content=[1, true])
 }
 
 ///|
@@ -38,7 +38,7 @@ test "adler32_simple" {
   let data = b"hello world"
   let adler = bytes_adler32(data, 0, data.length())
   // Adler-32 of "hello world" should be 0x26e4023c (651924540 in decimal)
-  @json.inspect(adler, content="436929629")
+  @json.inspect(adler, content=436929629)
 }
 
 ///|
@@ -49,19 +49,19 @@ test "adler32_incremental" {
     .update_bytes(data, 5, 6) // " world"
     .finish()
   let adler2 = bytes_adler32(data, 0, data.length())
-  @json.inspect((adler1 == adler2, adler1), content=[true, "436929629"])
+  @json.inspect((adler1 == adler2, adler1), content=[true, 436929629])
 }
 
 ///|
 /// Check functions
 test "crc32_check_success" {
-  let result = check_crc32(0x12345678L, 0x12345678L)
+  let result = check_crc32(0x12345678, 0x12345678)
   @json.inspect(result, content={ "Ok": null })
 }
 
 ///|
 test "crc32_check_failure" {
-  let result = check_crc32(0x12345678L, 0x87654321L)
+  let result = check_crc32(0x12345678, 0x87654321)
   match result {
     Ok(_) => @json.inspect("should not succeed", content="\"mismatch\"")
     Err(msg) => @json.inspect(msg.contains("mismatch"), content=true)
@@ -126,7 +126,7 @@ test "inflate_with_crc32" {
   )
   // Verify data and that CRC is computed
   @json.inspect(
-    (result[0].to_int(), result[1].to_int(), result[2].to_int(), crc > 0L),
+    (result[0].to_int(), result[1].to_int(), result[2].to_int(), crc > 0),
     content=[65, 66, 67, true],
   )
 }
@@ -179,7 +179,7 @@ test "file_is_encrypted" {
     data.length(),
     Compression::Stored,
     data.length(),
-    0L,
+    0,
     None,
     None,
     Some(gp_flag_encrypted),
@@ -768,7 +768,7 @@ test "e2e_crc32_known_value" {
   let test_string = b"The quick brown fox jumps over the lazy dog"
   let crc = bytes_crc32(test_string, 0, test_string.length())
   // Expected: 0x414FA339 (from OCaml test)
-  @json.inspect(crc, content="1095738169")
+  @json.inspect(crc, content=1095738169)
 }
 
 ///|
@@ -777,7 +777,7 @@ test "e2e_adler32_known_value" {
   let test_string = b"The quick brown fox jumps over the lazy dog"
   let adler = bytes_adler32(test_string, 0, test_string.length())
   // Expected: 0x5bdc0fda (from OCaml test)
-  @json.inspect(adler, content="1541148634")
+  @json.inspect(adler, content=1541148634)
 }
 
 ///|
@@ -1641,7 +1641,7 @@ test "zlib_compress_basic" {
   @json.inspect(has_trailer, content=true)
   
   // Adler-32 should be non-zero
-  let adler_valid = adler > 0L
+  let adler_valid = adler > 0
   @json.inspect(adler_valid, content=true)
 }
 
