@@ -1,4 +1,7 @@
 {
+  "import": [
+    "bobzhang/zip/buffer"
+  ],
   "test-import": [
      "bobzhang/zip/hexdump"
   ]
