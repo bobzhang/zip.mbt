@@ -2,17 +2,12 @@
 package "bobzhang/zip"
 
 import(
-  "bobzhang/zip/huffman"
   "bobzhang/zip/types"
   "moonbitlang/core/immut/sorted_map"
 )
 
 // Values
 fn adler32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(Int64, Bytes), String]
-
-fn backref_dist(Int) -> Int
-
-fn backref_len(Int) -> Int
 
 fn bytes_adler32(Bytes, Int, Int) -> Int64
 
@@ -40,18 +35,6 @@ fn distance_to_symbol(Int) -> Int
 
 let dos_epoch : Int
 
-fn find_backref(Bytes, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> Int
-
-fn find_match_length(Bytes, Int, Int, Int, Int) -> Int
-
-let fixed_dist_decoder : @huffman.HuffmanDecoder
-
-let fixed_dist_encoder : @huffman.HuffmanEncoder
-
-let fixed_litlen_decoder : @huffman.HuffmanDecoder
-
-let fixed_litlen_encoder : @huffman.HuffmanEncoder
-
 fn format_file_mode(Int) -> String
 
 fn fpath_ensure_directoryness(String) -> String
@@ -64,23 +47,15 @@ let gp_flag_encrypted : Int
 
 let gp_flag_utf8 : Int
 
-fn hash4(Bytes, Int) -> Int
-
 fn inflate(Bytes, Int, Int, Int?) -> Bytes
 
 fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
 
 fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
 
-fn insert_hash(Array[Int], Array[Int], Int, Int) -> Unit
-
 fn length_to_symbol(Int) -> Int
 
 let length_value_of_sym_table : Array[Int]
-
-fn make_backref(Int, Int) -> Int
-
-fn match_fwd(Bytes, Int, Int, Int, Int) -> Int
 
 let max_file_size : Int64
 
@@ -95,14 +70,6 @@ fn ptime_of_dos_date_time(Int, Int) -> Int
 fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
 
 fn ptime_to_dos_date_time(Int) -> (Int, Int)
-
-fn reverse_bits(Int, Int) -> Int
-
-fn sym_info_code(Int) -> Int
-
-fn sym_info_code_length(Int) -> Int
-
-fn sym_info_make(Int, Int) -> Int
 
 fn zlib_compress(Bytes, Int, Int, DeflateLevel?) -> (Int64, Bytes)
 
@@ -204,9 +171,9 @@ pub typealias Int as FileMode
 
 pub typealias String as Fpath
 
-pub typealias @huffman.HuffmanDecoder as HuffmanDecoder
+pub typealias @bobzhang/zip/huffman.HuffmanDecoder as HuffmanDecoder
 
-pub typealias @huffman.HuffmanEncoder as HuffmanEncoder
+pub typealias @bobzhang/zip/huffman.HuffmanEncoder as HuffmanEncoder
 
 pub typealias Int as Ptime
 

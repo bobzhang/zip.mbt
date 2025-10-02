@@ -203,23 +203,8 @@ pub typealias @huffman.HuffmanDecoder as HuffmanDecoder
 pub typealias @huffman.HuffmanEncoder as HuffmanEncoder
 pub typealias @huffman.SymInfo as SymInfo
 
-pub let fixed_litlen_decoder : HuffmanDecoder = @huffman.fixed_litlen_decoder
-pub let fixed_dist_decoder : HuffmanDecoder = @huffman.fixed_dist_decoder
-pub let fixed_litlen_encoder : HuffmanEncoder = @huffman.fixed_litlen_encoder
-pub let fixed_dist_encoder : HuffmanEncoder = @huffman.fixed_dist_encoder
-
-pub fn sym_info_make(code : Int, code_length : Int) -> SymInfo {
-  @huffman.sym_info_make(code, code_length)
-}
-pub fn sym_info_code(info : SymInfo) -> Int {
-  @huffman.sym_info_code(info)
-}
-pub fn sym_info_code_length(info : SymInfo) -> Int {
-  @huffman.sym_info_code_length(info)
-}
-pub fn reverse_bits(value : Int, length : Int) -> Int {
-  @huffman.reverse_bits(value, length)
-}
+let fixed_litlen_decoder : HuffmanDecoder = @huffman.fixed_litlen_decoder
+let fixed_dist_decoder : HuffmanDecoder = @huffman.fixed_dist_decoder
 
 ///|
 /// ByteBuf - Re-exported from buffer package
@@ -765,68 +750,6 @@ pub fn length_to_symbol(length : Int) -> Int {
 
 pub fn distance_to_symbol(dist : Int) -> Int {
   @deflate.distance_to_symbol(dist)
-}
-
-// ============================================================================
-// LZ77 String Matching - Re-exported from lz77 package
-// ============================================================================
-
-pub fn hash4(bytes : Bytes, i : Int) -> Int {
-  @lz77.hash4(bytes, i)
-}
-
-pub fn insert_hash(hash_head : Array[Int], hash_prev : Array[Int], hash : Int, pos : Int) -> Unit {
-  @lz77.insert_hash(hash_head, hash_prev, hash, pos)
-}
-
-pub fn match_fwd(bytes : Bytes, i : Int, j : Int, len : Int, max_match_len : Int) -> Int {
-  @lz77.match_fwd(bytes, i, j, len, max_match_len)
-}
-
-pub fn find_match_length(
-  bytes : Bytes,
-  i : Int,
-  j : Int,
-  prev_match_len : Int,
-  max_match_len : Int
-) -> Int {
-  @lz77.find_match_length(bytes, i, j, prev_match_len, max_match_len)
-}
-
-pub fn make_backref(dist : Int, len : Int) -> Int {
-  @lz77.make_backref(dist, len)
-}
-
-pub fn backref_dist(bref : Int) -> Int {
-  @lz77.backref_dist(bref)
-}
-
-pub fn backref_len(bref : Int) -> Int {
-  @lz77.backref_len(bref)
-}
-
-pub fn find_backref(
-  bytes : Bytes,
-  hash_head : Array[Int],
-  hash_prev : Array[Int],
-  pos : Int,
-  hash : Int,
-  prev_match_len : Int,
-  max_match_len : Int,
-  good_match : Int,
-  max_chain_len : Int
-) -> Int {
-  @lz77.find_backref(
-    bytes,
-    hash_head,
-    hash_prev,
-    pos,
-    hash,
-    prev_match_len,
-    max_match_len,
-    good_match,
-    max_chain_len
-  )
 }
 
 ///|
