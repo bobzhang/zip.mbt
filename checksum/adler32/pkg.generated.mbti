@@ -2,17 +2,15 @@
 package "bobzhang/zip/checksum/adler32"
 
 // Values
-fn bytes_adler32(Bytes, Int, Int) -> Int64
+fn bytes_adler32(Bytes, Int, Int) -> UInt
 
-fn check_adler32(Int64, Int64) -> Result[Unit, String]
+fn check_adler32(UInt, UInt) -> Result[Unit, String]
 
 // Errors
 
 // Types and methods
-pub struct Adler32 {
-  value : Int64
-}
-fn Adler32::finish(Self) -> Int64
+type Adler32
+fn Adler32::finish(Self) -> UInt
 fn Adler32::init() -> Self
 fn Adler32::update_bytes(Self, Bytes, Int, Int) -> Self
 impl Eq for Adler32

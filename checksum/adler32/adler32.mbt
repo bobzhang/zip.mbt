@@ -21,7 +21,7 @@ fn UInt::to_hex_string(self : UInt) -> String {
 
 ///|
 /// Adler-32 state for incremental checksum computation
-pub struct Adler32(UInt) derive(Eq, Show)
+struct Adler32(UInt) derive(Eq, Show)
 
 ///|
 /// Adler-32 modulus (largest prime less than 65536)

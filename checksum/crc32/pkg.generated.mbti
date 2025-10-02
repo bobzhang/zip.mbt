@@ -2,17 +2,15 @@
 package "bobzhang/zip/checksum/crc32"
 
 // Values
-fn bytes_crc32(Bytes, Int, Int) -> Int64
+fn bytes_crc32(Bytes, Int, Int) -> UInt
 
-fn check_crc32(Int64, Int64) -> Result[Unit, String]
+fn check_crc32(UInt, UInt) -> Result[Unit, String]
 
 // Errors
 
 // Types and methods
-pub struct Crc32 {
-  value : Int64
-}
-fn Crc32::finish(Self) -> Int64
+type Crc32
+fn Crc32::finish(Self) -> UInt
 fn Crc32::init() -> Self
 fn Crc32::update_byte(Self, Int) -> Self
 fn Crc32::update_bytes(Self, Bytes, Int, Int) -> Self

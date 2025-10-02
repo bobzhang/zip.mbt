@@ -21,7 +21,7 @@ fn UInt::to_hex_string(self : UInt) -> String {
 
 ///|
 /// CRC-32 state for incremental checksum computation
-pub struct Crc32(UInt) derive(Eq, Show)
+struct Crc32(UInt) derive(Eq, Show)
 
 ///|
 /// CRC-32 polynomial (reversed, for table-driven algorithm)

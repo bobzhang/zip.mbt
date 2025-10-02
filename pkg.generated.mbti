@@ -7,19 +7,19 @@ import(
 )
 
 // Values
-fn adler32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(Int64, Bytes), String]
+fn adler32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(UInt, Bytes), String]
 
-fn bytes_adler32(Bytes, Int, Int) -> Int64
+fn bytes_adler32(Bytes, Int, Int) -> UInt
 
-fn bytes_crc32(Bytes, Int, Int) -> Int64
+fn bytes_crc32(Bytes, Int, Int) -> UInt
 
 fn bytes_has_zip_magic(Bytes) -> Bool
 
-fn check_adler32(Int64, Int64) -> Result[Unit, String]
+fn check_adler32(UInt, UInt) -> Result[Unit, String]
 
-fn check_crc32(Int64, Int64) -> Result[Unit, String]
+fn check_crc32(UInt, UInt) -> Result[Unit, String]
 
-fn crc32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(Int64, Bytes), String]
+fn crc32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(UInt, Bytes), String]
 
 fn deflate(Bytes, Int, Int, DeflateLevel?) -> Result[Bytes, String]
 
@@ -49,9 +49,9 @@ let gp_flag_utf8 : Int
 
 fn inflate(Bytes, Int, Int, Int?) -> Bytes
 
-fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
+fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, UInt)
 
-fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, Int64)
+fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, UInt)
 
 fn length_to_symbol(Int) -> Int
 
@@ -71,9 +71,9 @@ fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
 
 fn ptime_to_dos_date_time(Int) -> (Int, Int)
 
-fn zlib_compress(Bytes, Int, Int, DeflateLevel?) -> (Int64, Bytes)
+fn zlib_compress(Bytes, Int, Int, DeflateLevel?) -> (UInt, Bytes)
 
-fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, Int64), String]
+fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, UInt), String]
 
 // Errors
 
@@ -115,23 +115,23 @@ pub struct File {
   compressed_size : Int
   compressed_bytes : Bytes
   decompressed_size : Int
-  decompressed_crc32 : Int64
+  decompressed_crc32 : UInt
 }
 fn File::can_extract(Self) -> Bool
 fn File::compressed_bytes(Self) -> Bytes
 fn File::compressed_bytes_to_bytes(Self) -> Bytes
 fn File::compressed_size(Self) -> Int
 fn File::compression(Self) -> @types.Compression
-fn File::decompressed_crc32(Self) -> Int64
+fn File::decompressed_crc32(Self) -> UInt
 fn File::decompressed_size(Self) -> Int
 fn File::deflate_of_bytes(Bytes, Int, Int, DeflateLevel?) -> Result[Self, String]
 fn File::gp_flags(Self) -> Int
 fn File::is_encrypted(Self) -> Bool
-fn File::make(Bytes, Int, Int, @types.Compression, Int, Int64, Int?, Int?, Int?) -> Result[Self, String]
+fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, Int?, Int?, Int?) -> Result[Self, String]
 fn File::start(Self) -> Int
 fn File::stored_of_bytes(Bytes, Int, Int) -> Result[Self, String]
 fn File::to_bytes(Self) -> Bytes
-fn File::to_bytes_no_crc_check(Self) -> (Bytes, Int64)
+fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt)
 fn File::version_made_by(Self) -> Int
 fn File::version_needed_to_extract(Self) -> Int
 
