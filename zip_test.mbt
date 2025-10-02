@@ -1676,7 +1676,7 @@ test "complete_zip_workflow_with_compression" {
   
   // 7. Extract and verify each file
   match decoded.find("doc.txt") {
-    Some(member) => match member.kind() {
+    Some(entry) => match entry.kind() {
       MemberKind::File(f) => {
         let data = f.to_bytes()
         @json.inspect(
@@ -1690,7 +1690,7 @@ test "complete_zip_workflow_with_compression" {
   }
   
   match decoded.find("repeated.txt") {
-    Some(member) => match member.kind() {
+    Some(entry) => match entry.kind() {
       MemberKind::File(f) => {
         let data = f.to_bytes()
         // Verify it decompressed correctly
@@ -1709,7 +1709,7 @@ test "complete_zip_workflow_with_compression" {
   }
   
   match decoded.find("random.txt") {
-    Some(member) => match member.kind() {
+    Some(entry) => match entry.kind() {
       MemberKind::File(f) => {
         let data = f.to_bytes()
         @json.inspect(data.length(), content=22)
@@ -1783,7 +1783,7 @@ test "zlib_roundtrip_simple" {
 ///|
 test "zlib_roundtrip_empty" {
   let data = b""
-  let (adler, compressed) = zlib_compress(data, 0, 0, None)
+  let (_adler, compressed) = zlib_compress(data, 0, 0, None)
   
   let result = zlib_decompress(compressed, 0, compressed.length())
   match result {
@@ -1803,7 +1803,7 @@ test "zlib_roundtrip_repetitive" {
   }
   let data = buf.contents()
   
-  let (adler, compressed) = zlib_compress(data, 0, data.length(), None)
+  let (_adler, compressed) = zlib_compress(data, 0, data.length(), None)
   
   // Should achieve good compression
   let ratio = compressed.length() < 30

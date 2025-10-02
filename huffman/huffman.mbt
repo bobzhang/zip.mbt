@@ -13,9 +13,9 @@ pub let dist_sym_max : Int = 29  // Maximum distance symbol
 ///|
 /// Huffman decoder for inflate (decompression)
 pub struct HuffmanDecoder {
-  pub counts : Array[Int] // counts[i] = number of codes of length i
-  pub symbols : Array[Int] // symbols sorted by code
-  pub mut max_sym : Int // maximum symbol seen
+  counts : Array[Int] // counts[i] = number of codes of length i
+  symbols : Array[Int] // symbols sorted by code
+  mut max_sym : Int // maximum symbol seen
 }
 
 ///|
@@ -160,8 +160,8 @@ pub fn sym_info_code_length(info : SymInfo) -> Int {
 /// Huffman encoder for deflate compression
 /// Stores symbol-to-code mappings
 pub struct HuffmanEncoder {
-  pub codes : Array[SymInfo] // codes[symbol] = sym_info for that symbol
-  pub mut max_sym : Int // Maximum symbol that has a code
+  codes : Array[SymInfo] // codes[symbol] = sym_info for that symbol
+  mut max_sym : Int // Maximum symbol that has a code
 }
 
 ///|

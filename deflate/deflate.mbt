@@ -6,7 +6,6 @@ typealias @buffer.ByteBuf as ByteBuf
 typealias @bitstream.BitWriter as BitWriter
 typealias @huffman.HuffmanDecoder as HuffmanDecoder
 typealias @huffman.HuffmanEncoder as HuffmanEncoder
-typealias @huffman.SymInfo as SymInfo
 
 // Type aliases for checksums
 typealias Int64 as UInt32
@@ -644,8 +643,8 @@ pub fn encode_code_lengths(
 /// Write dynamic Huffman block header
 pub fn write_dynamic_header(
   writer : BitWriter,
-  litlen_encoder : HuffmanEncoder,
-  dist_encoder : HuffmanEncoder,
+  _litlen_encoder : HuffmanEncoder,
+  _dist_encoder : HuffmanEncoder,
   codelen_encoder : HuffmanEncoder,
   codelen_syms : Array[Int],
   sym_count : Int,

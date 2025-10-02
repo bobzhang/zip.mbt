@@ -55,9 +55,6 @@ let litlen_sym_max : Int = 285
 let max_litlen_sym_count : Int = 286
 
 ///|
-let litlen_sym_fixed_max : Int = 287
-
-///|
 let litlen_end_of_block_sym : Int = 256
 
 ///|
@@ -770,36 +767,9 @@ pub fn distance_to_symbol(dist : Int) -> Int {
   @deflate.distance_to_symbol(dist)
 }
 
-fn write_literal_symbol(
-  writer : BitWriter,
-  encoder : HuffmanEncoder,
-  symbol : Int,
-) -> Unit {
-  @deflate.write_literal_symbol(writer, encoder, symbol)
-}
-
-fn write_length_distance(
-  writer : BitWriter,
-  litlen_encoder : HuffmanEncoder,
-  dist_encoder : HuffmanEncoder,
-  length : Int,
-  distance : Int,
-) -> Unit {
-  @deflate.write_length_distance(writer, litlen_encoder, dist_encoder, length, distance)
-}
-
 // ============================================================================
 // LZ77 String Matching - Re-exported from lz77 package
 // ============================================================================
-
-// LZ77 constants
-let lz77_min_match_len : Int = @lz77.min_match_len
-let lz77_max_match_len : Int = @lz77.max_match_len
-let lz77_max_match_dist : Int = @lz77.max_match_dist
-let lz77_window_size : Int = @lz77.window_size
-let lz77_hash_bit_size : Int = @lz77.hash_bit_size
-let lz77_hash_size : Int = @lz77.hash_size
-let lz77_no_pos : Int = @lz77.no_pos
 
 pub fn hash4(bytes : Bytes, i : Int) -> Int {
   @lz77.hash4(bytes, i)
@@ -1006,7 +976,7 @@ pub fn zlib_decompress(
   
   // Read and validate FLG
   let flg = bytes[start + 1].to_int()
-  let fcheck = flg.land(0x1F)
+  let _fcheck = flg.land(0x1F)
   let fdict = (flg >> 5).land(0x01)
   
   // Validate check bits
