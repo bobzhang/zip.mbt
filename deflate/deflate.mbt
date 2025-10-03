@@ -8,17 +8,17 @@ typealias @huffman.HuffmanDecoder as HuffmanDecoder
 typealias @huffman.HuffmanEncoder as HuffmanEncoder
 
 // Constants from RFC 1951
-pub let litlen_sym_max : Int = 285
-pub let litlen_end_of_block_sym : Int = 256
-pub let litlen_first_len_sym : Int = 257
+let litlen_sym_max : Int = 285
+let litlen_end_of_block_sym : Int = 256
+let litlen_first_len_sym : Int = 257
 
-pub let dist_sym_max : Int = 29
-pub let max_dist_sym_count : Int = 30
+let dist_sym_max : Int = 29
+let max_dist_sym_count : Int = 30
 
-pub let max_codelen_sym_count : Int = 19
+let max_codelen_sym_count : Int = 19
 
 // Code length order for dynamic Huffman (RFC 1951 3.2.7)
-pub let codelen_order : Array[Int] = [
+let codelen_order : Array[Int] = [
   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
 ]
 
@@ -41,7 +41,7 @@ fn dist_value_extra_bits(v : Int) -> Int {
 }
 
 // Length and distance value tables
-pub fn length_value_of_length_sym(sym : Int) -> Int {
+fn length_value_of_length_sym(sym : Int) -> Int {
   // Symbol must be 257-285
   let length_value_table : Array[Int] = [
     3 << 4, 4 << 4, 5 << 4, 6 << 4, 7 << 4, 8 << 4, 9 << 4, 10 << 4,
@@ -55,7 +55,7 @@ pub fn length_value_of_length_sym(sym : Int) -> Int {
   length_value_table[sym - 257]
 }
 
-pub let dist_value_of_sym : Array[Int] = [
+let dist_value_of_sym : Array[Int] = [
   1 << 4, 2 << 4, 3 << 4, 4 << 4,
   (5 << 4) | 1, (7 << 4) | 1,
   (9 << 4) | 2, (13 << 4) | 2,
@@ -77,7 +77,7 @@ pub let dist_value_of_sym : Array[Int] = [
 // ============================================================================
 
 /// Inflate decoder state
-pub struct InflateDecoder {
+struct InflateDecoder {
   src : Bytes // Source compressed data
   src_max : Int // Maximum valid index in src
   mut src_pos : Int // Current read position
@@ -89,7 +89,7 @@ pub struct InflateDecoder {
 }
 
 /// Create a new inflate decoder
-pub fn InflateDecoder::new(
+fn InflateDecoder::new(
   src : Bytes,
   start : Int,
   len : Int,
@@ -526,7 +526,7 @@ pub fn build_optimal_code_lengths(
 }
 
 /// Build canonical Huffman codes from code lengths
-pub fn build_canonical_huffman(
+fn build_canonical_huffman(
   lengths : Array[Int],
   max_sym : Int
 ) -> HuffmanEncoder {
@@ -562,7 +562,7 @@ pub fn build_canonical_huffman(
 }
 
 /// Encode code lengths with run-length compression
-pub fn encode_code_lengths(
+fn encode_code_lengths(
   litlen_lengths : Array[Int],
   dist_lengths : Array[Int],
   hlit : Int,
@@ -638,7 +638,7 @@ pub fn encode_code_lengths(
 }
 
 /// Write dynamic Huffman block header
-pub fn write_dynamic_header(
+fn write_dynamic_header(
   writer : BitWriter,
   _litlen_encoder : HuffmanEncoder,
   _dist_encoder : HuffmanEncoder,
@@ -747,7 +747,7 @@ pub fn distance_to_symbol(dist : Int) -> Int {
 }
 
 /// Write a literal or end-of-block symbol
-pub fn write_literal_symbol(
+fn write_literal_symbol(
   writer : BitWriter,
   encoder : HuffmanEncoder,
   symbol : Int,
@@ -759,7 +759,7 @@ pub fn write_literal_symbol(
 }
 
 /// Write a length/distance pair
-pub fn write_length_distance(
+fn write_length_distance(
   writer : BitWriter,
   litlen_encoder : HuffmanEncoder,
   dist_encoder : HuffmanEncoder,
@@ -800,30 +800,30 @@ pub fn write_length_distance(
 }
 
 /// Frequency counter for dynamic Huffman
-pub struct FrequencyCounter {
+struct FrequencyCounter {
   litlen_freqs : Array[Int]
   dist_freqs : Array[Int]
 }
 
-pub fn FrequencyCounter::new() -> FrequencyCounter {
+fn FrequencyCounter::new() -> FrequencyCounter {
   { litlen_freqs: Array::make(286, 0), dist_freqs: Array::make(30, 0) }
 }
 
-pub fn FrequencyCounter::add_literal(self : FrequencyCounter, lit : Int) -> Unit {
+fn FrequencyCounter::add_literal(self : FrequencyCounter, lit : Int) -> Unit {
   self.litlen_freqs[lit] = self.litlen_freqs[lit] + 1
 }
 
-pub fn FrequencyCounter::add_length(self : FrequencyCounter, length : Int) -> Unit {
+fn FrequencyCounter::add_length(self : FrequencyCounter, length : Int) -> Unit {
   let sym = length_to_symbol(length)
   self.litlen_freqs[sym] = self.litlen_freqs[sym] + 1
 }
 
-pub fn FrequencyCounter::add_distance(self : FrequencyCounter, dist : Int) -> Unit {
+fn FrequencyCounter::add_distance(self : FrequencyCounter, dist : Int) -> Unit {
   let sym = distance_to_symbol(dist)
   self.dist_freqs[sym] = self.dist_freqs[sym] + 1
 }
 
-pub fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
+fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
   self.litlen_freqs[256] = 1
 }
 

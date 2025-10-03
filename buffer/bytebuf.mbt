@@ -1,7 +1,7 @@
 ///|
 /// Extensible byte buffer for decompression output
 /// Similar to OCaml's Buffer but with self-blit support for LZ77 back-references
-pub struct ByteBuf {
+struct ByteBuf {
   mut buffer : Array[Byte]
   mut length : Int
   fixed : Bool // If true, buffer cannot grow (size is known)

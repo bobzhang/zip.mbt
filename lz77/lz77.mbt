@@ -9,9 +9,9 @@
 // LZ77 constants
 pub let min_match_len : Int = 3 // Minimum match length
 pub let max_match_len : Int = 258 // Maximum match length (same as length_max)
-pub let max_match_dist : Int = 32768 // Maximum back-reference distance
+let max_match_dist : Int = 32768 // Maximum back-reference distance
 pub let window_size : Int = 32768 // Sliding window size
-pub let hash_bit_size : Int = 15 // Hash table size = 2^15 = 32768
+let hash_bit_size : Int = 15 // Hash table size = 2^15 = 32768
 pub let hash_size : Int = 32768 // 1 << hash_bit_size
 pub let no_pos : Int = -1 // Marker for no position
 

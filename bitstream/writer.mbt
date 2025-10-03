@@ -1,7 +1,7 @@
 ///|
 /// Bit-level output writer for deflate compression
 /// Accumulates bits and writes complete bytes to the output buffer
-pub struct BitWriter {
+struct BitWriter {
   dst : @buffer.ByteBuf // Output buffer
   mut bits : Int // Accumulated bits (up to 31 bits)
   mut bits_len : Int // Number of valid bits in 'bits'
