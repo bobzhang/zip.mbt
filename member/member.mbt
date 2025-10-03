@@ -54,6 +54,7 @@ pub struct Member {
 
 ///|
 /// Create a new archive member
+#as_free_fn
 pub fn Member::make(
   path : Fpath,
   kind : MemberKind,

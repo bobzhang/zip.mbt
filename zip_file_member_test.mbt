@@ -52,7 +52,7 @@ test "file_is_encrypted" {
 test "member_make_file" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("test.txt", File(file), None, None).unwrap()
   @json.inspect((m.path(), m.is_file(), m.is_dir(), m.mode()), content=[
     "test.txt", true, false, 420,
   ]) // 0o644 = 420
@@ -60,7 +60,7 @@ test "member_make_file" {
 
 ///|
 test "member_make_dir" {
-  let m = Member::make("mydir", MemberKind::Dir, None, None).unwrap()
+  let m = @member.make("mydir", Dir, None, None).unwrap()
   @json.inspect((m.path(), m.is_dir(), m.is_file(), m.mode()), content=[
     "mydir/", true, false, 493,
   ]) // 0o755 = 493
@@ -70,7 +70,7 @@ test "member_make_dir" {
 test "member_ensure_unix_path" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("dir\\file.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("dir\\file.txt", File(file), None, None).unwrap()
   @json.inspect(m.path(), content="dir/file.txt")
 }
 
@@ -78,7 +78,7 @@ test "member_ensure_unix_path" {
 test "member_default_mtime" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("file.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("file.txt", File(file), None, None).unwrap()
   @json.inspect(m.mtime(), content=["Ptime", 315532800]) // dos_epoch
 }
 
@@ -87,12 +87,7 @@ test "member_custom_mode_and_mtime" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let custom_time = dos_epoch.0 + 1000
-  let m = Member::make(
-    "file.txt",
-    MemberKind::File(file),
-    Some(0o777),
-    Some(custom_time),
-  ).unwrap()
+  let m = @member.make("file.txt", File(file), Some(0o777), Some(custom_time)).unwrap()
   @json.inspect((m.mode(), m.mtime()), content=[511, ["Ptime", 315533800]]) // 0o777 = 511
 }
 
@@ -100,7 +95,7 @@ test "member_custom_mode_and_mtime" {
 test "member_format" {
   let data = b"hello"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("test.txt", File(file), None, None).unwrap()
   let formatted = m.format()
   // Should contain key parts: -, permissions, size, path
   @json.inspect(
@@ -117,7 +112,7 @@ test "member_format" {
 test "member_format_long" {
   let data = b"hello world"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("test.txt", File(file), None, None).unwrap()
   let formatted = m.format_long()
   // Should contain compression info
   @json.inspect(
@@ -132,7 +127,7 @@ test "member_format_long" {
 
 ///|
 test "member_format_long_dir" {
-  let m = Member::make("mydir/", MemberKind::Dir, None, None).unwrap()
+  let m = @member.make("mydir/", Dir, None, None).unwrap()
   let formatted = m.format_long()
   // Directories don't have compression info
   @json.inspect(formatted.contains("["), content=false)
@@ -146,7 +141,7 @@ test "member_make_error_path_too_long" {
   for i = 0; i < 70000; i = i + 1 {
     long_path = long_path + "a"
   }
-  let result = Member::make(long_path, MemberKind::Dir, None, None)
+  let result = @member.make(long_path, Dir, None, None)
   match result {
     Ok(_) => @json.inspect("should have failed", content="error")
     Err(msg) => @json.inspect(msg.contains("exceeds maximum"), content=true)
@@ -215,13 +210,7 @@ test "coverage_member_early_mtime" {
   let data = b"X"
   match @file.File::deflate_of_bytes(data, 0, data.length(), None) {
     Ok(file) =>
-      match
-        Member::make(
-          "test.txt",
-          MemberKind::File(file),
-          Some(0o644),
-          Some(early),
-        ) {
+      match @member.make("test.txt", File(file), Some(0o644), Some(early)) {
         Ok(m) => @json.inspect(m.mtime() >= dos_epoch, content=true)
         Err(_) => @json.inspect("should not fail", content="success")
       }
@@ -235,7 +224,7 @@ test "coverage_member_empty_format" {
   let data = b""
   match @file.File::deflate_of_bytes(data, 0, data.length(), None) {
     Ok(file) =>
-      match Member::make("empty.txt", MemberKind::File(file), None, None) {
+      match @member.make("empty.txt", File(file), None, None) {
         Ok(m) => @json.inspect(m.format_long().contains("0%"), content=true)
         Err(_) => @json.inspect("should not fail", content="success")
       }

@@ -35,6 +35,7 @@ fn Member::format_long(Self) -> String
 fn Member::is_dir(Self) -> Bool
 fn Member::is_file(Self) -> Bool
 fn Member::kind(Self) -> MemberKind
+#as_free_fn
 fn Member::make(String, MemberKind, Int?, @types.Ptime?) -> Result[Self, String]
 fn Member::mode(Self) -> Int
 fn Member::mtime(Self) -> @types.Ptime

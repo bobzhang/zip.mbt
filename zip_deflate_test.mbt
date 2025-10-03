@@ -83,7 +83,7 @@ test "file_deflate_empty_data" {
 test "archive_roundtrip_deflate" {
   let data = b"Test deflate compression in ZIP"
   let file = @file.File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
-  let m = Member::make("compressed.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("compressed.txt", File(file), None, None).unwrap()
   let original = Archive::empty().add(m)
 
   // Encode
@@ -96,7 +96,7 @@ test "archive_roundtrip_deflate" {
       match decoded.find("compressed.txt") {
         Some(found) =>
           match found.kind() {
-            MemberKind::File(f) => {
+            File(f) => {
               let extracted = f.to_bytes()
               @json.inspect((extracted.length(), extracted[0] == data[0]), content=[
                 31, true,
@@ -443,9 +443,9 @@ test "complete_zip_workflow_with_compression" {
   let file3 = @file.File::deflate_of_bytes(text3, 0, text3.length(), None).unwrap()
 
   // 3. Create members
-  let m1 = Member::make("doc.txt", MemberKind::File(file1), None, None).unwrap()
-  let m2 = Member::make("repeated.txt", MemberKind::File(file2), None, None).unwrap()
-  let m3 = Member::make("random.txt", MemberKind::File(file3), None, None).unwrap()
+  let m1 = @member.make("doc.txt", File(file1), None, None).unwrap()
+  let m2 = @member.make("repeated.txt", File(file2), None, None).unwrap()
+  let m3 = @member.make("random.txt", File(file3), None, None).unwrap()
 
   // 4. Build archive
   let archive = Archive::empty().add(m1).add(m2).add(m3)
@@ -460,7 +460,7 @@ test "complete_zip_workflow_with_compression" {
   match decoded.find("doc.txt") {
     Some(entry) =>
       match entry.kind() {
-        MemberKind::File(f) => {
+        File(f) => {
           let data = f.to_bytes()
           @json.inspect((data.length(), data[0].to_int()), content=[89, 84]) // 'T'
         }
@@ -471,7 +471,7 @@ test "complete_zip_workflow_with_compression" {
   match decoded.find("repeated.txt") {
     Some(entry) =>
       match entry.kind() {
-        MemberKind::File(f) => {
+        File(f) => {
           let data = f.to_bytes()
           // Verify it decompressed correctly
           @json.inspect((data.length(), data[0].to_int(), data[39].to_int()), content=[
@@ -489,7 +489,7 @@ test "complete_zip_workflow_with_compression" {
   match decoded.find("random.txt") {
     Some(entry) =>
       match entry.kind() {
-        MemberKind::File(f) => {
+        File(f) => {
           let data = f.to_bytes()
           @json.inspect(data.length(), content=22)
         }

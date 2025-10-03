@@ -11,8 +11,8 @@ test "archive_empty" {
 test "archive_add_and_find" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m1 = Member::make("file1.txt", MemberKind::File(file), None, None).unwrap()
-  let m2 = Member::make("file2.txt", MemberKind::File(file), None, None).unwrap()
+  let m1 = @member.make("file1.txt", File(file), None, None).unwrap()
+  let m2 = @member.make("file2.txt", File(file), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
   @json.inspect(
     (
@@ -29,7 +29,7 @@ test "archive_add_and_find" {
 test "archive_find_member" {
   let data = b"hello"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("test.txt", File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   match archive.find("test.txt") {
     Some(found) => @json.inspect(found.path(), content="test.txt")
@@ -41,8 +41,8 @@ test "archive_find_member" {
 test "archive_remove" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m1 = Member::make("file1.txt", MemberKind::File(file), None, None).unwrap()
-  let m2 = Member::make("file2.txt", MemberKind::File(file), None, None).unwrap()
+  let m1 = @member.make("file1.txt", File(file), None, None).unwrap()
+  let m2 = @member.make("file2.txt", File(file), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2).remove("file1.txt")
   @json.inspect(
     (archive.member_count(), archive.mem("file1.txt"), archive.mem("file2.txt")),
@@ -56,15 +56,15 @@ test "archive_replace_member" {
   let data2 = b"version2"
   let file1 = @file.File::stored_of_bytes(data1, 0, data1.length()).unwrap()
   let file2 = @file.File::stored_of_bytes(data2, 0, data2.length()).unwrap()
-  let m1 = Member::make("test.txt", MemberKind::File(file1), None, None).unwrap()
-  let m2 = Member::make("test.txt", MemberKind::File(file2), None, None).unwrap()
+  let m1 = @member.make("test.txt", File(file1), None, None).unwrap()
+  let m2 = @member.make("test.txt", File(file2), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
   // Should have only one member (replaced)
   @json.inspect(archive.member_count(), content=1)
   match archive.find("test.txt") {
     Some(found) =>
       match found.kind() {
-        MemberKind::File(f) => @json.inspect(f.decompressed_size, content=8)
+        File(f) => @json.inspect(f.decompressed_size, content=8)
         _ => @json.inspect("wrong kind", content="file")
       }
     None => @json.inspect("not found", content="not found")
@@ -75,9 +75,9 @@ test "archive_replace_member" {
 test "archive_fold" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m1 = Member::make("b.txt", MemberKind::File(file), None, None).unwrap()
-  let m2 = Member::make("a.txt", MemberKind::File(file), None, None).unwrap()
-  let m3 = Member::make("c.txt", MemberKind::File(file), None, None).unwrap()
+  let m1 = @member.make("b.txt", File(file), None, None).unwrap()
+  let m2 = @member.make("a.txt", File(file), None, None).unwrap()
+  let m3 = @member.make("c.txt", File(file), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2).add(m3)
   // Fold should process in lexicographic order
   let paths = archive.fold(
@@ -124,7 +124,7 @@ test "zip_magic_too_short" {
 test "archive_encoding_size" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("test.txt", File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   let size = archive.encoding_size()
   // Local header (30) + path (8) + data (4) + central dir (46) + path (8) + EOCD (22) = 118
@@ -149,7 +149,7 @@ test "archive_to_bytes_empty" {
 test "archive_to_bytes_single_file" {
   let data = b"Hello ZIP!"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("hello.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("hello.txt", File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   let result = archive.to_bytes(None)
   match result {
@@ -163,7 +163,7 @@ test "archive_to_bytes_single_file" {
 
 ///|
 test "archive_to_bytes_directory" {
-  let m = Member::make("mydir/", MemberKind::Dir, None, None).unwrap()
+  let m = @member.make("mydir/", Dir, None, None).unwrap()
   let archive = Archive::empty().add(m)
   let result = archive.to_bytes(None)
   match result {
@@ -178,8 +178,8 @@ test "archive_to_bytes_multiple_files" {
   let data2 = b"file 2"
   let file1 = @file.File::stored_of_bytes(data1, 0, data1.length()).unwrap()
   let file2 = @file.File::stored_of_bytes(data2, 0, data2.length()).unwrap()
-  let m1 = Member::make("a.txt", MemberKind::File(file1), None, None).unwrap()
-  let m2 = Member::make("b.txt", MemberKind::File(file2), None, None).unwrap()
+  let m1 = @member.make("a.txt", File(file1), None, None).unwrap()
+  let m2 = @member.make("b.txt", File(file2), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
   let result = archive.to_bytes(None)
   match result {
@@ -216,7 +216,7 @@ test "archive_of_bytes_empty" {
 test "archive_roundtrip_single_file" {
   let data = b"Hello, ZIP world!"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("hello.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("hello.txt", File(file), None, None).unwrap()
   let original = Archive::empty().add(m)
 
   // Encode
@@ -230,7 +230,7 @@ test "archive_roundtrip_single_file" {
       match decoded.find("hello.txt") {
         Some(found) =>
           match found.kind() {
-            MemberKind::File(f) => {
+            File(f) => {
               let extracted = f.to_bytes()
               @json.inspect(
                 (
@@ -258,9 +258,9 @@ test "archive_roundtrip_multiple_files" {
   let file1 = @file.File::stored_of_bytes(data1, 0, data1.length()).unwrap()
   let file2 = @file.File::stored_of_bytes(data2, 0, data2.length()).unwrap()
   let file3 = @file.File::stored_of_bytes(data3, 0, data3.length()).unwrap()
-  let m1 = Member::make("docs/file1.txt", MemberKind::File(file1), None, None).unwrap()
-  let m2 = Member::make("docs/file2.txt", MemberKind::File(file2), None, None).unwrap()
-  let m3 = Member::make("readme.txt", MemberKind::File(file3), None, None).unwrap()
+  let m1 = @member.make("docs/file1.txt", File(file1), None, None).unwrap()
+  let m2 = @member.make("docs/file2.txt", File(file2), None, None).unwrap()
+  let m3 = @member.make("readme.txt", File(file3), None, None).unwrap()
   let original = Archive::empty().add(m1).add(m2).add(m3)
 
   // Encode
@@ -287,8 +287,8 @@ test "archive_roundtrip_multiple_files" {
 test "archive_roundtrip_with_directory" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let dir = Member::make("mydir/", MemberKind::Dir, None, None).unwrap()
-  let f = Member::make("mydir/file.txt", MemberKind::File(file), None, None).unwrap()
+  let dir = @member.make("mydir/", Dir, None, None).unwrap()
+  let f = @member.make("mydir/file.txt", File(file), None, None).unwrap()
   let original = Archive::empty().add(dir).add(f)
 
   // Encode
@@ -323,8 +323,8 @@ test "archive_of_bytes_invalid" {
 test "archive_to_map" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m1 = Member::make("a.txt", MemberKind::File(file), None, None).unwrap()
-  let m2 = Member::make("b.txt", MemberKind::File(file), None, None).unwrap()
+  let m1 = @member.make("a.txt", File(file), None, None).unwrap()
+  let m2 = @member.make("b.txt", File(file), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
   let map = archive.to_map()
   @json.inspect(
@@ -337,7 +337,7 @@ test "archive_to_map" {
 test "archive_of_map_roundtrip" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let m = @member.make("test.txt", File(file), None, None).unwrap()
   let original = Archive::empty().add(m)
   let map = original.to_map()
   let restored = Archive::of_map(map)
@@ -371,13 +371,13 @@ test "coverage_archive_too_short" {
 /// Test archive to_array
 test "coverage_archive_to_array" {
   let a = Archive::empty()
-  match Member::make("dir/", MemberKind::Dir, None, None) {
+  match @member.make("dir/", Dir, None, None) {
     Ok(d) => {
       let a = a.add(d)
       let data = b"F"
       match @file.File::deflate_of_bytes(data, 0, data.length(), None) {
         Ok(file) =>
-          match Member::make("dir/f.txt", MemberKind::File(file), None, None) {
+          match @member.make("dir/f.txt", File(file), None, None) {
             Ok(f) => {
               let a = a.add(f)
               @json.inspect(a.to_array().length(), content=2)
@@ -401,9 +401,9 @@ test "coverage_archive_first" {
     Ok(f1) =>
       match @file.File::deflate_of_bytes(d2, 0, d2.length(), None) {
         Ok(f2) =>
-          match Member::make("a.txt", MemberKind::File(f1), None, None) {
+          match @member.make("a.txt", File(f1), None, None) {
             Ok(m1) =>
-              match Member::make("z.txt", MemberKind::File(f2), None, None) {
+              match @member.make("z.txt", File(f2), None, None) {
                 Ok(m2) => {
                   let a = a.add(m1).add(m2)
                   match a.to_bytes(Some("z.txt")) {

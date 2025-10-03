@@ -248,7 +248,8 @@ typealias @file.File
 // ============================================================================
 
 ///|
-pub typealias @member.Member
+/// FIXME(upstream): find all references does not work
+typealias @member.Member
 
 ///|
 pub typealias @member.MemberKind
@@ -532,7 +533,7 @@ fn parse_central_dir_entry(
 
   // Create member
   let kind = if is_dir {
-    MemberKind::Dir
+    @member.Dir
   } else {
     let compression = Compression::from_int(compression_method)
     let file = match
@@ -550,9 +551,9 @@ fn parse_central_dir_entry(
       Ok(f) => f
       Err(msg) => return Err(msg)
     }
-    MemberKind::File(file)
+    File(file)
   }
-  let m = match Member::make(path, kind, Some(file_mode), Some(mtime)) {
+  let m = match @member.make(path, kind, Some(file_mode), Some(mtime)) {
     Ok(mem) => mem
     Err(msg) => return Err(msg)
   }

@@ -27,9 +27,9 @@ fn test_simple_zip() -> Unit {
   let file = @file.File::stored_of_bytes(content, 0, content.length())
   match file {
     Ok(f) => {
-      let m = @lib.Member::make(
+      let m = @member.make(
         "hello.txt",
-        @lib.MemberKind::File(f),
+        File(f),
         Some(0o644),
         Some(@lib.dos_epoch),
       )
@@ -66,24 +66,9 @@ fn test_multi_file_zip() -> Unit {
   let file1 = @file.File::stored_of_bytes(b"Content of file 1", 0, 17).unwrap()
   let file2 = @file.File::stored_of_bytes(b"Content of file 2", 0, 17).unwrap()
   let file3 = @file.File::stored_of_bytes(b"Content of file 3", 0, 17).unwrap()
-  let m1 = @lib.Member::make(
-    "file1.txt",
-    @lib.MemberKind::File(file1),
-    None,
-    None,
-  ).unwrap()
-  let m2 = @lib.Member::make(
-    "file2.txt",
-    @lib.MemberKind::File(file2),
-    None,
-    None,
-  ).unwrap()
-  let m3 = @lib.Member::make(
-    "file3.txt",
-    @lib.MemberKind::File(file3),
-    None,
-    None,
-  ).unwrap()
+  let m1 = @member.make("file1.txt", File(file1), None, None).unwrap()
+  let m2 = @member.make("file2.txt", File(file2), None, None).unwrap()
+  let m3 = @member.make("file3.txt", File(file3), None, None).unwrap()
   println("  Original members:")
   println("    - \{m1.path()}")
   println("    - \{m2.path()}")
@@ -118,15 +103,10 @@ fn test_multi_file_zip() -> Unit {
 ///|
 fn test_directory_zip() -> Unit {
   println("\nTest 3: Creating archive with directories...")
-  let dir = @lib.Member::make("docs/", @lib.MemberKind::Dir, Some(0o755), None).unwrap()
+  let dir = @member.make("docs/", Dir, Some(0o755), None).unwrap()
   let file_data = b"Documentation file content"
   let file = @file.File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
-  let readme = @lib.Member::make(
-    "docs/README.md",
-    @lib.MemberKind::File(file),
-    Some(0o644),
-    None,
-  ).unwrap()
+  let readme = @member.make("docs/README.md", File(file), Some(0o644), None).unwrap()
   let archive = @lib.Archive::empty().add(dir).add(readme)
   match archive.to_bytes(None) {
     Ok(zip_bytes) => {
