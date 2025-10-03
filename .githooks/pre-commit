@@ -28,7 +28,24 @@ echo "📁 Found staged MoonBit files:"
 echo "$STAGED_FILES" | sed 's/^/   - /'
 echo ""
 
-# Run formatting first
+# Run moon info to update pkg.generated.mbti files
+echo "ℹ️  Running 'moon info'..."
+if ! moon info; then
+    echo "❌ 'moon info' failed! Please check the output above."
+    exit 1
+fi
+
+# Check if moon info changed any files
+CHANGED_FILES=$(git diff --name-only | grep -E '\.(mbt|mbti)$' || true)
+if [ -n "$CHANGED_FILES" ]; then
+    echo "⚠️  'moon info' updated generated files. Please stage them:"
+    echo "$CHANGED_FILES" | sed 's/^/   - /'
+    echo ""
+    echo "💡 Run: git add . && git commit"
+    exit 1
+fi
+
+# Run formatting
 echo "🎨 Running 'moon fmt'..."
 if ! moon fmt; then
     echo "❌ Formatting failed! Please check the output above."
@@ -68,21 +85,35 @@ else
     echo "   $CHECK_OUTPUT"
 fi
 
-# Optional: Run tests on changed modules (uncomment if desired)
-# echo "🧪 Running tests for changed modules..."
-# for file in $STAGED_FILES; do
-#     MODULE_DIR=$(dirname "$file")
-#     if [ -f "$MODULE_DIR/moon.pkg.json" ]; then
-#         echo "   Testing $MODULE_DIR..."
-#         if ! (cd "$MODULE_DIR" && moon test); then
-#             echo "❌ Tests failed in $MODULE_DIR"
-#             exit 1
-#         fi
-#     fi
-# done
+# Run tests
+echo "🧪 Running 'moon test'..."
+TEST_OUTPUT=$(moon test 2>&1)
+TEST_EXIT_CODE=$?
+
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "❌ Pre-commit hook failed!"
+    echo "   Tests failed. Please fix failing tests before committing:"
+    echo ""
+    echo "📝 Test output:"
+    echo "$TEST_OUTPUT" | sed 's/^/   /'
+    echo ""
+    echo "💡 What to do:"
+    echo "   - Review the test failures above"
+    echo "   - Fix the failing tests or update them if behavior changed"
+    echo "   - Run 'moon test' locally to verify fixes"
+    echo "   - If tests are intentionally failing, consider using:"
+    echo "     git commit --no-verify (use with caution)"
+    echo ""
+    exit 1
+else
+    echo "   $TEST_OUTPUT"
+fi
 
 echo "✅ All checks passed! Proceeding with commit..."
 echo "   📁 Files: $(echo "$STAGED_FILES" | wc -l | xargs) MoonBit files"
+echo "   ℹ️  Info updated: ✓"
 echo "   🎨 Formatted: ✓"
 echo "   📋 Checked: ✓"
+echo "   🧪 Tested: ✓"
 echo ""
