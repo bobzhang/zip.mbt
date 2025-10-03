@@ -24,7 +24,7 @@ The `types` package provides common type definitions and utilities used througho
 
 #### `pub enum Compression`
 
-```moonbit
+```
 pub enum Compression {
   Stored    // No compression (method 0)
   Deflate   // DEFLATE compression (method 8)
@@ -36,7 +36,7 @@ Represents ZIP compression methods.
 
 #### Functions
 
-```moonbit
+```
 pub fn Compression::from_int(method : Int) -> Compression
 pub fn Compression::to_int(self : Compression) -> Int
 ```
@@ -55,7 +55,7 @@ POSIX timestamp (seconds since 1970-01-01 00:00:00 UTC).
 
 #### Constants
 
-```moonbit
+```
 pub let dos_epoch : Ptime  // 1980-01-01 00:00:00 UTC
 ```
 
@@ -97,19 +97,19 @@ File path type (re-exported from `types/fpath`).
 
 #### Functions
 
-```moonbit
+```
 pub fn fpath_ensure_unix(path : Fpath) -> Fpath
 ```
 
 Convert Windows-style paths (`\`) to Unix-style (`/`).
 
-```moonbit
+```
 pub fn fpath_ensure_directoryness(path : Fpath) -> Fpath
 ```
 
 Ensure directory paths end with `/`.
 
-```moonbit
+```
 pub fn fpath_sanitize(path : Fpath) -> Fpath
 ```
 
@@ -120,20 +120,23 @@ Remove redundant separators and normalize path.
 ### Compression Types
 
 ```moonbit
-// Create from ZIP method code
-let compression = Compression::from_int(8)  // DEFLATE
-match compression {
-  Stored => println("No compression")
-  Deflate => println("DEFLATE compression")
+test {
+  // Create from ZIP method code
+  let compression = Compression::from_int(8)  // DEFLATE
+  
+  // Convert to method code
+  let method_code = compression.to_int()
+  @json.inspect(method_code, content=8)
+  
+  // Test stored compression
+  let stored = Compression::from_int(0)
+  @json.inspect(stored.to_int(), content=0)
 }
-
-// Convert to method code
-let method = compression.to_int()  // 8
 ```
 
 ### Time Conversion
 
-```moonbit
+```
 // Get current time as POSIX timestamp
 let now : Ptime = current_time()
 
@@ -150,14 +153,14 @@ println("Modified: \{ptime_format(mtime)}")
 
 ### Date/Time Components
 
-```moonbit
+```
 let ((year, month, day), (hour, minute, second)) = ptime_to_date_time(now)
 println("\{year}-\{month}-\{day} \{hour}:\{minute}:\{second}")
 ```
 
 ### File Paths
 
-```moonbit
+```
 // Normalize Windows path
 let path = fpath_ensure_unix("dir\\subdir\\file.txt")
 // Result: "dir/subdir/file.txt"
@@ -193,7 +196,7 @@ Bits 4-0:   Second / 2 (0-29, representing 0-58 seconds)
 
 ### Example
 
-```moonbit
+```
 // October 2, 2025, 14:30:45
 // DOS Date: (2025-1980) << 9 | 10 << 5 | 2 = 0x5A82
 // DOS Time: 14 << 11 | 30 << 5 | (45/2) = 0x73D6
