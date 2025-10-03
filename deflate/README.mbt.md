@@ -23,7 +23,7 @@ The `deflate` package implements the complete DEFLATE compression algorithm (RFC
 ## Compression Formats
 
 ### 1. Stored Blocks (No Compression)
-```moonbit
+```
 deflate_stored(bytes, start, len) -> Bytes
 ```
 - No compression, just wraps data in DEFLATE format
@@ -31,7 +31,7 @@ deflate_stored(bytes, start, len) -> Bytes
 - 5 bytes overhead per 65535-byte block
 
 ### 2. Fixed Huffman
-```moonbit
+```
 deflate_fixed(bytes, start, len, is_final, good_match, max_chain) -> Bytes
 ```
 - Uses predefined Huffman trees (RFC 1951)
@@ -40,7 +40,7 @@ deflate_fixed(bytes, start, len, is_final, good_match, max_chain) -> Bytes
 - Combines LZ77 + Fixed Huffman
 
 ### 3. Dynamic Huffman
-```moonbit
+```
 deflate_dynamic(bytes, start, len, is_final, good_match, max_chain) -> Bytes
 ```
 - Builds optimal Huffman trees for the data
@@ -116,7 +116,7 @@ Compress using LZ77 + Dynamic Huffman.
 
 #### Symbol Conversion
 
-```moonbit
+```
 pub fn length_to_symbol(length : Int) -> Int
 pub fn distance_to_symbol(dist : Int) -> Int
 ```
@@ -125,7 +125,7 @@ Convert LZ77 match lengths/distances to DEFLATE symbols.
 
 #### Huffman Encoding
 
-```moonbit
+```
 pub fn write_literal_symbol(writer, encoder, symbol) -> Unit
 pub fn write_length_distance(writer, litlen_encoder, dist_encoder, length, distance) -> Unit
 ```
@@ -137,21 +137,27 @@ Low-level functions for writing Huffman-encoded symbols.
 ### Basic Compression
 
 ```moonbit
-// Compress with default settings
-let compressed = deflate_dynamic(
-  data, 0, data.length(),
-  true,      // is_final block
-  8,         // good_match (balanced)
-  1024       // max_chain (balanced)
-)
+test {
+  let data = b"Hello, DEFLATE compression!"
+  
+  // Compress with default settings
+  let compressed = deflate_dynamic(
+    data, 0, data.length(),
+    true,      // is_final block
+    8,         // good_match (balanced)
+    1024       // max_chain (balanced)
+  )
 
-// Decompress
-let decompressed = inflate(compressed, 0, compressed.length(), None)
+  // Decompress
+  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  
+  @json.inspect(decompressed.length(), content=27)
+}
 ```
 
 ### With Checksums
 
-```moonbit
+```
 // Compress and get CRC-32
 let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 1024)
 let (decompressed, crc) = inflate_and_crc32(
@@ -161,7 +167,7 @@ let (decompressed, crc) = inflate_and_crc32(
 
 ### Compression Levels
 
-```moonbit
+```
 // Fast compression (Level 1)
 let fast = deflate_fixed(data, 0, len, true, 4, 128)
 
@@ -174,7 +180,7 @@ let best = deflate_dynamic(data, 0, len, true, 32, 4096)
 
 ### Multi-Block Compression
 
-```moonbit
+```
 let block_size = 32768
 let blocks = []
 
