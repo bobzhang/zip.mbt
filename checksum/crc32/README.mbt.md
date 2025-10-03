@@ -18,9 +18,7 @@ The `crc32` package implements the CRC-32 checksum algorithm as used in ZIP arch
 
 ### Types
 
-```moonbit
-pub typealias UInt32 as Crc32
-```
+
 
 Type alias for CRC-32 values (32-bit unsigned integer).
 
@@ -51,7 +49,7 @@ Validate a CRC-32 checksum.
 
 The CRC-32 computation follows this pattern:
 
-```moonbit
+```
 crc = 0xFFFFFFFF
 for each byte b:
   crc = (crc >> 8) ^ table[(crc ^ b) & 0xFF]
@@ -63,14 +61,11 @@ The lookup table is precomputed using the IEEE 802.3 polynomial: `0xEDB88320`
 ## Usage Example
 
 ```moonbit
-let data = b"Hello, World!"
-let crc = bytes_crc32(data, 0, data.length())
-println("CRC-32: 0x\{crc.to_int().to_hex()}")
-
-// Validate checksum
-match check_crc32(expected_crc, crc) {
-  Ok(_) => println("CRC valid")
-  Err(msg) => println("CRC error: \{msg}")
+test {
+  let data = b"Hello, World!"
+  let crc = bytes_crc32(data, 0, data.length())
+  println("CRC-32: 0x\{crc.reinterpret_as_int().to_string(radix=16)}")
+  @json.inspect(crc, content=3964322768)
 }
 ```
 
