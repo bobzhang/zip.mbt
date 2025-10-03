@@ -6,9 +6,13 @@
 
 ///|
 /// Constants for DEFLATE Huffman coding
-let litlen_sym_max : Int = 285  // Maximum literal/length symbol
-let litlen_sym_fixed_max : Int = 287  // Max for fixed Huffman
-let dist_sym_max : Int = 29  // Maximum distance symbol
+let litlen_sym_max : Int = 285 // Maximum literal/length symbol
+
+///|
+let litlen_sym_fixed_max : Int = 287 // Max for fixed Huffman
+
+///|
+let dist_sym_max : Int = 29 // Maximum distance symbol
 
 ///|
 /// Huffman decoder for inflate (decompression)
@@ -254,31 +258,30 @@ pub let fixed_litlen_encoder : HuffmanEncoder = {
   // Symbols 144-255: 9 bits, codes 110010000-111111111 (0x190-0x1FF)
   // Symbols 256-279: 7 bits, codes 0000000-0010111    (0x00-0x17)
   // Symbols 280-287: 8 bits, codes 11000000-11000111  (0xC0-0xC7)
-  
+
   // Symbols 256-279: 7 bits (0000000-0010111)
   for i = 256; i <= 279; i = i + 1 {
     let code = reverse_bits(i - 256, 7)
     encoder.set(i, sym_info_make(code, 7))
   }
-  
+
   // Symbols 0-143: 8 bits (00110000-10111111)
   for i = 0; i <= 143; i = i + 1 {
     let code = reverse_bits(0x30 + i, 8)
     encoder.set(i, sym_info_make(code, 8))
   }
-  
+
   // Symbols 280-287: 8 bits (11000000-11000111)
   for i = 280; i <= 287; i = i + 1 {
     let code = reverse_bits(0xC0 + (i - 280), 8)
     encoder.set(i, sym_info_make(code, 8))
   }
-  
+
   // Symbols 144-255: 9 bits (110010000-111111111)
   for i = 144; i <= 255; i = i + 1 {
     let code = reverse_bits(0x190 + (i - 144), 9)
     encoder.set(i, sym_info_make(code, 9))
   }
-  
   encoder.max_sym = litlen_sym_max
   encoder
 }
@@ -288,13 +291,12 @@ pub let fixed_litlen_encoder : HuffmanEncoder = {
 /// All 32 distance symbols use 5 bits
 pub let fixed_dist_encoder : HuffmanEncoder = {
   let encoder = HuffmanEncoder::new()
-  
+
   // All 32 symbols (0-31) use 5 bits
   for i = 0; i < 32; i = i + 1 {
     let code = reverse_bits(i, 5)
     encoder.set(i, sym_info_make(code, 5))
   }
-  
   encoder.max_sym = dist_sym_max
   encoder
 }

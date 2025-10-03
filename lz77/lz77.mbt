@@ -8,11 +8,23 @@
 
 // LZ77 constants
 pub let min_match_len : Int = 3 // Minimum match length
+
+///|
 pub let max_match_len : Int = 258 // Maximum match length (same as length_max)
+
+///|
 let max_match_dist : Int = 32768 // Maximum back-reference distance
+
+///|
 pub let window_size : Int = 32768 // Sliding window size
+
+///|
 let hash_bit_size : Int = 15 // Hash table size = 2^15 = 32768
+
+///|
 pub let hash_size : Int = 32768 // 1 << hash_bit_size
+
+///|
 pub let no_pos : Int = -1 // Marker for no position
 
 ///|
@@ -24,19 +36,24 @@ pub fn hash4(bytes : Bytes, i : Int) -> Int {
   let b1 = bytes[i + 1].to_int()
   let b2 = bytes[i + 2].to_int()
   let b3 = bytes[i + 3].to_int()
-  let v = b0.lor(b1 << 8).lor(b2 << 16).lor(b3 << 24)
-  
+  let v = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+
   // Fibonacci hash: multiply by golden ratio approximation
   let hmul = 0x9E3779B1 // 2^32 / phi, where phi = golden ratio
   let product = v * hmul
-  
+
   // Take upper bits (shift right to get most significant bits)
-  (product >> (32 - hash_bit_size)).land(0x7FFF) // Keep 15 bits
+  (product >> (32 - hash_bit_size)) & 0x7FFF // Keep 15 bits
 }
 
 ///|
 /// Insert position into hash chain
-pub fn insert_hash(hash_head : Array[Int], hash_prev : Array[Int], hash : Int, pos : Int) -> Unit {
+pub fn insert_hash(
+  hash_head : Array[Int],
+  hash_prev : Array[Int],
+  hash : Int,
+  pos : Int,
+) -> Unit {
   hash_prev[pos.mod(window_size)] = hash_head[hash]
   hash_head[hash] = pos
 }
@@ -58,7 +75,13 @@ fn match_bwd(bytes : Bytes, i : Int, j : Int, len : Int) -> Int {
 ///|
 /// Match bytes forward from positions i and j, up to max_match_len
 /// Returns the length of the match
-pub fn match_fwd(bytes : Bytes, i : Int, j : Int, len : Int, max_match_len : Int) -> Int {
+pub fn match_fwd(
+  bytes : Bytes,
+  i : Int,
+  j : Int,
+  len : Int,
+  max_match_len : Int,
+) -> Int {
   if len >= max_match_len {
     return len
   }
@@ -81,15 +104,14 @@ pub fn find_match_length(
   i : Int,
   j : Int,
   prev_match_len : Int,
-  max_match_len : Int
+  max_match_len : Int,
 ) -> Int {
   let newi = i + prev_match_len
   let newj = j + prev_match_len
-  
   if newi >= bytes.length() || newj >= bytes.length() {
     return 0
   }
-  
+
   // Check backward from prev_match_len position
   if match_bwd(bytes, newi, newj, prev_match_len) < 0 {
     // Backward match succeeded, try forward
@@ -104,22 +126,24 @@ pub fn find_match_length(
 /// Packed into a single Int: (distance << 16) | length
 /// If distance == 0, it's a literal (length is the byte value)
 pub fn make_backref(dist : Int, len : Int) -> Int {
-  (dist << 16).lor(len)
+  (dist << 16) | len
 }
 
+///|
 pub fn backref_dist(bref : Int) -> Int {
   // Extract upper 16 bits, handling the bit pattern correctly
-  let bits = bref.land(-65536) // Mask to keep only upper 16 bits
+  let bits = bref & -65536 // Mask to keep only upper 16 bits
   if bits < 0 {
     // Negative means bit 31 was set, need to handle as unsigned
-    (bits >> 16).land(0xFFFF)
+    (bits >> 16) & 0xFFFF
   } else {
     bits >> 16
   }
 }
 
+///|
 pub fn backref_len(bref : Int) -> Int {
-  bref.land(0xFFFF)
+  bref & 0xFFFF
 }
 
 ///|
@@ -138,7 +162,7 @@ pub fn find_backref(
   prev_match_len : Int,
   max_match_len : Int,
   good_match : Int,
-  max_chain_len : Int
+  max_chain_len : Int,
 ) -> Int {
   // Adjust prev_match_len: we want at least min_match_len
   let prev_len = if prev_match_len == 0 {
@@ -146,21 +170,26 @@ pub fn find_backref(
   } else {
     prev_match_len
   }
-  
+
   // Early exit if already at max
   if prev_len >= max_match_len {
     return 0
   }
-  
+
   // Adjust chain length based on match quality
   let chain_steps = if prev_len >= good_match {
     max_chain_len / 4 // Reduce effort if we already have a good match
   } else {
     max_chain_len
   }
-  
+
   // Search the hash chain for best match
-  fn search_chain(chain_left : Int, i : Int, match_pos : Int, best_len : Int) -> Int {
+  fn search_chain(
+    chain_left : Int,
+    i : Int,
+    match_pos : Int,
+    best_len : Int,
+  ) -> Int {
     if i == no_pos || chain_left == 0 || pos - i > max_match_dist {
       // End of chain or out of range
       if match_pos == no_pos {
@@ -171,7 +200,6 @@ pub fn find_backref(
     } else {
       // Try to find match at position i
       let len = find_match_length(bytes, i, pos, best_len, max_match_len)
-      
       if len == max_match_len {
         // Found maximum possible match, stop searching
         make_backref(pos - i, len)
@@ -186,7 +214,7 @@ pub fn find_backref(
       }
     }
   }
-  
+
   let start_i = hash_head[hash]
   search_chain(chain_steps, start_i, no_pos, prev_len)
 }

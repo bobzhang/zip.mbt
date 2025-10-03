@@ -16,7 +16,11 @@ pub fn BitWriter::new(dst : @buffer.ByteBuf) -> BitWriter {
 ///|
 /// Write N bits to the output stream (N <= 16)
 /// Bits are written LSB first (as required by deflate format)
-pub fn BitWriter::write_bits(self : BitWriter, value : Int, count : Int) -> Unit {
+pub fn BitWriter::write_bits(
+  self : BitWriter,
+  value : Int,
+  count : Int,
+) -> Unit {
   self.bits = self.bits | (value << self.bits_len)
   self.bits_len = self.bits_len + count
   // Flush complete bytes

@@ -10,7 +10,6 @@ pub(all) enum Compression {
   Other(Int) // Unknown compression method
 } derive(Eq, Show)
 
-
 ///|
 /// Convert compression format to ZIP method number
 pub fn Compression::to_int(self : Compression) -> Int {

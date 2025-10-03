@@ -60,8 +60,8 @@ test "crc32_update_byte" {
 /// Test CRC-32 with partial data
 test "crc32_partial" {
   let data = b"hello world"
-  let crc_hello = bytes_crc32(data, 0, 5)  // Just "hello"
-  let crc_world = bytes_crc32(data, 6, 5)  // Just "world"
+  let crc_hello = bytes_crc32(data, 0, 5) // Just "hello"
+  let crc_world = bytes_crc32(data, 6, 5) // Just "world"
   // These should be different
   @json.inspect(crc_hello != crc_world, content=true)
 }

@@ -32,8 +32,8 @@ test "adler32_incremental" {
 /// Test Adler-32 with partial data
 test "adler32_partial" {
   let data = b"hello world"
-  let adler_hello = bytes_adler32(data, 0, 5)  // Just "hello"
-  let adler_world = bytes_adler32(data, 6, 5)  // Just "world"
+  let adler_hello = bytes_adler32(data, 0, 5) // Just "hello"
+  let adler_world = bytes_adler32(data, 6, 5) // Just "world"
   // These should be different
   @json.inspect(adler_hello != adler_world, content=true)
 }
@@ -53,16 +53,13 @@ test "adler32_single_byte" {
 test "adler32_check" {
   let result_success = check_adler32(0x12345678, 0x12345678)
   let result_failure = check_adler32(0x12345678, 0x87654321)
-  
   let success_ok = match result_success {
     Ok(_) => true
     Err(_) => false
   }
-  
   let failure_err = match result_failure {
     Ok(_) => false
     Err(msg) => msg.contains("mismatch")
   }
-  
   @json.inspect((success_ok, failure_err), content=[true, true])
 }

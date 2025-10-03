@@ -26,7 +26,12 @@ test "bitwriter_multi_byte" {
   writer.flush()
   let result = buf.contents()
   @json.inspect(
-    (result.length(), result[0].to_int(), result[1].to_int(), result[2].to_int()),
+    (
+      result.length(),
+      result[0].to_int(),
+      result[1].to_int(),
+      result[2].to_int(),
+    ),
     content=[3, 255, 171, 5],
   )
 }
