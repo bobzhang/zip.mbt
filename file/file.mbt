@@ -26,16 +26,116 @@ fn UInt::to_hex_string(self : UInt) -> String {
 
 ///|
 /// File data in a ZIP archive
+///
+/// Represents a single file entry with its compressed data and metadata.
+/// This struct stores the essential information from both the Local File Header
+/// and Central Directory File Header as defined in the ZIP specification.
+///
+/// # ZIP Format Background
+/// The ZIP file format stores files in a specific structure:
+/// 1. Local file header + compressed data (for each file)
+/// 2. Central directory (index of all files)
+/// 3. End of central directory record (EOCD)
+///
+/// This struct combines the metadata from these structures.
 pub struct File {
+  /// Version made by (2 bytes as per ZIP spec)
+  ///
+  /// Upper byte: host system (0=DOS, 3=UNIX, etc.)
+  /// Lower byte: PKZIP version (e.g., 20 = v2.0, 45 = v4.5)
+  ///
+  /// Default: 0x0314 = (3 << 8) | 20 = UNIX + PKZIP 2.0
+  ///
+  /// This field indicates the system and software version that created
+  /// the ZIP entry, which can affect how file attributes are interpreted.
   version_made_by : UInt16
+  /// Version needed to extract (2 bytes as per ZIP spec)
+  ///
+  /// Minimum PKZIP version required to extract this file.
+  /// - 10 = PKZIP 1.0 (stored/shrunk)
+  /// - 20 = PKZIP 2.0 (deflate compression)
+  /// - 45 = PKZIP 4.5 (ZIP64 extensions)
+  ///
+  /// Default: 20 (PKZIP 2.0 for deflate support)
+  ///
+  /// This ensures compatibility by declaring the minimum version needed
+  /// to properly extract and decompress the file data.
   version_needed_to_extract : UInt16
+  /// General purpose bit flags (2 bytes as per ZIP spec)
+  ///
+  /// Bit 0: if set, file is encrypted
+  /// Bit 1-2: compression-specific flags
+  /// Bit 3: if set, CRC-32 and sizes are in data descriptor after file data
+  /// Bit 11 (0x800): if set, filename and comment are UTF-8 encoded
+  ///
+  /// Default: 0x0800 (UTF-8 encoding enabled)
+  ///
+  /// These flags control various aspects of file handling, encryption,
+  /// and character encoding in the ZIP archive.
   gp_flags : UInt16
+  /// Compression method (enum mapped to ZIP spec values)
+  ///
+  /// ZIP specification compression methods:
+  /// - 0 = Stored (no compression)
+  /// - 8 = Deflate (RFC 1951)
+  /// - 12 = Bzip2
+  /// - 14 = LZMA
+  /// - 93 = Zstandard
+  /// - 95 = XZ
+  ///
+  /// This implementation primarily supports Stored (0) and Deflate (8).
+  /// The Compression enum provides type-safe access to these values.
   compression : Compression
-  start : Int // Start offset in compressed_bytes
-  compressed_size : Int // Size in compressed_bytes
-  compressed_bytes : Bytes // The actual compressed data
-  decompressed_size : Int // Expected size when decompressed
-  decompressed_crc32 : UInt // Expected CRC-32 of decompressed data
+  /// Start offset within compressed_bytes buffer
+  ///
+  /// When compressed_bytes contains multiple files or has a header,
+  /// this indicates where this file's compressed data actually begins.
+  /// Allows sharing a single Bytes buffer among multiple Files.
+  ///
+  /// For standalone file data, this is typically 0.
+  start : Int
+  /// Compressed size in bytes
+  ///
+  /// The actual number of bytes occupied by the compressed data
+  /// in the compressed_bytes buffer, starting from the 'start' offset.
+  ///
+  /// Must not exceed max_file_size (2^32 - 1 = 4GB) for non-ZIP64 archives.
+  /// For ZIP64 archives, larger sizes are stored in extra fields.
+  compressed_size : Int
+  /// The compressed data buffer
+  ///
+  /// Contains the actual compressed file data. This may be:
+  /// - The complete compressed stream for this file
+  /// - A shared buffer containing multiple files' data
+  /// - The original ZIP archive's raw bytes
+  ///
+  /// Use 'start' and 'compressed_size' to extract this file's data.
+  /// Call to_bytes() to decompress and verify the data.
+  compressed_bytes : Bytes
+  /// Uncompressed size in bytes
+  ///
+  /// The expected size of the file after decompression.
+  /// Used to:
+  /// - Pre-allocate output buffers during decompression
+  /// - Validate decompression completed successfully
+  /// - Display file sizes to users
+  ///
+  /// Must match the actual decompressed data size for integrity.
+  /// Must not exceed max_file_size (4GB) for non-ZIP64 archives.
+  decompressed_size : Int
+  /// CRC-32 checksum of uncompressed data
+  ///
+  /// IEEE 802.3 CRC-32 polynomial (0xEDB88320) as defined in RFC 1952.
+  /// Computed on the uncompressed file data for integrity verification.
+  ///
+  /// During extraction:
+  /// 1. File is decompressed
+  /// 2. CRC-32 is calculated on decompressed data
+  /// 3. Result is compared with this stored value
+  /// 4. Mismatch indicates data corruption
+  ///
+  /// This is the primary integrity check in the ZIP format.
+  decompressed_crc32 : UInt
 }
 
 ///|
