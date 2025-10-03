@@ -24,8 +24,8 @@ test "ptime_to_date_time" {
 test "ptime_dos_roundtrip" {
   // Test DOS date/time roundtrip
   // 2000-06-15 14:30:00
-  let dos_date = 15 | (6 << 5) | ((2000 - 1980) << 9) // day=15, month=6, year=2000
-  let dos_time = 0 | (30 << 5) | (14 << 11) // sec=0, min=30, hour=14
+  let dos_date : UInt16 = 15 | (6 << 5) | ((2000 - 1980) << 9) // day=15, month=6, year=2000
+  let dos_time : UInt16 = 0 | (30 << 5) | (14 << 11) // sec=0, min=30, hour=14
   let ptime = ptime_of_dos_date_time(dos_date, dos_time)
   let (dos_date2, dos_time2) = ptime_to_dos_date_time(ptime)
   @json.inspect((dos_date == dos_date2, dos_time == dos_time2), content=[

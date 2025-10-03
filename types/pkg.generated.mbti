@@ -12,11 +12,11 @@ fn fpath_sanitize(String) -> String
 
 fn ptime_format(Int) -> String
 
-fn ptime_of_dos_date_time(Int, Int) -> Int
+fn ptime_of_dos_date_time(UInt16, UInt16) -> Int
 
 fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
 
-fn ptime_to_dos_date_time(Int) -> (Int, Int)
+fn ptime_to_dos_date_time(Int) -> (UInt16, UInt16)
 
 // Errors
 

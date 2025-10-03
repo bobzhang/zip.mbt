@@ -722,8 +722,8 @@ fn parse_central_dir_entry(
   let version_needed = read_uint16_le(data, pos + 6)
   let gp_flags = read_uint16_le(data, pos + 8)
   let compression_method = read_uint16_le(data, pos + 10).to_int()
-  let dos_time = read_uint16_le(data, pos + 12).to_int()
-  let dos_date = read_uint16_le(data, pos + 14).to_int()
+  let dos_time = read_uint16_le(data, pos + 12)
+  let dos_date = read_uint16_le(data, pos + 14)
   let crc32 = read_uint32_le(data, pos + 16)
   let compressed_size = read_uint32_le(data, pos + 20).reinterpret_as_int()
   let uncompressed_size = read_uint32_le(data, pos + 24).reinterpret_as_int()
@@ -910,9 +910,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, 0) // compression method (stored)
         pos = pos + 2
-        write_uint16_le(result, pos, dos_time.to_uint16()) // last mod time
+        write_uint16_le(result, pos, dos_time) // last mod time
         pos = pos + 2
-        write_uint16_le(result, pos, dos_date.to_uint16())
+        write_uint16_le(result, pos, dos_date)
         pos = pos + 2
         write_uint32_le(result, pos, (0 : UInt)) // CRC-32
         pos = pos + 4
@@ -945,9 +945,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, f.compression.to_int().to_uint16())
         pos = pos + 2
-        write_uint16_le(result, pos, dos_time.to_uint16())
+        write_uint16_le(result, pos, dos_time)
         pos = pos + 2
-        write_uint16_le(result, pos, dos_date.to_uint16())
+        write_uint16_le(result, pos, dos_date)
         pos = pos + 2
         write_uint32_le(result, pos, f.decompressed_crc32)
         pos = pos + 4
@@ -1025,9 +1025,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, 0) // compression
         pos = pos + 2
-        write_uint16_le(result, pos, dos_time.to_uint16())
+        write_uint16_le(result, pos, dos_time)
         pos = pos + 2
-        write_uint16_le(result, pos, dos_date.to_uint16())
+        write_uint16_le(result, pos, dos_date)
         pos = pos + 2
         write_uint32_le(result, pos, (0 : UInt)) // CRC
         pos = pos + 4
@@ -1069,9 +1069,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, f.compression.to_int().to_uint16())
         pos = pos + 2
-        write_uint16_le(result, pos, dos_time.to_uint16())
+        write_uint16_le(result, pos, dos_time)
         pos = pos + 2
-        write_uint16_le(result, pos, dos_date.to_uint16())
+        write_uint16_le(result, pos, dos_date)
         pos = pos + 2
         write_uint32_le(result, pos, f.decompressed_crc32)
         pos = pos + 4
