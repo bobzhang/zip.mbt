@@ -19,7 +19,7 @@ The `fpath` package provides utilities for manipulating and normalizing file pat
 
 ### Types
 
-```moonbit
+```
 pub typealias String as Fpath
 ```
 
@@ -37,9 +37,11 @@ Convert any path to Unix-style (forward slashes).
 
 **Example:**
 ```moonbit
-let windows_path = "C:\\Users\\name\\file.txt"
-let unix_path = fpath_ensure_unix(windows_path)
-// Result: "C:/Users/name/file.txt"
+test {
+  let windows_path = "C:\\Users\\name\\file.txt"
+  let unix_path = ensure_unix(windows_path)
+  @json.inspect(unix_path, content="C:/Users/name/file.txt")
+}
 ```
 
 #### `fpath_ensure_directoryness(path : Fpath) -> Fpath`
@@ -52,7 +54,7 @@ Ensure directory paths end with `/`.
 - `mydir/subdir` → `mydir/subdir/`
 
 **Example:**
-```moonbit
+```
 let dir = "src/main"
 let dir_path = fpath_ensure_directoryness(dir)
 // Result: "src/main/"
@@ -68,7 +70,7 @@ Remove redundant path separators and normalize `.` components.
 - `./dir/file.txt` → `dir/file.txt`
 
 **Example:**
-```moonbit
+```
 let messy_path = "src//./main///utils/./file.txt"
 let clean_path = fpath_sanitize(messy_path)
 // Result: "src/main/utils/file.txt"
@@ -78,7 +80,7 @@ let clean_path = fpath_sanitize(messy_path)
 
 ### Creating ZIP-Compatible Paths
 
-```moonbit
+```
 // Windows input
 let user_path = "Documents\\Projects\\src\\main.mbt"
 
@@ -90,7 +92,7 @@ let clean_path = fpath_sanitize(zip_path)
 
 ### Directory Handling
 
-```moonbit
+```
 // Create directory entry
 let dir_name = "src/utils"
 let dir_path = fpath_ensure_directoryness(
@@ -103,7 +105,7 @@ let dir_path = fpath_ensure_directoryness(
 
 ### Path Pipeline
 
-```moonbit
+```
 fn normalize_for_zip(path : String) -> Fpath {
   path
   |> fpath_sanitize
@@ -175,7 +177,7 @@ Output: "dir/subdir/"
 ## Common Patterns
 
 ### File Entry Path
-```moonbit
+```
 fn make_file_path(raw_path : String) -> Fpath {
   raw_path
   |> fpath_sanitize      // Clean up
@@ -184,7 +186,7 @@ fn make_file_path(raw_path : String) -> Fpath {
 ```
 
 ### Directory Entry Path
-```moonbit
+```
 fn make_dir_path(raw_path : String) -> Fpath {
   raw_path
   |> fpath_sanitize           // Clean up
@@ -194,7 +196,7 @@ fn make_dir_path(raw_path : String) -> Fpath {
 ```
 
 ### Full Normalization
-```moonbit
+```
 fn normalize_zip_path(raw_path : String, is_dir : Bool) -> Fpath {
   let path = raw_path
     |> fpath_sanitize
