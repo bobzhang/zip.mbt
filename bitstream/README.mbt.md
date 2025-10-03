@@ -20,9 +20,7 @@ The `bitstream` package provides `BitWriter` for writing data at the bit level, 
 
 ### Types
 
-```moonbit
-pub struct BitWriter
-```
+
 
 A bit-level output writer backed by a `ByteBuf`.
 
@@ -57,36 +55,40 @@ If there are partial bits (< 8), pads with zeros to reach a byte boundary.
 ## Usage Example
 
 ```moonbit
-let output = ByteBuf::new(100, false)
-let writer = BitWriter::new(output)
+test {
+  let output = @buffer.ByteBuf::new(100, false)
+  let writer = BitWriter::new(output)
 
-// Write a 3-bit value
-writer.write_bits(0b101, 3)  // Writes: 101
+  // Write a 3-bit value
+  writer.write_bits(0b101, 3)  // Writes: 101
 
-// Write a 5-bit value
-writer.write_bits(0b11010, 5)  // Writes: 11010
+  // Write a 5-bit value
+  writer.write_bits(0b11010, 5)  // Writes: 11010
 
-// At this point, 8 bits written, one byte flushed to ByteBuf: 0b01011101
+  // At this point, 8 bits written, one byte flushed to ByteBuf: 0b01011101
 
-// Write more bits
-writer.write_bits(0xFF, 7)  // Writes: 1111111
+  // Write more bits
+  writer.write_bits(0xFF, 7)  // Writes: 1111111
 
-// Flush remaining bits (pads to byte boundary)
-writer.flush()
+  // Flush remaining bits (pads to byte boundary)
+  writer.flush()
 
-let result = output.contents()
+  let result = output.contents()
+  @json.inspect(result.length(), content=2)
+  @json.inspect(result[0].to_int(), content=213) // 0b11010101
+}
 ```
 
 ## Bit Order
 
 DEFLATE uses **LSB-first** (little-endian) bit order:
 
-```moonbit
+```
 write_bits(0b110, 3)  // Writes bits: 0, 1, 1 (right to left)
 ```
 
 Example: Writing Huffman codes
-```moonbit
+```
 // Fixed Huffman code for 'A' (65): code=00110000 (8 bits)
 writer.write_bits(0b00110000, 8)
 
@@ -107,7 +109,7 @@ When `buffer_len >= 8`, the LSB byte is written to output and removed from buffe
 
 ### DEFLATE Block Header
 
-```moonbit
+```
 // Write block header: BFINAL=1, BTYPE=01 (fixed Huffman)
 let header = 0b011  // 1 (final), 01 (fixed)
 writer.write_bits(header, 3)
@@ -115,7 +117,7 @@ writer.write_bits(header, 3)
 
 ### Huffman Encoding
 
-```moonbit
+```
 // Write a Huffman code
 let code = 0b00110000  // 8-bit code
 let code_len = 8
@@ -127,7 +129,7 @@ writer.write_bits(extra_bits, extra_count)
 
 ### Dynamic Huffman Header
 
-```moonbit
+```
 // RFC 1951 dynamic block header
 writer.write_bits(hlit, 5)    // # of literal codes - 257
 writer.write_bits(hdist, 5)   // # of distance codes - 1
