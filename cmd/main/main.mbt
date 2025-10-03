@@ -2,6 +2,7 @@
 // This creates test ZIP files that can be verified with standard tools
 
 ///|
+#coverage.skip
 fn main {
   println("=== MoonBit ZIP Library Test ===\n")
 

@@ -2108,3 +2108,233 @@ test "adler32_and_deflate_api" {
     Err(_) => @json.inspect("should not fail", content="success")
   }
 }
+
+// ============================================================================
+// Additional coverage tests for error paths and edge cases
+// ============================================================================
+
+///|
+/// Test zlib decompression with too short data
+test "coverage_zlib_too_short" {
+  let data = b"short"
+  match zlib_decompress(data, 0, data.length()) {
+    Ok(_) => @json.inspect("should fail", content="error")
+    Err(msg) => @json.inspect(msg.contains("too short"), content=true)
+  }
+}
+
+///|
+/// Test zlib with invalid compression method
+test "coverage_zlib_invalid_method" {
+  let buf = Array::make(10, b'\x00')
+  buf[0] = b'\x79' // CM=9 (invalid)
+  buf[1] = b'\x9C'
+  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  match zlib_decompress(data, 0, data.length()) {
+    Ok(_) => @json.inspect("should fail", content="error")
+    Err(msg) => @json.inspect(msg.contains("compression method"), content=true)
+  }
+}
+
+///|
+/// Test zlib with invalid window size
+test "coverage_zlib_bad_window" {
+  let buf = Array::make(10, b'\x00')
+  buf[0] = b'\x88' // CINFO=8 (too large)
+  buf[1] = b'\x1E'
+  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  match zlib_decompress(data, 0, data.length()) {
+    Ok(_) => @json.inspect("should fail", content="error")
+    Err(msg) => @json.inspect(msg.contains("window size"), content=true)
+  }
+}
+
+///|
+/// Test zlib with bad header checksum
+test "coverage_zlib_bad_checksum" {
+  let buf = Array::make(10, b'\x00')
+  buf[0] = b'\x78'
+  buf[1] = b'\x00' // Wrong checksum
+  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  match zlib_decompress(data, 0, data.length()) {
+    Ok(_) => @json.inspect("should fail", content="error")
+    Err(msg) => @json.inspect(msg.contains("header checksum"), content=true)
+  }
+}
+
+///|
+/// Test zlib with preset dictionary
+test "coverage_zlib_dict" {
+  let buf = Array::make(10, b'\x00')
+  buf[0] = b'\x78'
+  buf[1] = b'\xBB' // FDICT=1
+  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  match zlib_decompress(data, 0, data.length()) {
+    Ok(_) => @json.inspect("should fail", content="error")
+    Err(msg) => @json.inspect(msg.contains("dictionary"), content=true)
+  }
+}
+
+///|
+/// Test archive with no magic signature
+test "coverage_archive_no_magic" {
+  let data = b"Not a ZIP file"
+  match Archive::of_bytes(data) {
+    Ok(_) => @json.inspect("should fail", content="error")
+    Err(msg) => @json.inspect(msg.contains("magic"), content=true)
+  }
+}
+
+///|
+/// Test archive too short for EOCD
+test "coverage_archive_too_short" {
+  let data = b"PK\x03\x04short"
+  match Archive::of_bytes(data) {
+    Ok(_) => @json.inspect("should fail", content="error")
+    Err(msg) => @json.inspect(msg.contains("end of central directory"), content=true)
+  }
+}
+
+///|
+/// Test file accessor methods
+test "coverage_file_accessors" {
+  let data = b"Accessor test"
+  match File::deflate_of_bytes(data, 0, data.length(), None) {
+    Ok(file) => {
+      let _c = file.compressed_bytes()
+      let _crc = file.decompressed_crc32()
+      let _v = file.version_needed_to_extract()
+      @json.inspect(file.can_extract(), content=true)
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Test member with early mtime (before DOS epoch)
+test "coverage_member_early_mtime" {
+  let early = dos_epoch - 86400 // One day before DOS epoch
+  let data = b"X"
+  match File::deflate_of_bytes(data, 0, data.length(), None) {
+    Ok(file) => {
+      match Member::make("test.txt", MemberKind::File(file), Some(0o644), Some(early)) {
+        Ok(m) => @json.inspect(m.mtime() >= dos_epoch, content=true)
+        Err(_) => @json.inspect("should not fail", content="success")
+      }
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Test member format_long with empty file
+test "coverage_member_empty_format" {
+  let data = b""
+  match File::deflate_of_bytes(data, 0, data.length(), None) {
+    Ok(file) => {
+      match Member::make("empty.txt", MemberKind::File(file), None, None) {
+        Ok(m) => @json.inspect(m.format_long().contains("0%"), content=true)
+        Err(_) => @json.inspect("should not fail", content="success")
+      }
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Test archive to_array
+test "coverage_archive_to_array" {
+  let a = Archive::empty()
+  match Member::make("dir/", MemberKind::Dir, None, None) {
+    Ok(d) => {
+      let a = a.add(d)
+      let data = b"F"
+      match File::deflate_of_bytes(data, 0, data.length(), None) {
+        Ok(file) => {
+          match Member::make("dir/f.txt", MemberKind::File(file), None, None) {
+            Ok(f) => {
+              let a = a.add(f)
+              @json.inspect(a.to_array().length(), content=2)
+            }
+            Err(_) => @json.inspect("should not fail", content="success")
+          }
+        }
+        Err(_) => @json.inspect("should not fail", content="success")
+      }
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Test archive to_bytes with first parameter
+test "coverage_archive_first" {
+  let a = Archive::empty()
+  let d1 = b"A"
+  let d2 = b"B"
+  match File::deflate_of_bytes(d1, 0, d1.length(), None) {
+    Ok(f1) => {
+      match File::deflate_of_bytes(d2, 0, d2.length(), None) {
+        Ok(f2) => {
+          match Member::make("a.txt", MemberKind::File(f1), None, None) {
+            Ok(m1) => {
+              match Member::make("z.txt", MemberKind::File(f2), None, None) {
+                Ok(m2) => {
+                  let a = a.add(m1).add(m2)
+                  match a.to_bytes(Some("z.txt")) {
+                    Ok(enc) => @json.inspect(enc.length() > 0, content=true)
+                    Err(_) => @json.inspect("should not fail", content="success")
+                  }
+                }
+                Err(_) => @json.inspect("should not fail", content="success")
+              }
+            }
+            Err(_) => @json.inspect("should not fail", content="success")
+          }
+        }
+        Err(_) => @json.inspect("should not fail", content="success")
+      }
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Test inflate_and_adler32
+test "coverage_inflate_adler32" {
+  let data = b"Inflate with Adler-32"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 8, 128)
+  let (dec, adler) = inflate_and_adler32(compressed, 0, compressed.length(), Some(data.length()))
+  @json.inspect((dec == data, adler == bytes_adler32(data, 0, data.length())), content=[true, true])
+}
+
+///|
+/// Test file to_bytes_no_crc_check
+test "coverage_no_crc_check" {
+  let data = b"No CRC check"
+  match File::deflate_of_bytes(data, 0, data.length(), None) {
+    Ok(file) => {
+      let (dec, crc) = file.to_bytes_no_crc_check()
+      @json.inspect((dec == data, crc == file.decompressed_crc32()), content=[true, true])
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Test large data triggering dynamic Huffman (>= 256 bytes)
+test "coverage_large_data_dynamic" {
+  let buf = Array::make(300, b'A')
+  for i = 0; i < 300; i = i + 1 {
+    buf[i] = (65 + i.mod(26)).to_byte()
+  }
+  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  match File::deflate_of_bytes(data, 0, data.length(), None) {
+    Ok(file) => {
+      let dec = file.to_bytes()
+      @json.inspect((dec.length(), dec == data), content=[300, true])
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
