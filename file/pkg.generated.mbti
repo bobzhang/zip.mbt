@@ -7,25 +7,25 @@ import(
 )
 
 // Values
-let gp_flag_default : Int
+let gp_flag_default : UInt16
 
-let gp_flag_encrypted : Int
+let gp_flag_encrypted : UInt16
 
-let gp_flag_utf8 : Int
+let gp_flag_utf8 : UInt16
 
 let max_file_size : Int64
 
-let version_made_by_default : Int
+let version_made_by_default : UInt16
 
-let version_needed_default : Int
+let version_needed_default : UInt16
 
 // Errors
 
 // Types and methods
 pub struct File {
-  version_made_by : Int
-  version_needed_to_extract : Int
-  gp_flags : Int
+  version_made_by : UInt16
+  version_needed_to_extract : UInt16
+  gp_flags : UInt16
   compression : @types.Compression
   start : Int
   compressed_size : Int
@@ -41,15 +41,15 @@ fn File::compression(Self) -> @types.Compression
 fn File::decompressed_crc32(Self) -> UInt
 fn File::decompressed_size(Self) -> Int
 fn File::deflate_of_bytes(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[Self, String]
-fn File::gp_flags(Self) -> Int
+fn File::gp_flags(Self) -> UInt16
 fn File::is_encrypted(Self) -> Bool
-fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, Int?, Int?, Int?) -> Result[Self, String]
+fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, UInt16?, UInt16?, UInt16?) -> Result[Self, String]
 fn File::start(Self) -> Int
 fn File::stored_of_bytes(Bytes, Int, Int) -> Result[Self, String]
 fn File::to_bytes(Self) -> Bytes
 fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt)
-fn File::version_made_by(Self) -> Int
-fn File::version_needed_to_extract(Self) -> Int
+fn File::version_made_by(Self) -> UInt16
+fn File::version_needed_to_extract(Self) -> UInt16
 
 // Type aliases
 pub typealias @types.Compression as Compression

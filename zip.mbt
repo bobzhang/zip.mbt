@@ -4,10 +4,6 @@
 // SPDX-License-Identifier: ISC
 
 ///|
-/// Unsigned integer types
-typealias Int as UInt16
-
-///|
 
 ///|
 /// CRC-32 and Adler-32 checksums - Re-exported from checksum packages
@@ -342,22 +338,22 @@ pub fn format_file_mode(mode : FileMode) -> String {
 pub typealias @file.File
 
 ///|
-pub let gp_flag_encrypted : Int = @file.gp_flag_encrypted
+pub let gp_flag_encrypted : UInt16 = @file.gp_flag_encrypted
 
 ///|
-pub let gp_flag_utf8 : Int = @file.gp_flag_utf8
+pub let gp_flag_utf8 : UInt16 = @file.gp_flag_utf8
 
 ///|
 pub let max_file_size : Int64 = @file.max_file_size
 
 ///|
-let gp_flag_default : Int = @file.gp_flag_default
+let gp_flag_default : UInt16 = @file.gp_flag_default
 
 ///|
-let version_made_by_default : Int = @file.version_made_by_default
+let version_made_by_default : UInt16 = @file.version_made_by_default
 
 ///|
-let version_needed_default : Int = @file.version_needed_default
+let version_needed_default : UInt16 = @file.version_needed_default
 
 ///|
 /// Archive Member - represents a file or directory in a ZIP archive
@@ -620,7 +616,7 @@ pub fn bytes_has_zip_magic(data : Bytes) -> Bool {
 
 ///|
 /// Helper to write 16-bit little-endian integer to array
-fn write_uint16_le(arr : Array[Byte], pos : Int, value : Int) -> Unit {
+fn write_uint16_le(arr : Array[Byte], pos : Int, value : UInt16) -> Unit {
   arr[pos] = (value & 0xFF).to_byte()
   arr[pos + 1] = ((value >> 8) & 0xFF).to_byte()
 }
@@ -651,8 +647,8 @@ let zip_central_dir_sig : Int = 0x02014b50
 
 ///|
 /// Helper to read 16-bit little-endian integer from bytes
-fn read_uint16_le(data : Bytes, pos : Int) -> Int {
-  data[pos].to_int() | (data[pos + 1].to_int() << 8)
+fn read_uint16_le(data : Bytes, pos : Int) -> UInt16 {
+  data[pos].to_uint16() | (data[pos + 1].to_uint16() << 8)
 }
 
 ///|
@@ -698,8 +694,8 @@ fn parse_eocd(data : Bytes, pos : Int) -> Result[(Int, Int, Int), String] {
   if disk != 0 || cd_disk != 0 {
     return Err("Multi-disk archives not supported")
   }
-  let entries_this_disk = read_uint16_le(data, pos + 8)
-  let entries_total = read_uint16_le(data, pos + 10)
+  let entries_this_disk = read_uint16_le(data, pos + 8).to_int()
+  let entries_total = read_uint16_le(data, pos + 10).to_int()
   if entries_this_disk != entries_total {
     return Err("Inconsistent entry count in EOCD")
   }
@@ -725,15 +721,15 @@ fn parse_central_dir_entry(
   let version_made_by = read_uint16_le(data, pos + 4)
   let version_needed = read_uint16_le(data, pos + 6)
   let gp_flags = read_uint16_le(data, pos + 8)
-  let compression_method = read_uint16_le(data, pos + 10)
-  let dos_time = read_uint16_le(data, pos + 12)
-  let dos_date = read_uint16_le(data, pos + 14)
+  let compression_method = read_uint16_le(data, pos + 10).to_int()
+  let dos_time = read_uint16_le(data, pos + 12).to_int()
+  let dos_date = read_uint16_le(data, pos + 14).to_int()
   let crc32 = read_uint32_le(data, pos + 16)
   let compressed_size = read_uint32_le(data, pos + 20).reinterpret_as_int()
   let uncompressed_size = read_uint32_le(data, pos + 24).reinterpret_as_int()
-  let filename_len = read_uint16_le(data, pos + 28)
-  let extra_len = read_uint16_le(data, pos + 30)
-  let comment_len = read_uint16_le(data, pos + 32)
+  let filename_len = read_uint16_le(data, pos + 28).to_int()
+  let extra_len = read_uint16_le(data, pos + 30).to_int()
+  let comment_len = read_uint16_le(data, pos + 32).to_int()
   let external_attrs = read_uint32_le(data, pos + 38)
   let local_header_offset = read_uint32_le(data, pos + 42).reinterpret_as_int()
 
@@ -782,8 +778,8 @@ fn parse_central_dir_entry(
   if local_sig != zip_local_file_sig.to_int64().to_int().reinterpret_as_uint() {
     return Err("Invalid local file header signature")
   }
-  let local_filename_len = read_uint16_le(data, local_header_offset + 26)
-  let local_extra_len = read_uint16_le(data, local_header_offset + 28)
+  let local_filename_len = read_uint16_le(data, local_header_offset + 26).to_int()
+  let local_extra_len = read_uint16_le(data, local_header_offset + 28).to_int()
   let data_offset = local_header_offset +
     30 +
     local_filename_len +
@@ -914,9 +910,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, 0) // compression method (stored)
         pos = pos + 2
-        write_uint16_le(result, pos, dos_time)
+        write_uint16_le(result, pos, dos_time.to_uint16()) // last mod time
         pos = pos + 2
-        write_uint16_le(result, pos, dos_date)
+        write_uint16_le(result, pos, dos_date.to_uint16())
         pos = pos + 2
         write_uint32_le(result, pos, (0 : UInt)) // CRC-32
         pos = pos + 4
@@ -924,7 +920,7 @@ pub fn Archive::to_bytes(
         pos = pos + 4
         write_uint32_le(result, pos, (0 : UInt)) // uncompressed size
         pos = pos + 4
-        write_uint16_le(result, pos, path_len) // file name length
+        write_uint16_le(result, pos, path_len.to_uint16()) // file name length
         pos = pos + 2
         write_uint16_le(result, pos, 0) // extra field length
         pos = pos + 2
@@ -947,11 +943,11 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, f.gp_flags)
         pos = pos + 2
-        write_uint16_le(result, pos, f.compression.to_int())
+        write_uint16_le(result, pos, f.compression.to_int().to_uint16())
         pos = pos + 2
-        write_uint16_le(result, pos, dos_time)
+        write_uint16_le(result, pos, dos_time.to_uint16())
         pos = pos + 2
-        write_uint16_le(result, pos, dos_date)
+        write_uint16_le(result, pos, dos_date.to_uint16())
         pos = pos + 2
         write_uint32_le(result, pos, f.decompressed_crc32)
         pos = pos + 4
@@ -967,7 +963,7 @@ pub fn Archive::to_bytes(
           f.decompressed_size.to_int64().to_int().reinterpret_as_uint(),
         )
         pos = pos + 4
-        write_uint16_le(result, pos, path_len)
+        write_uint16_le(result, pos, path_len.to_uint16())
         pos = pos + 2
         write_uint16_le(result, pos, 0) // extra field length
         pos = pos + 2
@@ -1029,9 +1025,9 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, 0) // compression
         pos = pos + 2
-        write_uint16_le(result, pos, dos_time)
+        write_uint16_le(result, pos, dos_time.to_uint16())
         pos = pos + 2
-        write_uint16_le(result, pos, dos_date)
+        write_uint16_le(result, pos, dos_date.to_uint16())
         pos = pos + 2
         write_uint32_le(result, pos, (0 : UInt)) // CRC
         pos = pos + 4
@@ -1039,7 +1035,7 @@ pub fn Archive::to_bytes(
         pos = pos + 4
         write_uint32_le(result, pos, (0 : UInt)) // uncompressed size
         pos = pos + 4
-        write_uint16_le(result, pos, path_len)
+        write_uint16_le(result, pos, path_len.to_uint16()) // file name length
         pos = pos + 2
         write_uint16_le(result, pos, 0) // extra field length
         pos = pos + 2
@@ -1071,11 +1067,11 @@ pub fn Archive::to_bytes(
         pos = pos + 2
         write_uint16_le(result, pos, f.gp_flags)
         pos = pos + 2
-        write_uint16_le(result, pos, f.compression.to_int())
+        write_uint16_le(result, pos, f.compression.to_int().to_uint16())
         pos = pos + 2
-        write_uint16_le(result, pos, dos_time)
+        write_uint16_le(result, pos, dos_time.to_uint16())
         pos = pos + 2
-        write_uint16_le(result, pos, dos_date)
+        write_uint16_le(result, pos, dos_date.to_uint16())
         pos = pos + 2
         write_uint32_le(result, pos, f.decompressed_crc32)
         pos = pos + 4
@@ -1091,7 +1087,7 @@ pub fn Archive::to_bytes(
           f.decompressed_size.to_int64().to_int().reinterpret_as_uint(),
         )
         pos = pos + 4
-        write_uint16_le(result, pos, path_len)
+        write_uint16_le(result, pos, path_len.to_uint16())
         pos = pos + 2
         write_uint16_le(result, pos, 0) // extra field length
         pos = pos + 2
@@ -1131,9 +1127,9 @@ pub fn Archive::to_bytes(
   pos = pos + 2
   write_uint16_le(result, pos, 0) // disk with central directory
   pos = pos + 2
-  write_uint16_le(result, pos, count) // entries on this disk
+  write_uint16_le(result, pos, count.to_uint16()) // entries on this disk
   pos = pos + 2
-  write_uint16_le(result, pos, count) // total entries
+  write_uint16_le(result, pos, count.to_uint16()) // total entries
   pos = pos + 2
   write_uint32_le(
     result,

@@ -43,6 +43,26 @@ pub fn ptime_to_date_time(
 
 ///|
 /// Convert MS-DOS date/time to POSIX time
+///
+/// # Parameters
+/// - `dos_date`: 16-bit DOS date value (range: 0x0000-0xFFFF)
+///   - Bits 0-4: Day of month (1-31)
+///   - Bits 5-8: Month (1-12)
+///   - Bits 9-15: Year offset from 1980 (0-127, represents 1980-2107)
+/// - `dos_time`: 16-bit DOS time value (range: 0x0000-0xFFFF)
+///   - Bits 0-4: Seconds/2 (0-29, represents 0-58 seconds in 2-second intervals)
+///   - Bits 5-10: Minutes (0-59)
+///   - Bits 11-15: Hours (0-23)
+///
+/// # Returns
+/// POSIX timestamp (seconds since Unix epoch: 1970-01-01 00:00:00 UTC)
+///
+/// # Notes
+/// - Both parameters are `Int` type but represent 16-bit unsigned values read
+///   from ZIP file format fields (UInt16 converted to Int)
+/// - Valid range: 1980-01-01 00:00:00 to 2107-12-31 23:59:58
+/// - If `dos_date < 0x21` (before 1980-01-01), returns `dos_epoch` (1980-01-01)
+/// - The ZIP format uses this encoding as defined in PKWARE's APPNOTE.TXT
 pub fn ptime_of_dos_date_time(dos_date : Int, dos_time : Int) -> Ptime {
   if dos_date < 0x21 {
     // Before 1980-01-01

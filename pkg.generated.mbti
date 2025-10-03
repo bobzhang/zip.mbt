@@ -46,9 +46,9 @@ fn fpath_ensure_unix(String) -> String
 
 fn fpath_sanitize(String) -> String
 
-let gp_flag_encrypted : Int
+let gp_flag_encrypted : UInt16
 
-let gp_flag_utf8 : Int
+let gp_flag_utf8 : UInt16
 
 fn inflate(Bytes, Int, Int, Int?) -> Bytes
 

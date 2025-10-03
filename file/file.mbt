@@ -2,10 +2,6 @@
 // Represents a single file entry with its compressed data and metadata
 
 ///|
-/// Unsigned integer type alias
-typealias Int as UInt16
-
-///|
 /// Compression type - Re-exported from types package
 pub typealias @types.Compression
 
@@ -140,19 +136,19 @@ pub struct File {
 
 ///|
 /// Default values for ZIP file metadata
-pub let gp_flag_encrypted : Int = 0x1
+pub let gp_flag_encrypted : UInt16 = 0x1
 
 ///|
-pub let gp_flag_utf8 : Int = 0x800
+pub let gp_flag_utf8 : UInt16 = 0x800
 
 ///|
-pub let gp_flag_default : Int = gp_flag_utf8
+pub let gp_flag_default : UInt16 = gp_flag_utf8
 
 ///|
-pub let version_made_by_default : Int = (3 << 8) | 20 // UNIX + PKZIP 2.0
+pub let version_made_by_default : UInt16 = (3 << 8) | 20 // UNIX + PKZIP 2.0
 
 ///|
-pub let version_needed_default : Int = 20 // PKZIP 2.0
+pub let version_needed_default : UInt16 = 20 // PKZIP 2.0
 
 ///|
 /// Maximum file size in non-ZIP64 archives
@@ -167,9 +163,9 @@ pub fn File::make(
   compression : Compression,
   decompressed_size : Int,
   decompressed_crc32 : UInt,
-  version_made_by : Int?,
-  version_needed : Int?,
-  gp_flags : Int?,
+  version_made_by : UInt16?,
+  version_needed : UInt16?,
+  gp_flags : UInt16?,
 ) -> Result[File, String] {
   if compressed_size.to_int64() > max_file_size ||
     decompressed_size.to_int64() > max_file_size {
