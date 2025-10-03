@@ -3,7 +3,7 @@
 
 ///|
 /// POSIX time (seconds since Unix epoch: 1970-01-01 00:00:00 UTC)
-pub typealias Int as Ptime
+pub(all) struct Ptime(Int) derive(Eq, Compare, ToJson, FromJson, Hash)
 
 ///|
 /// DOS epoch: 1980-01-01 00:00:00 UTC (in POSIX time)
@@ -19,8 +19,8 @@ pub fn ptime_to_date_time(
   ptime_s : Ptime,
 ) -> ((Int, Int, Int), (Int, Int, Int)) {
   // Calculate Julian day
-  let jd = ptime_s / 86400 + jd_posix_epoch
-  let jd_rem = ptime_s % 86400
+  let jd = ptime_s.0 / 86400 + jd_posix_epoch
+  let jd_rem = ptime_s.0 % 86400
 
   // Time components
   let hh = jd_rem / 3600

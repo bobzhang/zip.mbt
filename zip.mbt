@@ -26,18 +26,18 @@ pub fnalias @adler32.check_adler32
 
 ///|
 /// Helper: UInt to hex string
-fn UInt::to_hex_string(self : UInt) -> String {
-  let hex_digits = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
-  ]
-  let mut result = ""
-  let v = self
-  for i = 0; i < 8; i = i + 1 {
-    let digit = ((v >> (28 - i * 4)) & (0xF : UInt)).reinterpret_as_int()
-    result = result + Char::to_string(hex_digits[digit])
-  }
-  result
-}
+// fn UInt::to_hex_string(self : UInt) -> String {
+//   let hex_digits = [
+//     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+//   ]
+//   let mut result = ""
+//   let v = self
+//   for i = 0; i < 8; i = i + 1 {
+//     let digit = ((v >> (28 - i * 4)) & (0xF : UInt)).reinterpret_as_int()
+//     result = result + Char::to_string(hex_digits[digit])
+//   }
+//   result
+// }
 
 ///|
 /// Deflate format constants and symbols (RFC 1951)
@@ -45,28 +45,28 @@ fn UInt::to_hex_string(self : UInt) -> String {
 // Literal/length symbols
 
 ///|
-let litlen_sym_max : Int = 285
+// let litlen_sym_max : Int = 285
 
 ///|
-let max_litlen_sym_count : Int = 286
+// let max_litlen_sym_count : Int = 286
 
 ///|
-let litlen_end_of_block_sym : Int = 256
+// let litlen_end_of_block_sym : Int = 256
 
 ///|
-let litlen_first_len_sym : Int = 257
+// let litlen_first_len_sym : Int = 257
 
 ///|
 /// Extract base length value (upper bits)
-fn length_value_base(v : Int) -> Int {
-  v >> 4
-}
+// fn length_value_base(v : Int) -> Int {
+//  v >> 4
+//}
 
 ///|
 /// Extract extra bits count (lower bits)
-fn length_value_extra_bits(v : Int) -> Int {
-  v & 0xF
-}
+// fn length_value_extra_bits(v : Int) -> Int {
+//  v & 0xF
+//}
 
 ///|
 /// Length value table from RFC 1951 3.2.5
@@ -111,27 +111,27 @@ pub let length_value_of_sym_table : Array[Int] = [
 ]
 
 ///|
-fn length_value_of_length_sym(sym : Int) -> Int {
-  length_value_of_sym_table[sym - litlen_first_len_sym]
-}
+// fn length_value_of_length_sym(sym : Int) -> Int {
+//  length_value_of_sym_table[sym - litlen_first_len_sym]
+//}
 
 // Distance symbols
 
 ///|
-let dist_sym_max : Int = 29
+// let dist_sym_max : Int = 29
 
 ///|
-let max_dist_sym_count : Int = 30
+// let max_dist_sym_count : Int = 30
 
 ///|
-fn dist_value_base(v : Int) -> Int {
-  v >> 4
-}
+// fn dist_value_base(v : Int) -> Int {
+//  v >> 4
+//}
 
 ///|
-fn dist_value_extra_bits(v : Int) -> Int {
-  v & 0xF
-}
+// fn dist_value_extra_bits(v : Int) -> Int {
+//  v & 0xF
+//}
 
 ///|
 /// Distance value table from RFC 1951 3.2.5
@@ -185,13 +185,13 @@ pub let dist_value_of_sym : Array[Int] = [
 // Code length symbols
 
 ///|
-let max_codelen_sym_count : Int = 19
+// let max_codelen_sym_count : Int = 19
 
 ///|
 /// Order in which code length symbols are transmitted (RFC 1951 3.2.7)
-let codelen_order_of_sym_lengths : Array[Int] = [
-  16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
-]
+// let codelen_order_of_sym_lengths : Array[Int] = [
+//  16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
+// ]
 
 ///|
 /// Huffman coding - Re-exported from huffman package
@@ -204,10 +204,10 @@ pub typealias @huffman.HuffmanEncoder
 pub typealias @huffman.SymInfo
 
 ///|
-let fixed_litlen_decoder : HuffmanDecoder = @huffman.fixed_litlen_decoder
+// let fixed_litlen_decoder : HuffmanDecoder = @huffman.fixed_litlen_decoder
 
 ///|
-let fixed_dist_decoder : HuffmanDecoder = @huffman.fixed_dist_decoder
+// let fixed_dist_decoder : HuffmanDecoder = @huffman.fixed_dist_decoder
 
 ///|
 /// ByteBuf - Re-exported from buffer package

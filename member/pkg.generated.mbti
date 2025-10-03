@@ -3,10 +3,11 @@ package "bobzhang/zip/member"
 
 import(
   "bobzhang/zip/file"
+  "bobzhang/zip/types"
 )
 
 // Values
-let dos_epoch : Int
+let dos_epoch : @types.Ptime
 
 fn format_file_mode(Int) -> String
 
@@ -18,7 +19,7 @@ let max_member_count : Int
 
 let max_path_length : Int
 
-fn ptime_format(Int) -> String
+fn ptime_format(@types.Ptime) -> String
 
 // Errors
 
@@ -27,16 +28,16 @@ pub struct Member {
   path : String
   kind : MemberKind
   mode : Int
-  mtime : Int
+  mtime : @types.Ptime
 }
 fn Member::format(Self) -> String
 fn Member::format_long(Self) -> String
 fn Member::is_dir(Self) -> Bool
 fn Member::is_file(Self) -> Bool
 fn Member::kind(Self) -> MemberKind
-fn Member::make(String, MemberKind, Int?, Int?) -> Result[Self, String]
+fn Member::make(String, MemberKind, Int?, @types.Ptime?) -> Result[Self, String]
 fn Member::mode(Self) -> Int
-fn Member::mtime(Self) -> Int
+fn Member::mtime(Self) -> @types.Ptime
 fn Member::path(Self) -> String
 
 pub(all) enum MemberKind {
@@ -51,7 +52,7 @@ pub typealias Int as FileMode
 
 pub typealias String as Fpath
 
-pub typealias Int as Ptime
+pub typealias @types.Ptime as Ptime
 
 // Traits
 

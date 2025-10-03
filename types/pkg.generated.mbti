@@ -1,8 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/types"
 
+import(
+  "moonbitlang/core/json"
+)
+
 // Values
-let dos_epoch : Int
+let dos_epoch : Ptime
 
 fn format_file_mode(Int) -> String
 
@@ -12,13 +16,13 @@ fn fpath_ensure_unix(String) -> String
 
 fn fpath_sanitize(String) -> String
 
-fn ptime_format(Int) -> String
+fn ptime_format(Ptime) -> String
 
-fn ptime_of_dos_date_time(UInt16, UInt16) -> Int
+fn ptime_of_dos_date_time(UInt16, UInt16) -> Ptime
 
-fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
+fn ptime_to_date_time(Ptime) -> ((Int, Int, Int), (Int, Int, Int))
 
-fn ptime_to_dos_date_time(Int) -> (UInt16, UInt16)
+fn ptime_to_dos_date_time(Ptime) -> (UInt16, UInt16)
 
 // Errors
 
@@ -38,12 +42,19 @@ fn Compression::to_string(Self) -> String
 impl Eq for Compression
 impl Show for Compression
 
+pub(all) struct Ptime(Int)
+#deprecated
+fn Ptime::inner(Self) -> Int
+impl Compare for Ptime
+impl Eq for Ptime
+impl Hash for Ptime
+impl ToJson for Ptime
+impl @json.FromJson for Ptime
+
 // Type aliases
 pub typealias Int as FileMode
 
 pub typealias String as Fpath
-
-pub typealias Int as Ptime
 
 // Traits
 

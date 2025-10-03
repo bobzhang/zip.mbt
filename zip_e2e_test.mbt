@@ -834,7 +834,7 @@ test "e2e_metadata_preservation" {
   let content = b"test"
   let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
   let custom_mode = 0o755
-  let custom_time = dos_epoch + 86400 // One day after DOS epoch
+  let custom_time = dos_epoch.0 + 86400 // One day after DOS epoch
   let m = Member::make(
     "executable.sh",
     MemberKind::File(file),
@@ -847,7 +847,10 @@ test "e2e_metadata_preservation" {
   match decoded.find("executable.sh") {
     Some(found) =>
       // Mode and mtime should be preserved
-      @json.inspect((found.mode(), found.mtime()), content=[493, 315619200])
+      @json.inspect((found.mode(), found.mtime()), content=[
+        493,
+        ["Ptime", 315619200],
+      ])
     None => @json.inspect(false, content=false)
   }
 }

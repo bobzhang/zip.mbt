@@ -4,6 +4,7 @@ package "bobzhang/zip"
 import(
   "bobzhang/zip/deflate"
   "bobzhang/zip/member"
+  "bobzhang/zip/types"
   "moonbitlang/core/immut/sorted_map"
 )
 
@@ -36,7 +37,7 @@ let dist_value_of_sym : Array[Int]
 
 fn distance_to_symbol(Int) -> Int
 
-let dos_epoch : Int
+let dos_epoch : @types.Ptime
 
 fn format_file_mode(Int) -> String
 
@@ -66,13 +67,13 @@ let max_member_count : Int
 
 let max_path_length : Int
 
-fn ptime_format(Int) -> String
+fn ptime_format(@types.Ptime) -> String
 
-fn ptime_of_dos_date_time(UInt16, UInt16) -> Int
+fn ptime_of_dos_date_time(UInt16, UInt16) -> @types.Ptime
 
-fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
+fn ptime_to_date_time(@types.Ptime) -> ((Int, Int, Int), (Int, Int, Int))
 
-fn ptime_to_dos_date_time(Int) -> (UInt16, UInt16)
+fn ptime_to_dos_date_time(@types.Ptime) -> (UInt16, UInt16)
 
 fn zlib_compress(Bytes, Int, Int, @deflate.DeflateLevel?) -> (UInt, Bytes)
 
@@ -107,7 +108,7 @@ pub typealias @bobzhang/zip/bitstream.BitWriter as BitWriter
 
 pub typealias @bobzhang/zip/buffer.ByteBuf as ByteBuf
 
-pub typealias @bobzhang/zip/types.Compression as Compression
+pub typealias @types.Compression as Compression
 
 pub typealias @bobzhang/zip/checksum/crc32.Crc32 as Crc32
 
@@ -127,7 +128,7 @@ pub typealias @member.Member as Member
 
 pub typealias @member.MemberKind as MemberKind
 
-pub typealias Int as Ptime
+pub typealias @types.Ptime as Ptime
 
 pub typealias Int as SymInfo
 
