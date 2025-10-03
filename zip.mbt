@@ -258,102 +258,119 @@ pub typealias @member.MemberKind
 // pub let max_member_count : Int = @member.max_member_count
 
 ///|
-/// Create an empty archive
-pub fn Archive::empty() -> Archive {
-  { members: @immut/sorted_map.SortedMap::new() }
-}
-
-///|
-/// Check if archive is empty
-pub fn Archive::is_empty(self : Archive) -> Bool {
-  self.members.is_empty()
-}
-
-///|
-/// Get the number of members in the archive
-pub fn Archive::member_count(self : Archive) -> Int {
-  let mut count = 0
-  self.members.each(fn(_path, _m) { count = count + 1 })
-  count
-}
-
-///|
-/// Check if archive has a member with the given path
-pub fn Archive::mem(self : Archive, path : Fpath) -> Bool {
-  self.members.contains(path)
-}
-
-///|
-/// Find a member by path
-pub fn Archive::find(self : Archive, path : Fpath) -> Member? {
-  self.members.get(path)
-}
-
-///|
-/// Add a member to the archive (replaces if path already exists)
-pub fn Archive::add(self : Archive, m : Member) -> Archive {
-  { members: self.members.add(m.path(), m) }
-}
-
-///|
-/// Remove a member from the archive by path
-pub fn Archive::remove(self : Archive, path : Fpath) -> Archive {
-  { members: self.members.remove(path) }
-}
-
-///|
-/// Fold over all members in lexicographic path order
-pub fn[T] Archive::fold(self : Archive, f : (Member, T) -> T, init : T) -> T {
-  self.members.foldl_with_key(init~, fn(acc, _path, m) { f(m, acc) })
-}
-
-///|
-/// Convert archive to an array of members (sorted by path)
-pub fn Archive::to_array(self : Archive) -> Array[Member] {
-  let result : Array[Member] = []
-  self.members.each(fn(_path, m) { result.push(m) })
-  result
-}
-
-///|
-/// Convert archive to a SortedMap from path to member
-pub fn Archive::to_map(
-  self : Archive,
-) -> @immut/sorted_map.SortedMap[String, Member] {
-  self.members
-}
-
-///|
-/// Create archive from a SortedMap
-/// Warning: Assumes each key k maps to member m with Member::path(m) == k
-pub fn Archive::of_map(
-  map : @immut/sorted_map.SortedMap[String, Member],
-) -> Archive {
-  { members: map }
-}
-
-///|
 /// ZIP file format constants and detection
 
 ///|
 /// ZIP local file header signature: 0x04034b50 ("PK\x03\x04")
-let zip_local_file_sig : Int = 0x04034b50
+// let zip_local_file_sig : Int = 0x04034b50
 
 ///|
-/// ZIP end of central directory signature: 0x06054b50 ("PK\x05\x06")
-let zip_eocd_sig : Int = 0x06054b50
+/// ZIP local file header (little endian) ("PK\x03\x04")
+const ZIP_LOCAL_FILE_SIG : UInt = 0x04034b50
+
+///|
+/// ZIP end of central directory signature (little endian) ("PK\x05\x06")
+const ZIP_EOCD_SIG : UInt = 0x06054b50
 
 ///|
 /// Check if bytes start with ZIP magic signature
-pub fn bytes_has_zip_magic(data : Bytes) -> Bool {
-  if data.length() < 4 {
-    false
-  } else {
-    let sig = data[0].to_int() |
-      (data[1].to_int() << 8) |
-      (data[2].to_int() << 16) |
-      (data[3].to_int() << 24)
-    sig == zip_local_file_sig || sig == zip_eocd_sig
+fn bytes_has_zip_magic(data : Bytes) -> Bool {
+  // FIXME(upstream): u4 should give a warning/error
+  // when u4 has a literal pattern, what does it mean??
+  // [u32(0x04034b50|0x06054b50),..] => true 
+  data[:] is [u32le(ZIP_LOCAL_FILE_SIG | ZIP_EOCD_SIG), ..]
+}
+
+///|
+/// ZIP magic detection tests
+test "zip_magic_local_file_header" {
+  // PK\x03\x04
+  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x03, 0x04, 0x00, 0x00])
+  @json.inspect(bytes_has_zip_magic(data), content=true)
+}
+
+///|
+test "zip_magic_eocd" {
+  // PK\x05\x06 (empty archive)
+  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x05, 0x06, 0x00, 0x00])
+  @json.inspect(bytes_has_zip_magic(data), content=true)
+}
+
+///|
+test "zip_magic_invalid" {
+  let data = b"not a zip file"
+  @json.inspect(bytes_has_zip_magic(data), content=false)
+}
+
+///|
+test "zip_magic_too_short" {
+  let data = Bytes::from_fixedarray([0x50, 0x4B])
+  @json.inspect(bytes_has_zip_magic(data), content=false)
+}
+
+///|
+test "archive_to_bytes_empty" {
+  let archive = Archive::empty()
+  let result = archive.to_bytes(None)
+  match result {
+    Ok(bytes) =>
+      // Empty archive: just EOCD (22 bytes)
+      @json.inspect((bytes.length(), bytes_has_zip_magic(bytes)), content=[
+        22, true,
+      ])
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_to_bytes_single_file" {
+  let data = b"Hello ZIP!"
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let m = @member.make("hello.txt", File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let result = archive.to_bytes(None)
+  match result {
+    Ok(bytes) =>
+      @json.inspect((bytes.length() > 0, bytes_has_zip_magic(bytes)), content=[
+        true, true,
+      ])
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_to_bytes_directory" {
+  let m = @member.make("mydir/", Dir, None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let result = archive.to_bytes(None)
+  match result {
+    Ok(bytes) => @json.inspect(bytes_has_zip_magic(bytes), content=true)
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_to_bytes_multiple_files" {
+  let data1 = b"file 1"
+  let data2 = b"file 2"
+  let file1 = @file.File::stored_of_bytes(data1, 0, data1.length()).unwrap()
+  let file2 = @file.File::stored_of_bytes(data2, 0, data2.length()).unwrap()
+  let m1 = @member.make("a.txt", File(file1), None, None).unwrap()
+  let m2 = @member.make("b.txt", File(file2), None, None).unwrap()
+  let archive = Archive::empty().add(m1).add(m2)
+  let result = archive.to_bytes(None)
+  match result {
+    Ok(bytes) =>
+      @json.inspect(
+        (
+          bytes.length() > 100,
+          // 2 files
+          bytes_has_zip_magic(bytes),
+          archive.member_count(),
+        ),
+        content=[true, true, 2],
+      )
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
   }
 }
 
@@ -421,7 +438,7 @@ fn find_eocd(data : Bytes) -> Int? {
   let search_start = if len > 65557 { len - 65557 } else { 0 }
   for i = len - 22; i >= search_start; i = i - 1 {
     let sig = read_uint32_le(data, i)
-    if sig == zip_eocd_sig.to_int64().to_int().reinterpret_as_uint() {
+    if sig == ZIP_EOCD_SIG {
       return Some(i)
     }
   }
@@ -521,7 +538,7 @@ fn parse_central_dir_entry(
     return Err("Invalid local header offset")
   }
   let local_sig = read_uint32_le(data, local_header_offset)
-  if local_sig != zip_local_file_sig.to_int64().to_int().reinterpret_as_uint() {
+  if local_sig != ZIP_LOCAL_FILE_SIG {
     return Err("Invalid local file header signature")
   }
   let local_filename_len = read_uint16_le(data, local_header_offset + 26).to_int()
@@ -647,7 +664,8 @@ pub fn Archive::to_bytes(
         write_uint32_le(
           result,
           pos,
-          zip_local_file_sig.to_int64().to_int().reinterpret_as_uint(),
+          ZIP_LOCAL_FILE_SIG,
+          // zip_local_file_sig.to_int64().to_int().reinterpret_as_uint(),
         )
         pos = pos + 4
         write_uint16_le(result, pos, @file.version_needed_default) // version needed
@@ -679,11 +697,7 @@ pub fn Archive::to_bytes(
         let local_header_offset = pos
 
         // Local file header for file
-        write_uint32_le(
-          result,
-          pos,
-          zip_local_file_sig.to_int64().to_int().reinterpret_as_uint(),
-        )
+        write_uint32_le(result, pos, ZIP_LOCAL_FILE_SIG)
         pos = pos + 4
         write_uint16_le(result, pos, f.version_needed_to_extract)
         pos = pos + 2
@@ -863,11 +877,7 @@ pub fn Archive::to_bytes(
   let central_dir_size = pos - central_dir_start
 
   // Write end of central directory record
-  write_uint32_le(
-    result,
-    pos,
-    zip_eocd_sig.to_int64().to_int().reinterpret_as_uint(),
-  )
+  write_uint32_le(result, pos, ZIP_EOCD_SIG)
   pos = pos + 4
   write_uint16_le(result, pos, 0) // disk number
   pos = pos + 2

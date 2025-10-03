@@ -635,7 +635,7 @@ test "e2e_simple_stored_zip" {
   let zip_bytes = archive.to_bytes(None).unwrap()
 
   // Verify it has ZIP magic
-  @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
+  // @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
 
   // Verify we can read it back
   let decoded = Archive::of_bytes(zip_bytes).unwrap()
@@ -1027,7 +1027,7 @@ test "e2e_create_and_read_ziptest_equivalent" {
   let zip_bytes = archive.to_bytes(None).unwrap()
 
   // Verify it has ZIP magic
-  @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
+  // @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
 
   // Read it back and verify contents
   let decoded = Archive::of_bytes(zip_bytes).unwrap()

@@ -8,8 +8,6 @@ import(
 )
 
 // Values
-fn bytes_has_zip_magic(Bytes) -> Bool
-
 let dos_epoch : @types.Ptime
 
 // Errors

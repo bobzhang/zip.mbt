@@ -39,7 +39,7 @@ fn test_simple_zip() -> Unit {
           match archive.to_bytes(None) {
             Ok(zip_bytes) => {
               println("  ✓ Created ZIP: \{zip_bytes.length()} bytes")
-              println("  ✓ Has magic: \{@lib.bytes_has_zip_magic(zip_bytes)}")
+              // println("  ✓ Has magic: \{@lib.bytes_has_zip_magic(zip_bytes)}")
 
               // Verify roundtrip
               match @lib.Archive::of_bytes(zip_bytes) {
