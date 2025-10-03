@@ -2,12 +2,13 @@
 package "bobzhang/zip"
 
 import(
+  "bobzhang/zip/deflate"
   "bobzhang/zip/types"
   "moonbitlang/core/immut/sorted_map"
 )
 
 // Values
-fn adler32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(UInt, Bytes), String]
+fn adler32_and_deflate(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[(UInt, Bytes), String]
 
 fn bytes_adler32(Bytes, Int, Int) -> UInt
 
@@ -19,9 +20,9 @@ fn check_adler32(UInt, UInt) -> Result[Unit, String]
 
 fn check_crc32(UInt, UInt) -> Result[Unit, String]
 
-fn crc32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(UInt, Bytes), String]
+fn crc32_and_deflate(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[(UInt, Bytes), String]
 
-fn deflate(Bytes, Int, Int, DeflateLevel?) -> Result[Bytes, String]
+fn deflate(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[Bytes, String]
 
 fn deflate_dynamic(Bytes, Int, Int, Bool, Int, Int) -> Bytes
 
@@ -71,7 +72,7 @@ fn ptime_to_date_time(Int) -> ((Int, Int, Int), (Int, Int, Int))
 
 fn ptime_to_dos_date_time(Int) -> (Int, Int)
 
-fn zlib_compress(Bytes, Int, Int, DeflateLevel?) -> (UInt, Bytes)
+fn zlib_compress(Bytes, Int, Int, @deflate.DeflateLevel?) -> (UInt, Bytes)
 
 fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, UInt), String]
 
@@ -97,15 +98,6 @@ fn Archive::to_bytes(Self, String?) -> Result[Bytes, String]
 fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, Member]
 fn Archive::write_bytes(Self, Bytes, Int, String?) -> Result[Int, String]
 
-pub enum DeflateLevel {
-  None
-  Fast
-  Default
-  Best
-}
-impl Eq for DeflateLevel
-impl Show for DeflateLevel
-
 pub struct File {
   version_made_by : Int
   version_needed_to_extract : Int
@@ -124,7 +116,7 @@ fn File::compressed_size(Self) -> Int
 fn File::compression(Self) -> @types.Compression
 fn File::decompressed_crc32(Self) -> UInt
 fn File::decompressed_size(Self) -> Int
-fn File::deflate_of_bytes(Bytes, Int, Int, DeflateLevel?) -> Result[Self, String]
+fn File::deflate_of_bytes(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[Self, String]
 fn File::gp_flags(Self) -> Int
 fn File::is_encrypted(Self) -> Bool
 fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, Int?, Int?, Int?) -> Result[Self, String]
@@ -166,6 +158,8 @@ pub typealias @bobzhang/zip/buffer.ByteBuf as ByteBuf
 pub typealias @types.Compression as Compression
 
 pub typealias @bobzhang/zip/checksum/crc32.Crc32 as Crc32
+
+pub typealias @deflate.DeflateLevel as DeflateLevel
 
 pub typealias Int as FileMode
 

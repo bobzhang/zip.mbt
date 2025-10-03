@@ -244,343 +244,21 @@ pub fnalias @types.ptime_to_dos_date_time
 ///|
 pub fnalias @types.ptime_format
 
-///|
-/// Inflate decoder state
-priv struct InflateDecoder {
-  src : Bytes // Source compressed data
-  src_max : Int // Maximum valid index in src
-  mut src_pos : Int // Current read position
-  mut src_bits : Int // Buffered bits (up to 31 bits)
-  mut src_bits_len : Int // Number of valid bits in src_bits
-  dst : ByteBuf // Output buffer
-  dyn_litlen : HuffmanDecoder // Dynamic literal/length decoder
-  dyn_dist : HuffmanDecoder // Dynamic distance decoder
-}
+// ============================================================================
+// DEFLATE and zlib - Re-exported from deflate package
+// ============================================================================
 
 ///|
-/// Create a new inflate decoder
-fn InflateDecoder::new(
-  src : Bytes,
-  start : Int,
-  len : Int,
-  decompressed_size : Int?,
-) -> InflateDecoder {
-  let src_max = start + len - 1
-  let dst = match decompressed_size {
-    Some(size) => ByteBuf::new(size, true)
-    None => ByteBuf::new(len * 3, false)
-  }
-  {
-    src,
-    src_max,
-    src_pos: start,
-    src_bits: 0,
-    src_bits_len: 0,
-    dst,
-    dyn_litlen: HuffmanDecoder::new(),
-    dyn_dist: HuffmanDecoder::new(),
-  }
-}
+pub typealias @deflate.DeflateLevel
 
 ///|
-/// Read N bits from the bit stream (N < 32)
-fn InflateDecoder::read_bits(self : InflateDecoder, count : Int) -> Int {
-  let mut bits = self.src_bits
-  let mut bits_len = self.src_bits_len
-  // Refill bit buffer if needed
-  while bits_len < count {
-    if self.src_pos > self.src_max {
-      abort("Corrupted deflate stream: unexpected end of data")
-    }
-    let byte = self.src[self.src_pos].to_int()
-    bits = bits | (byte << bits_len)
-    self.src_pos = self.src_pos + 1
-    bits_len = bits_len + 8
-  }
-  // Extract requested bits
-  let result = bits & ((1 << count) - 1)
-  self.src_bits = bits >> count
-  self.src_bits_len = bits_len - count
-  result
-}
+pub fnalias @deflate.inflate
 
 ///|
-/// Read an integer value: base + read_bits(bit_count)
-fn InflateDecoder::read_int(
-  self : InflateDecoder,
-  base : Int,
-  bit_count : Int,
-) -> Int {
-  if bit_count == 0 {
-    base
-  } else {
-    base + self.read_bits(bit_count)
-  }
-}
+pub fnalias @deflate.inflate_and_crc32
 
 ///|
-/// Read a symbol using a Huffman decoder (helper)
-fn read_symbol_loop(
-  decoder_state : InflateDecoder,
-  decoder : HuffmanDecoder,
-  len : Int,
-  base : Int,
-  offs : Int,
-) -> Int {
-  let new_offs = 2 * offs + decoder_state.read_bits(1)
-  let count = decoder.count(len)
-  if new_offs < count {
-    decoder.symbol(base + new_offs)
-  } else {
-    read_symbol_loop(
-      decoder_state,
-      decoder,
-      len + 1,
-      base + count,
-      new_offs - count,
-    )
-  }
-}
-
-///|
-/// Read a symbol using a Huffman decoder
-fn InflateDecoder::read_symbol(
-  self : InflateDecoder,
-  decoder : HuffmanDecoder,
-) -> Int {
-  read_symbol_loop(self, decoder, 1, 0, 0)
-}
-
-///|
-/// Read and process symbols from a compressed block
-fn read_block_symbols(
-  decoder : InflateDecoder,
-  litlen_decoder : HuffmanDecoder,
-  dist_decoder : HuffmanDecoder,
-) -> Unit {
-  while true {
-    let sym = decoder.read_symbol(litlen_decoder)
-    if sym < litlen_end_of_block_sym {
-      // Literal byte
-      decoder.dst.add_byte(sym)
-    } else if sym == litlen_end_of_block_sym {
-      // End of block
-      return
-    } else if sym > litlen_decoder.max_sym() ||
-      sym > litlen_sym_max ||
-      litlen_decoder.max_sym() == -1 {
-      abort("Corrupted deflate stream: invalid literal/length symbol")
-    } else {
-      // Length symbol - read the length
-      let len_value = length_value_of_length_sym(sym)
-      let base = length_value_base(len_value)
-      let extra_bits = length_value_extra_bits(len_value)
-      let length = decoder.read_int(base, extra_bits)
-
-      // Read the distance
-      let dist_sym = decoder.read_symbol(dist_decoder)
-      if dist_sym > dist_decoder.max_sym() || dist_sym > dist_sym_max {
-        abort("Corrupted deflate stream: invalid distance symbol")
-      }
-      let dist_value = dist_value_of_sym[dist_sym]
-      let dist_base = dist_value_base(dist_value)
-      let dist_extra = dist_value_extra_bits(dist_value)
-      let dist = decoder.read_int(dist_base, dist_extra)
-
-      // Copy from earlier in the output
-      if dist > decoder.dst.length() {
-        abort("Corrupted deflate stream: distance too large")
-      }
-      decoder.dst.recopy(decoder.dst.length() - dist, length)
-    }
-  }
-}
-
-///|
-/// Read an uncompressed (stored) block
-fn read_uncompressed_block(decoder : InflateDecoder) -> Unit {
-  // Skip to byte boundary
-  decoder.src_bits = 0
-  decoder.src_bits_len = 0
-
-  // Need at least 4 bytes for length fields
-  if decoder.src_max - decoder.src_pos + 1 < 4 {
-    abort("Corrupted deflate stream: truncated uncompressed block")
-  }
-
-  // Read length and inverted length
-  let length = decoder.src[decoder.src_pos].to_int() |
-    (decoder.src[decoder.src_pos + 1].to_int() << 8)
-  let inv_length = decoder.src[decoder.src_pos + 2].to_int() |
-    (decoder.src[decoder.src_pos + 3].to_int() << 8)
-  decoder.src_pos = decoder.src_pos + 4
-
-  // Verify they are complements
-  if length != (inv_length ^ 0xFFFF) {
-    abort("Corrupted deflate stream: invalid uncompressed block length")
-  }
-
-  // Check we have enough data
-  if decoder.src_max - decoder.src_pos + 1 < length {
-    abort("Corrupted deflate stream: truncated uncompressed block data")
-  }
-
-  // Copy bytes directly
-  decoder.dst.add_bytes(decoder.src, decoder.src_pos, length)
-  decoder.src_pos = decoder.src_pos + length
-}
-
-///|
-/// Read a block compressed with fixed Huffman codes
-fn read_fixed_block(decoder : InflateDecoder) -> Unit {
-  read_block_symbols(decoder, fixed_litlen_decoder, fixed_dist_decoder)
-}
-
-///|
-/// Read a block compressed with dynamic Huffman codes
-fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
-  // Read number of literal/length codes (257-286)
-  let hlit = decoder.read_int(257, 5)
-  // Read number of distance codes (1-32)
-  let hdist = decoder.read_int(1, 5)
-  if hlit > max_litlen_sym_count || hdist > max_dist_sym_count {
-    abort("Corrupted deflate stream: invalid dynamic block header")
-  }
-
-  // Read number of code length codes (4-19)
-  let hclen = decoder.read_int(4, 4)
-
-  // Read code length code lengths
-  let codelen_lengths = Array::make(max_codelen_sym_count, 0)
-  for i = 0; i < hclen; i = i + 1 {
-    codelen_lengths[codelen_order_of_sym_lengths[i]] = decoder.read_bits(3)
-  }
-
-  // Build Huffman decoder for code lengths (temporarily use dyn_litlen)
-  decoder.dyn_litlen.init_from_lengths(
-    codelen_lengths, 0, max_codelen_sym_count,
-  )
-  if decoder.dyn_litlen.max_sym() == -1 {
-    abort("Corrupted deflate stream: empty code length code")
-  }
-
-  // Decode the literal/length and distance code lengths
-  let lengths = Array::make(max_litlen_sym_count + max_dist_sym_count, 0)
-  let mut num = 0
-  let total = hlit + hdist
-  while num < total {
-    let sym = decoder.read_symbol(decoder.dyn_litlen)
-    if sym > decoder.dyn_litlen.max_sym() {
-      abort("Corrupted deflate stream: invalid code length symbol")
-    }
-    let (repeat, value) = match sym {
-      16 => {
-        // Repeat previous code length 3-6 times
-        if num == 0 {
-          abort("Corrupted deflate stream: repeat with no previous code")
-        }
-        (decoder.read_int(3, 2), lengths[num - 1])
-      }
-      17 =>
-        // Repeat zero 3-10 times
-        (decoder.read_int(3, 3), 0)
-      18 =>
-        // Repeat zero 11-138 times  
-        (decoder.read_int(11, 7), 0)
-      _ => (1, sym)
-    }
-    if repeat > total - num {
-      abort("Corrupted deflate stream: code length repeat too long")
-    }
-    for i = 0; i < repeat; i = i + 1 {
-      lengths[num] = value
-      num = num + 1
-    }
-  }
-
-  // Check that end-of-block symbol has non-zero length
-  if lengths[256] == 0 {
-    abort("Corrupted deflate stream: missing end-of-block code")
-  }
-
-  // Initialize the literal/length and distance decoders
-  decoder.dyn_litlen.init_from_lengths(lengths, 0, hlit)
-  decoder.dyn_dist.init_from_lengths(lengths, hlit, hdist)
-
-  // Decompress the block
-  read_block_symbols(decoder, decoder.dyn_litlen, decoder.dyn_dist)
-}
-
-///|
-/// Main inflate loop - decompress all blocks
-fn inflate_loop(decoder : InflateDecoder) -> Bytes {
-  while true {
-    // Read block header
-    let is_final = decoder.read_bits(1) == 1
-    let btype = decoder.read_bits(2)
-
-    // Process block based on type
-    match btype {
-      0 => read_uncompressed_block(decoder) // No compression
-      1 => read_fixed_block(decoder) // Fixed Huffman
-      2 => read_dynamic_block(decoder) // Dynamic Huffman
-      _ => abort("Corrupted deflate stream: invalid block type")
-    }
-    if is_final {
-      return decoder.dst.contents()
-    }
-  }
-  // Unreachable
-  abort("Unreachable")
-}
-
-///|
-/// Decompress deflate format data (RFC 1951)
-/// Returns the decompressed bytes
-/// Aborts on corrupted data
-pub fn inflate(
-  src : Bytes,
-  start : Int,
-  len : Int,
-  decompressed_size : Int?,
-) -> Bytes {
-  let decoder = InflateDecoder::new(src, start, len, decompressed_size)
-  inflate_loop(decoder)
-}
-
-///|
-/// Decompress deflate data and compute CRC-32
-/// Returns (decompressed bytes, CRC-32 checksum)
-/// Aborts on corrupted data
-pub fn inflate_and_crc32(
-  src : Bytes,
-  start : Int,
-  len : Int,
-  decompressed_size : Int?,
-) -> (Bytes, UInt) {
-  let decoder = InflateDecoder::new(src, start, len, decompressed_size)
-  let result = inflate_loop(decoder)
-  // Compute CRC-32 of the decompressed data
-  let crc = bytes_crc32(result, 0, result.length())
-  (result, crc)
-}
-
-///|
-/// Decompress deflate data and compute Adler-32
-/// Returns (decompressed bytes, Adler-32 checksum)
-/// Aborts on corrupted data
-pub fn inflate_and_adler32(
-  src : Bytes,
-  start : Int,
-  len : Int,
-  decompressed_size : Int?,
-) -> (Bytes, UInt) {
-  let decoder = InflateDecoder::new(src, start, len, decompressed_size)
-  let result = inflate_loop(decoder)
-  // Compute Adler-32 of the decompressed data
-  let adler = bytes_adler32(result, 0, result.length())
-  (result, adler)
-}
+pub fnalias @deflate.inflate_and_adler32
 
 ///|
 /// File path utilities for ZIP archives
@@ -703,68 +381,6 @@ pub fn File::stored_of_bytes(
 }
 
 ///|
-/// Deflate compression levels
-pub enum DeflateLevel {
-  None // No compression, use stored blocks only
-  Fast // Fast compression with fixed Huffman
-  Default // Default compression with dynamic Huffman
-  Best // Best compression with maximum effort
-} derive(Eq, Show)
-
-// ============================================================================
-// Deflate Encoder (Compression) - Re-exported from deflate package
-// ============================================================================
-
-///|
-fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes {
-  @deflate.deflate_stored(bytes, start, len)
-}
-
-///|
-pub fn deflate_fixed_literals_only(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  is_final : Bool,
-) -> Bytes {
-  @deflate.deflate_fixed_literals_only(bytes, start, len, is_final)
-}
-
-///|
-pub fn deflate_fixed(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  is_final : Bool,
-  good_match : Int,
-  max_chain : Int,
-) -> Bytes {
-  @deflate.deflate_fixed(bytes, start, len, is_final, good_match, max_chain)
-}
-
-///|
-pub fn deflate_dynamic(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  is_final : Bool,
-  good_match : Int,
-  max_chain : Int,
-) -> Bytes {
-  @deflate.deflate_dynamic(bytes, start, len, is_final, good_match, max_chain)
-}
-
-///|
-pub fn length_to_symbol(length : Int) -> Int {
-  @deflate.length_to_symbol(length)
-}
-
-///|
-pub fn distance_to_symbol(dist : Int) -> Int {
-  @deflate.distance_to_symbol(dist)
-}
-
-///|
 /// Create deflate-compressed file data from bytes
 /// Uses LZ77 + Huffman compression with optimal block type selection
 pub fn File::deflate_of_bytes(
@@ -821,127 +437,75 @@ pub fn File::deflate_of_bytes(
 }
 
 // ============================================================================
-// zlib Wrapper Format (RFC 1950)
+// Deflate compression functions - Re-exported from deflate package  
 // ============================================================================
 
 ///|
-/// Compress data with zlib wrapper format (RFC 1950)
-/// Returns (Adler-32 checksum, compressed bytes)
-///
-/// zlib format:
-/// - 2 bytes: CMF + FLG header
-/// - N bytes: deflate compressed data
-/// - 4 bytes: Adler-32 checksum (big-endian)
-pub fn zlib_compress(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level : DeflateLevel?,
-) -> (UInt, Bytes) {
-  // Determine compression parameters
-  let (good_match, max_chain, flevel) = match level {
-    Some(DeflateLevel::None) => (4, 128, 0)
-    Some(DeflateLevel::Fast) => (4, 128, 1)
-    Some(DeflateLevel::Default) | None => (8, 1024, 2)
-    Some(DeflateLevel::Best) => (32, 4096, 3)
-  }
-  let output = ByteBuf::new(len + 100, false)
-
-  // Write CMF (Compression Method and Flags)
-  // Bits 0-3: CM (compression method) = 8 for deflate
-  // Bits 4-7: CINFO (window size) = 7 for 32KB window
-  let cmf = (7 << 4) | 8 // 0x78 = 120
-  output.add_byte(cmf)
-
-  // Write FLG (Flags)
-  // Bits 0-4: FCHECK (check bits to make (CMF*256 + FLG) % 31 == 0)
-  // Bit 5: FDICT = 0 (no preset dictionary)
-  // Bits 6-7: FLEVEL (compression level)
-  let flg_base = flevel << 6
-  let header = (cmf << 8) | flg_base
-  let fcheck = (31 - header.mod(31)).mod(31)
-  let flg = flg_base | fcheck
-  output.add_byte(flg)
-
-  // Write deflate compressed data
-  let compressed = deflate_fixed(bytes, start, len, true, good_match, max_chain)
-  for i = 0; i < compressed.length(); i = i + 1 {
-    output.add_byte(compressed[i].to_int())
-  }
-
-  // Compute Adler-32 checksum of uncompressed data
-  let adler = bytes_adler32(bytes, start, len)
-
-  // Write Adler-32 checksum (big-endian, 4 bytes)
-  let a32 = adler.reinterpret_as_int()
-  output.add_byte((a32 >> 24) & 0xFF)
-  output.add_byte((a32 >> 16) & 0xFF)
-  output.add_byte((a32 >> 8) & 0xFF)
-  output.add_byte(a32 & 0xFF)
-  (adler, output.contents())
+fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes {
+  @deflate.deflate_stored(bytes, start, len)
 }
 
 ///|
-/// Decompress zlib format data (RFC 1950)
-/// Returns (decompressed bytes, Adler-32 checksum)
-/// Validates header and checksum
-pub fn zlib_decompress(
+pub fn deflate_fixed_literals_only(
   bytes : Bytes,
   start : Int,
   len : Int,
-) -> Result[(Bytes, UInt), String] {
-  if len < 6 {
-    return Err("zlib data too short (minimum 6 bytes)")
-  }
-
-  // Read and validate CMF
-  let cmf = bytes[start].to_int()
-  let cm = cmf & 0x0F // Compression method
-  let cinfo = (cmf >> 4) & 0x0F // Window size
-  if cm != 8 {
-    return Err("Invalid compression method (expected 8 for deflate)")
-  }
-  if cinfo > 7 {
-    return Err("Invalid window size")
-  }
-
-  // Read and validate FLG
-  let flg = bytes[start + 1].to_int()
-  let _fcheck = flg & 0x1F
-  let fdict = (flg >> 5) & 0x01
-
-  // Validate check bits
-  let header = (cmf << 8) | flg
-  if header.mod(31) != 0 {
-    return Err("Invalid zlib header checksum")
-  }
-  if fdict != 0 {
-    return Err("Preset dictionary not supported")
-  }
-
-  // Decompress deflate data (skip 2-byte header, 4-byte trailer)
-  let deflate_start = start + 2
-  let deflate_len = len - 6
-  let decompressed = inflate(bytes, deflate_start, deflate_len, None)
-
-  // Read Adler-32 checksum (big-endian, last 4 bytes)
-  let trailer_pos = start + len - 4
-  let stored_adler = (bytes[trailer_pos].to_int() << 24) |
-    (bytes[trailer_pos + 1].to_int() << 16) |
-    (bytes[trailer_pos + 2].to_int() << 8) |
-    bytes[trailer_pos + 3].to_int()
-
-  // Compute Adler-32 of decompressed data
-  let computed_adler = bytes_adler32(decompressed, 0, decompressed.length())
-
-  // Validate checksum
-  if computed_adler.reinterpret_as_int() != stored_adler {
-    return Err("Adler-32 checksum mismatch")
-  }
-  Ok((decompressed, computed_adler))
+  is_final : Bool,
+) -> Bytes {
+  @deflate.deflate_fixed_literals_only(bytes, start, len, is_final)
 }
 
 ///|
+pub fn deflate_fixed(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  is_final : Bool,
+  good_match : Int,
+  max_chain : Int,
+) -> Bytes {
+  @deflate.deflate_fixed(bytes, start, len, is_final, good_match, max_chain)
+}
+
+///|
+pub fn deflate_dynamic(
+  bytes : Bytes,
+  start : Int,
+  len : Int,
+  is_final : Bool,
+  good_match : Int,
+  max_chain : Int,
+) -> Bytes {
+  @deflate.deflate_dynamic(bytes, start, len, is_final, good_match, max_chain)
+}
+
+///|
+pub fn length_to_symbol(length : Int) -> Int {
+  @deflate.length_to_symbol(length)
+}
+
+///|
+pub fn distance_to_symbol(dist : Int) -> Int {
+  @deflate.distance_to_symbol(dist)
+}
+
+///|
+pub fnalias @deflate.deflate
+
+///|
+pub fnalias @deflate.crc32_and_deflate
+
+///|
+pub fnalias @deflate.adler32_and_deflate
+
+///|
+pub fnalias @deflate.zlib_compress
+
+///|
+pub fnalias @deflate.zlib_decompress
+
+///|
+//////|
 /// Get compression format
 pub fn File::compression(self : File) -> Compression {
   self.compression
@@ -1879,69 +1443,6 @@ pub fn Archive::write_bytes(
         "write_bytes not supported (Bytes is immutable): use to_bytes() instead. Would write \{size} bytes at offset \{offset}",
       )
     }
-    Err(msg) => Err(msg)
-  }
-}
-
-// ============================================================================
-// High-level DEFLATE API Functions (for OCaml zipc compatibility)
-// ============================================================================
-
-///|
-/// Compress data with DEFLATE format (RFC 1951)
-/// Returns compressed bytes
-pub fn deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level : DeflateLevel?,
-) -> Result[Bytes, String] {
-  let (good_match, max_chain, use_dynamic) = match level {
-    Some(DeflateLevel::None) =>
-      // No compression, use stored blocks
-      return Ok(deflate_stored(bytes, start, len))
-    Some(DeflateLevel::Fast) => (4, 128, false) // Fast: fixed Huffman only
-    Some(DeflateLevel::Default) | None => (8, 1024, true) // Default: dynamic Huffman
-    Some(DeflateLevel::Best) => (32, 4096, true) // Best: dynamic Huffman with max effort
-  }
-
-  // Choose between Fixed and Dynamic Huffman based on size and level
-  let compressed = if use_dynamic && len >= 256 {
-    deflate_dynamic(bytes, start, len, true, good_match, max_chain)
-  } else {
-    deflate_fixed(bytes, start, len, true, good_match, max_chain)
-  }
-  Ok(compressed)
-}
-
-///|
-/// Compress data with DEFLATE and compute CRC-32 of input
-/// Returns (CRC-32 checksum, compressed bytes)
-pub fn crc32_and_deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level : DeflateLevel?,
-) -> Result[(UInt, Bytes), String] {
-  let crc = bytes_crc32(bytes, start, len)
-  match deflate(bytes, start, len, level) {
-    Ok(compressed) => Ok((crc, compressed))
-    Err(msg) => Err(msg)
-  }
-}
-
-///|
-/// Compress data with DEFLATE and compute Adler-32 of input
-/// Returns (Adler-32 checksum, compressed bytes)
-pub fn adler32_and_deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level : DeflateLevel?,
-) -> Result[(UInt, Bytes), String] {
-  let adler = bytes_adler32(bytes, start, len)
-  match deflate(bytes, start, len, level) {
-    Ok(compressed) => Ok((adler, compressed))
     Err(msg) => Err(msg)
   }
 }
