@@ -6,17 +6,10 @@
 ///|
 
 ///|
-/// CRC-32 and Adler-32 checksums - Re-exported from checksum packages
-pub typealias @crc32.Crc32
-
-///|
 pub fnalias @crc32.bytes_crc32
 
 ///|
 pub fnalias @crc32.check_crc32
-
-///|
-pub typealias @adler32.Adler32
 
 ///|
 pub fnalias @adler32.bytes_adler32
@@ -71,7 +64,7 @@ pub fnalias @adler32.check_adler32
 ///|
 /// Length value table from RFC 1951 3.2.5
 /// Each entry packs (base_length << 4) | extra_bits
-pub let length_value_of_sym_table : Array[Int] = [
+let length_value_of_sym_table : Array[Int] = [
   // Symbol 257-264: lengths 3-10, 0 extra bits
   3 << 4,
   4 << 4,
@@ -111,6 +104,17 @@ pub let length_value_of_sym_table : Array[Int] = [
 ]
 
 ///|
+test "length_value_table" {
+  // Test a few entries from the length value table
+  // Symbol 257 -> length 3, 0 extra bits
+  @json.inspect(length_value_of_sym_table[0], content=48) // 3 << 4
+  // Symbol 265 -> length 11, 1 extra bit
+  @json.inspect(length_value_of_sym_table[8], content=177) // (11 << 4) | 1
+  // Symbol 285 -> length 258, 0 extra bits
+  @json.inspect(length_value_of_sym_table[28], content=4128) // 258 << 4
+}
+
+///|
 // fn length_value_of_length_sym(sym : Int) -> Int {
 //  length_value_of_sym_table[sym - litlen_first_len_sym]
 //}
@@ -135,7 +139,7 @@ pub let length_value_of_sym_table : Array[Int] = [
 
 ///|
 /// Distance value table from RFC 1951 3.2.5
-pub let dist_value_of_sym : Array[Int] = [
+let dist_value_of_sym : Array[Int] = [
   // Symbols 0-3: distances 1-4, 0 extra bits
   1 << 4,
   2 << 4,
@@ -181,6 +185,17 @@ pub let dist_value_of_sym : Array[Int] = [
   (16385 << 4) | 13,
   (24577 << 4) | 13,
 ]
+
+///|
+test "distance_value_table" {
+  // Test a few entries from the distance value table
+  // Symbol 0 -> distance 1, 0 extra bits
+  @json.inspect(dist_value_of_sym[0], content=16) // 1 << 4
+  // Symbol 4 -> distance 5, 1 extra bit
+  @json.inspect(dist_value_of_sym[4], content=81) // (5 << 4) | 1
+  // Symbol 29 -> distance 24577, 13 extra bits
+  @json.inspect(dist_value_of_sym[29], content=393245) // (24577 << 4) | 13
+}
 
 // Code length symbols
 
@@ -360,12 +375,6 @@ pub let max_member_count : Int = @member.max_member_count
 
 ///|
 pub let max_path_length : Int = @member.max_path_length
-
-///|
-/// ZIP Archive - represents a complete ZIP file
-pub struct Archive {
-  members : @immut/sorted_map.SortedMap[String, Member] // Maps path to member
-}
 
 ///|
 /// Create an empty archive

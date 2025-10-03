@@ -33,8 +33,6 @@ fn deflate_fixed_literals_only(Bytes, Int, Int, Bool) -> Bytes
 
 fn deflate_stored(Bytes, Int, Int) -> Bytes
 
-let dist_value_of_sym : Array[Int]
-
 fn distance_to_symbol(Int) -> Int
 
 let dos_epoch : @types.Ptime
@@ -59,8 +57,6 @@ fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, UInt)
 
 fn length_to_symbol(Int) -> Int
 
-let length_value_of_sym_table : Array[Int]
-
 let max_file_size : Int64
 
 let max_member_count : Int
@@ -82,9 +78,7 @@ fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, UInt), String]
 // Errors
 
 // Types and methods
-pub struct Archive {
-  members : @sorted_map.SortedMap[String, @member.Member]
-}
+type Archive
 fn Archive::add(Self, @member.Member) -> Self
 fn Archive::empty() -> Self
 fn Archive::encoding_size(Self) -> Int
@@ -102,15 +96,11 @@ fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, @member.Member]
 fn Archive::write_bytes(Self, Bytes, Int, String?) -> Result[Int, String]
 
 // Type aliases
-pub typealias @bobzhang/zip/checksum/adler32.Adler32 as Adler32
-
 pub typealias @bobzhang/zip/bitstream.BitWriter as BitWriter
 
 pub typealias @bobzhang/zip/buffer.ByteBuf as ByteBuf
 
 pub typealias @types.Compression as Compression
-
-pub typealias @bobzhang/zip/checksum/crc32.Crc32 as Crc32
 
 pub typealias @deflate.DeflateLevel as DeflateLevel
 

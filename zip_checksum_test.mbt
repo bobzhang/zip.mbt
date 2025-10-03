@@ -18,7 +18,7 @@ test "crc32_simple" {
 ///|
 test "crc32_incremental" {
   let data = b"hello world"
-  let crc1 = Crc32::init()
+  let crc1 = @crc32.Crc32::init()
     .update_bytes(data, 0, 5) // "hello"
     .update_bytes(data, 5, 6) // " world"
     .finish()
@@ -44,7 +44,7 @@ test "adler32_simple" {
 ///|
 test "adler32_incremental" {
   let data = b"hello world"
-  let adler1 = Adler32::init()
+  let adler1 = @adler32.Adler32::init()
     .update_bytes(data, 0, 5) // "hello"
     .update_bytes(data, 5, 6) // " world"
     .finish()
@@ -66,28 +66,6 @@ test "crc32_check_failure" {
     Ok(_) => @json.inspect("should not succeed", content="\"mismatch\"")
     Err(msg) => @json.inspect(msg.contains("mismatch"), content=true)
   }
-}
-
-///|
-test "length_value_table" {
-  // Test a few entries from the length value table
-  // Symbol 257 -> length 3, 0 extra bits
-  @json.inspect(length_value_of_sym_table[0], content=48) // 3 << 4
-  // Symbol 265 -> length 11, 1 extra bit
-  @json.inspect(length_value_of_sym_table[8], content=177) // (11 << 4) | 1
-  // Symbol 285 -> length 258, 0 extra bits
-  @json.inspect(length_value_of_sym_table[28], content=4128) // 258 << 4
-}
-
-///|
-test "distance_value_table" {
-  // Test a few entries from the distance value table
-  // Symbol 0 -> distance 1, 0 extra bits
-  @json.inspect(dist_value_of_sym[0], content=16) // 1 << 4
-  // Symbol 4 -> distance 5, 1 extra bit
-  @json.inspect(dist_value_of_sym[4], content=81) // (5 << 4) | 1
-  // Symbol 29 -> distance 24577, 13 extra bits
-  @json.inspect(dist_value_of_sym[29], content=393245) // (24577 << 4) | 13
 }
 
 ///|
