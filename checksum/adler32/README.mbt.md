@@ -18,9 +18,7 @@ The `adler32` package implements the Adler-32 checksum algorithm as defined in R
 
 ### Types
 
-```moonbit
-pub typealias UInt32 as Adler32
-```
+
 
 Type alias for Adler-32 values (32-bit unsigned integer).
 
@@ -51,7 +49,7 @@ Validate an Adler-32 checksum.
 
 Adler-32 maintains two 16-bit sums (modulo 65521):
 
-```moonbit
+```
 s1 = 1
 s2 = 0
 for each byte b:
@@ -65,14 +63,11 @@ result = (s2 << 16) | s1
 ## Usage Example
 
 ```moonbit
-let data = b"Hello, World!"
-let adler = bytes_adler32(data, 0, data.length())
-println("Adler-32: 0x\{adler.to_int().to_hex()}")
-
-// Validate checksum
-match check_adler32(expected_adler, adler) {
-  Ok(_) => println("Checksum valid")
-  Err(msg) => println("Checksum error: \{msg}")
+test {
+  let data = b"Hello, World!"
+  let adler = bytes_adler32(data, 0, data.length())
+  println("Adler-32: 0x\{adler.reinterpret_as_int().to_string(radix=16)}")
+  @json.inspect(adler, content=530449514)
 }
 ```
 
