@@ -6,11 +6,7 @@ package "bobzhang/zip/buffer"
 // Errors
 
 // Types and methods
-pub struct ByteBuf {
-  mut buffer : Array[Byte]
-  mut length : Int
-  fixed : Bool
-}
+type ByteBuf
 fn ByteBuf::add_byte(Self, Int) -> Unit
 fn ByteBuf::add_bytes(Self, Bytes, Int, Int) -> Unit
 fn ByteBuf::contents(Self) -> Bytes

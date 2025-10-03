@@ -10,11 +10,7 @@ import(
 // Errors
 
 // Types and methods
-pub struct BitWriter {
-  dst : @buffer.ByteBuf
-  mut bits : Int
-  mut bits_len : Int
-}
+type BitWriter
 fn BitWriter::align_to_byte(Self) -> Unit
 fn BitWriter::flush(Self) -> Unit
 fn BitWriter::new(@buffer.ByteBuf) -> Self
