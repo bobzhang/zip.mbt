@@ -53,36 +53,31 @@ Where:
 ## Usage Example
 
 ```moonbit
-let data = b"Hello, World!\x00\x01\x02"
+test {
+  let data = b"Hello, World!\x00\x01\x02"
 
-// Dump entire buffer
-println(hexdump(data))
-
-// Output:
-// 00000000: 48 65 6C 6C 6F 2C 20 57 6F 72 6C 64 21 00 01 02  |Hello, World!...|
-
-// Dump specific range
-println(hexdump_range(data, 0, 8))
-
-// Output:
-// 00000000: 48 65 6C 6C 6F 2C 20 57                          |Hello, W        |
+  // Dump entire buffer
+  let output = hex_dump(data)
+  @json.inspect(output.contains("48 65 6c 6c 6f"), content=true)
+  @json.inspect(output.contains("Hello, World!"), content=true)
+}
 ```
 
 ## Real-World Usage
 
-```moonbit
+```
 // Debug ZIP file headers
 let zip_header = read_file_header(data, pos)
 println("ZIP Local File Header:")
-println(hexdump_range(data, pos, 30))
+println(hex_dump_range(data, pos, 30))
 
 // Debug compressed data
 println("First 128 bytes of compressed data:")
-println(hexdump_range(compressed, 0, 128))
+println(hex_dump_range(compressed, 0, 128))
 
 // Inspect DEFLATE blocks
 println("DEFLATE block header:")
-println(hexdump_range(deflated, block_start, 16))
+println(hex_dump_range(deflated, block_start, 16))
 ```
 
 ## Implementation Details
@@ -102,32 +97,32 @@ println(hexdump_range(deflated, block_start, 16))
 ## Common Use Cases
 
 1. **Debugging Binary Formats**
-   ```moonbit
+   ```
    println("Unexpected bytes at offset \{offset}:")
-   println(hexdump_range(data, offset - 16, 48))
+   println(hex_dump_range(data, offset - 16, 48))
    ```
 
 2. **Validating File Structures**
-   ```moonbit
+   ```
    println("ZIP signature check:")
-   println(hexdump_range(file_data, 0, 4))
+   println(hex_dump_range(file_data, 0, 4))
    // Should show: 50 4B 03 04 (PK..)
    ```
 
 3. **Comparing Binary Data**
-   ```moonbit
+   ```
    println("Original:")
-   println(hexdump(original))
+   println(hex_dump(original))
    println("Decompressed:")
-   println(hexdump(decompressed))
+   println(hex_dump(decompressed))
    ```
 
 4. **Test Output**
-   ```moonbit
+   ```
    test "deflate compression" {
      let compressed = deflate(data)
      println("Compressed output:")
-     println(hexdump(compressed))
+     println(hex_dump(compressed))
      // Visual verification of compression format
    }
    ```
