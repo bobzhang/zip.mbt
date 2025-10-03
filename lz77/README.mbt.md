@@ -30,7 +30,7 @@ Output: "The quick brown fox jumps over the lazy dog. [49 bytes back, 19 bytes].
 
 ### Constants
 
-```moonbit
+```
 pub let min_match_len : Int = 3        // Minimum match length
 pub let max_match_len : Int = 258      // Maximum match length  
 pub let max_match_dist : Int = 32768   // Maximum back-reference distance
@@ -49,7 +49,7 @@ pub let no_pos : Int = -1              // Marker for "no position"
 Compute 4-byte rolling hash at position i.
 
 **Hash Function:**
-```moonbit
+```
 hash = (b[i] + (b[i+1] << 5) + (b[i+2] << 10) + (b[i+3] << 15)) & 0x7FFF
 ```
 
@@ -115,7 +115,7 @@ Extract length from packed back-reference.
 
 ### Basic Compression
 
-```moonbit
+```
 // Initialize hash tables
 let hash_head = Array::make(lz77_hash_size, lz77_no_pos)
 let hash_prev = Array::make(lz77_window_size, 0)
@@ -151,7 +151,7 @@ for pos = start; pos < start + len - min_match_len; pos = pos + 1 {
 
 ### Lazy Matching
 
-```moonbit
+```
 let mut prev_bref = 0
 
 for pos = start; pos < end; pos = pos + 1 {
@@ -180,7 +180,7 @@ for pos = start; pos < end; pos = pos + 1 {
 ### Compression Levels
 
 **Fast (Level 1):**
-```moonbit
+```
 good_match = 4
 max_chain = 128
 ```
@@ -189,7 +189,7 @@ max_chain = 128
 - Good for real-time or streaming
 
 **Default (Level 6):**
-```moonbit
+```
 good_match = 8
 max_chain = 1024
 ```
@@ -197,7 +197,7 @@ max_chain = 1024
 - Good general-purpose setting
 
 **Best (Level 9):**
-```moonbit
+```
 good_match = 32
 max_chain = 4096
 ```
