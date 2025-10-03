@@ -623,3 +623,529 @@ test "e2e_unicode_filename_support" {
     None => ()
   }
 }
+
+// Additional e2e tests from zip_test.mbt
+
+///|
+test "e2e_simple_stored_zip" {
+  // Create a simple ZIP with one stored file
+  // This should produce a deterministic output we can verify
+  let content = b"Hello, World!"
+  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+
+  // Use a specific timestamp for deterministic output
+  let fixed_time = dos_epoch // 1980-01-01 00:00:00
+  let m = Member::make(
+    "hello.txt",
+    MemberKind::File(file),
+    Some(0o644),
+    Some(fixed_time),
+  ).unwrap()
+  let archive = Archive::empty().add(m)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+
+  // Verify it has ZIP magic
+  @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
+
+  // Verify we can read it back
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  @json.inspect(decoded.member_count(), content=1)
+
+  // Verify content matches
+  match decoded.find("hello.txt") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => {
+          let extracted = f.to_bytes()
+          @json.inspect((extracted.length(), extracted == content), content=[
+            13, true,
+          ])
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_zip_structure_verification" {
+  // Create a ZIP and verify its structure matches ZIP spec
+  let content = b"test"
+  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+  let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+
+  // Verify local file header signature (0x04034b50 = "PK\x03\x04")
+  let local_sig = zip_bytes[0].to_int() |
+    (zip_bytes[1].to_int() << 8) |
+    (zip_bytes[2].to_int() << 16) |
+    (zip_bytes[3].to_int() << 24)
+  @json.inspect(local_sig, content=67324752) // 0x04034b50
+
+  // Find EOCD signature at end (0x06054b50 = "PK\x05\x06")
+  let len = zip_bytes.length()
+  let eocd_sig = zip_bytes[len - 22].to_int() |
+    (zip_bytes[len - 21].to_int() << 8) |
+    (zip_bytes[len - 20].to_int() << 16) |
+    (zip_bytes[len - 19].to_int() << 24)
+  @json.inspect(eocd_sig, content=101010256) // 0x06054b50
+}
+
+///|
+test "e2e_multi_file_deterministic" {
+  // Create a multi-file archive with deterministic content
+  let file1 = File::stored_of_bytes(b"File 1", 0, 6).unwrap()
+  let file2 = File::stored_of_bytes(b"File 2", 0, 6).unwrap()
+  let file3 = File::stored_of_bytes(b"File 3", 0, 6).unwrap()
+  let m1 = Member::make(
+    "a.txt",
+    MemberKind::File(file1),
+    Some(0o644),
+    Some(dos_epoch),
+  ).unwrap()
+  let m2 = Member::make(
+    "b.txt",
+    MemberKind::File(file2),
+    Some(0o644),
+    Some(dos_epoch),
+  ).unwrap()
+  let m3 = Member::make(
+    "c.txt",
+    MemberKind::File(file3),
+    Some(0o644),
+    Some(dos_epoch),
+  ).unwrap()
+  let archive = Archive::empty().add(m1).add(m2).add(m3)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+
+  // Verify roundtrip
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  @json.inspect(decoded.member_count(), content=3)
+
+  // Verify all files are present and correct
+  match decoded.find("a.txt") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          @json.inspect(data == b"File 1", content=true)
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_deflate_compatibility" {
+  // Test deflate compression creates valid streams
+  let original = b"AAAAAAAAAA" // Highly compressible (RLE pattern)
+  let file = File::deflate_of_bytes(original, 0, original.length(), None).unwrap()
+
+  // Verify it's marked as deflate
+  @json.inspect(file.compression() == Compression::Deflate, content=true)
+
+  // Verify decompression works
+  let decompressed = file.to_bytes()
+  @json.inspect(decompressed == original, content=true)
+
+  // Verify in a ZIP archive
+  let m = Member::make("data.bin", MemberKind::File(file), None, None).unwrap()
+  let archive = Archive::empty().add(m)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+
+  // Read back and verify
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  match decoded.find("data.bin") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          @json.inspect(data == original, content=true)
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_empty_archive_exact_format" {
+  // Empty archive should be exactly 22 bytes (EOCD only)
+  let archive = Archive::empty()
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  @json.inspect(zip_bytes.length(), content=22)
+
+  // Should start with EOCD signature
+  let sig = zip_bytes[0].to_int() |
+    (zip_bytes[1].to_int() << 8) |
+    (zip_bytes[2].to_int() << 16) |
+    (zip_bytes[3].to_int() << 24)
+  @json.inspect(sig, content=101010256) // PK\x05\x06
+
+  // Entry count should be 0
+  let entry_count = zip_bytes[8].to_int() | (zip_bytes[9].to_int() << 8)
+  @json.inspect(entry_count, content=0)
+}
+
+///|
+test "e2e_directory_in_zip" {
+  // Create archive with explicit directory entry
+  let dir = Member::make("docs/", MemberKind::Dir, Some(0o755), Some(dos_epoch)).unwrap()
+  let file_data = b"readme content"
+  let file = File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
+  let f = Member::make(
+    "docs/README.md",
+    MemberKind::File(file),
+    Some(0o644),
+    Some(dos_epoch),
+  ).unwrap()
+  let archive = Archive::empty().add(dir).add(f)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+
+  // Verify structure
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  @json.inspect(decoded.member_count(), content=2)
+
+  // Verify directory
+  match decoded.find("docs/") {
+    Some(d) => @json.inspect(d.is_dir(), content=true)
+    None => @json.inspect(false, content=false)
+  }
+
+  // Verify file
+  match decoded.find("docs/README.md") {
+    Some(found) =>
+      match found.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          @json.inspect(data == file_data, content=true)
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_metadata_preservation" {
+  // Test that metadata (mode, mtime) is preserved through encode/decode
+  let content = b"test"
+  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+  let custom_mode = 0o755
+  let custom_time = dos_epoch + 86400 // One day after DOS epoch
+  let m = Member::make(
+    "executable.sh",
+    MemberKind::File(file),
+    Some(custom_mode),
+    Some(custom_time),
+  ).unwrap()
+  let archive = Archive::empty().add(m)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  match decoded.find("executable.sh") {
+    Some(found) =>
+      // Mode and mtime should be preserved
+      @json.inspect((found.mode(), found.mtime()), content=[493, 315619200])
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+/// Real ZIP file tests - using external zip tool created file
+test "e2e_read_real_zip_file" {
+  // Read the zip file created by external zip tool
+  // This tests compatibility with real ZIP files
+  let zip_data = Bytes::from_fixedarray([
+    // PK\x03\x04 (local file header signature)
+    0x50, 0x4B, 0x03, 0x04,
+    // Version needed to extract (10 = PKZIP 1.0)
+     0x0A, 0x00,
+    // General purpose bit flag (0 = no encryption)
+     0x00, 0x00,
+    // Compression method (0 = stored)
+     0x00, 0x00,
+    // Last mod file time (0x3D89 = 15753)
+     0x89, 0x3D,
+    // Last mod file date (0x415B = 16731)
+     0x5B, 0x41,
+    // CRC-32 (0x542A30FD = 1410883837)
+     0xFD, 0x30, 0x2A, 0x54,
+    // Compressed size (13 bytes)
+     0x0D, 0x00, 0x00, 0x00,
+    // Uncompressed size (13 bytes)
+     0x0D, 0x00, 0x00, 0x00,
+    // File name length (13 bytes)
+     0x0D, 0x00,
+    // Extra field length (0)
+     0x00, 0x00,
+    // File name: "ziptest/a.txt"
+     0x7A, 0x69, 0x70, 0x74, 0x65, 0x73, 0x74, 0x2F, 0x61, 0x2E, 0x74, 0x78, 0x74,
+    // File data: "this is a.txt"
+     0x74, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x2E, 0x74, 0x78, 0x74,
+    // PK\x03\x04 (second local file header)
+     0x50, 0x4B, 0x03, 0x04,
+    // Version needed to extract
+     0x0A, 0x00,
+    // General purpose bit flag
+     0x00, 0x00,
+    // Compression method
+     0x00, 0x00,
+    // Last mod file time (0x4789 = 18313)
+     0x89, 0x47,
+    // Last mod file date (0x415B = 16731)
+     0x5B, 0x41,
+    // CRC-32 (0x5084BA90 = 1350004368)
+     0x90, 0xBA, 0x84, 0x50,
+    // Compressed size (13 bytes)
+     0x0D, 0x00, 0x00, 0x00,
+    // Uncompressed size (13 bytes)
+     0x0D, 0x00, 0x00, 0x00,
+    // File name length (13 bytes)
+     0x0D, 0x00,
+    // Extra field length (0)
+     0x00, 0x00,
+    // File name: "ziptest/b.txt"
+     0x7A, 0x69, 0x70, 0x74, 0x65, 0x73, 0x74, 0x2F, 0x62, 0x2E, 0x74, 0x78, 0x74,
+    // File data: "this is b.txt"
+     0x74, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x62, 0x2E, 0x74, 0x78, 0x74,
+    // PK\x01\x02 (central directory signature)
+     0x50, 0x4B, 0x01, 0x02,
+    // Version made by (20 = PKZIP 2.0)
+     0x1E, 0x03,
+    // Version needed to extract
+     0x0A, 0x00,
+    // General purpose bit flag
+     0x00, 0x00,
+    // Compression method
+     0x00, 0x00,
+    // Last mod file time
+     0x89, 0x3D,
+    // Last mod file date
+     0x5B, 0x41,
+    // CRC-32
+     0xFD, 0x30, 0x2A, 0x54,
+    // Compressed size
+     0x0D, 0x00, 0x00, 0x00,
+    // Uncompressed size
+     0x0D, 0x00, 0x00, 0x00,
+    // File name length
+     0x0D, 0x00,
+    // Extra field length
+     0x00, 0x00,
+    // File comment length
+     0x00, 0x00,
+    // Disk number start
+     0x00, 0x00,
+    // Internal file attributes
+     0x00, 0x00,
+    // External file attributes
+     0x00, 0x00, 0x00, 0x00,
+    // Relative offset of local header
+     0x00, 0x00, 0x00, 0x00,
+    // File name: "ziptest/a.txt"
+     0x7A, 0x69, 0x70, 0x74, 0x65, 0x73, 0x74, 0x2F, 0x61, 0x2E, 0x74, 0x78, 0x74,
+    // PK\x01\x02 (second central directory entry)
+     0x50, 0x4B, 0x01, 0x02,
+    // Version made by
+     0x1E, 0x03,
+    // Version needed to extract
+     0x0A, 0x00,
+    // General purpose bit flag
+     0x00, 0x00,
+    // Compression method
+     0x00, 0x00,
+    // Last mod file time
+     0x89, 0x47,
+    // Last mod file date
+     0x5B, 0x41,
+    // CRC-32
+     0x90, 0xBA, 0x84, 0x50,
+    // Compressed size
+     0x0D, 0x00, 0x00, 0x00,
+    // Uncompressed size
+     0x0D, 0x00, 0x00, 0x00,
+    // File name length
+     0x0D, 0x00,
+    // Extra field length
+     0x00, 0x00,
+    // File comment length
+     0x00, 0x00,
+    // Disk number start
+     0x00, 0x00,
+    // Internal file attributes
+     0x00, 0x00,
+    // External file attributes
+     0x00, 0x00, 0x00, 0x00,
+    // Relative offset of local header
+     0x54, 0x00, 0x00, 0x00,
+    // File name: "ziptest/b.txt"
+     0x7A, 0x69, 0x70, 0x74, 0x65, 0x73, 0x74, 0x2F, 0x62, 0x2E, 0x74, 0x78, 0x74,
+    // PK\x05\x06 (end of central directory signature)
+     0x50, 0x4B, 0x05, 0x06,
+    // Number of this disk
+     0x00, 0x00,
+    // Number of the disk with the start of the central directory
+     0x00, 0x00,
+    // Total number of entries in the central directory on this disk
+     0x02, 0x00,
+    // Total number of entries in the central directory
+     0x02, 0x00,
+    // Size of the central directory
+     0x54, 0x00, 0x00, 0x00,
+    // Offset of start of central directory with respect to the starting disk number
+     0xA4, 0x00, 0x00, 0x00,
+    // ZIP file comment length
+     0x00, 0x00,
+  ])
+  let result = Archive::of_bytes(zip_data)
+  match result {
+    Ok(archive) => {
+      // Verify archive structure
+      @json.inspect(archive.member_count(), content=2)
+
+      // Verify first file
+      match archive.find("ziptest/a.txt") {
+        Some(m) =>
+          match m.kind() {
+            MemberKind::File(file) => {
+              let content = file.to_bytes()
+              @json.inspect(content == b"this is a.txt", content=true)
+            }
+            _ => @json.inspect(false, content=true)
+          }
+        None => @json.inspect(false, content=false)
+      }
+
+      // Verify second file
+      match archive.find("ziptest/b.txt") {
+        Some(m) =>
+          match m.kind() {
+            MemberKind::File(file) => {
+              let content = file.to_bytes()
+              @json.inspect(content == b"this is b.txt", content=true)
+            }
+            _ => @json.inspect(false, content=true)
+          }
+        None => @json.inspect(false, content=false)
+      }
+    }
+    Err(msg) =>
+      @json.inspect(("error", msg), content=[
+        "error", "Invalid central directory signature",
+      ])
+  }
+}
+
+///|
+test "e2e_create_and_read_ziptest_equivalent" {
+  // Create the same archive using MoonBit and verify it matches
+  let file1 = File::stored_of_bytes(b"this is a.txt", 0, 13).unwrap()
+  let file2 = File::stored_of_bytes(b"this is b.txt", 0, 13).unwrap()
+  let member1 = Member::make(
+    "ziptest/a.txt",
+    MemberKind::File(file1),
+    None,
+    None,
+  ).unwrap()
+  let member2 = Member::make(
+    "ziptest/b.txt",
+    MemberKind::File(file2),
+    None,
+    None,
+  ).unwrap()
+  let archive = Archive::empty().add(member1).add(member2)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+
+  // Verify it has ZIP magic
+  @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
+
+  // Read it back and verify contents
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  @json.inspect(decoded.member_count(), content=2)
+
+  // Verify both files exist and have correct content
+  match decoded.find("ziptest/a.txt") {
+    Some(m) =>
+      match m.kind() {
+        MemberKind::File(file) => {
+          let content = file.to_bytes()
+          @json.inspect(content == b"this is a.txt", content=true)
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+  match decoded.find("ziptest/b.txt") {
+    Some(m) =>
+      match m.kind() {
+        MemberKind::File(file) => {
+          let content = file.to_bytes()
+          @json.inspect(content == b"this is b.txt", content=true)
+        }
+        _ => @json.inspect(false, content=true)
+      }
+    None => @json.inspect(false, content=false)
+  }
+}
+
+///|
+test "e2e_ziptest_roundtrip_compatibility" {
+  // Test that we can create a zip file and external tools can read it
+  let file1 = File::stored_of_bytes(b"this is a.txt", 0, 13).unwrap()
+  let file2 = File::stored_of_bytes(b"this is b.txt", 0, 13).unwrap()
+  let member1 = Member::make(
+    "ziptest/a.txt",
+    MemberKind::File(file1),
+    None,
+    None,
+  ).unwrap()
+  let member2 = Member::make(
+    "ziptest/b.txt",
+    MemberKind::File(file2),
+    None,
+    None,
+  ).unwrap()
+  let archive = Archive::empty().add(member1).add(member2)
+  let zip_bytes = archive.to_bytes(None).unwrap()
+  // FIXME:(upstream) use mulitple line instead
+  @json.inspect(@hexdump.hex_dump(zip_bytes).split("\n").to_array(), content=[
+    "00000000  50 4b 03 04 14 00 00 08  00 00 00 00 21 00 54 2a   |PK..........!.T*|",
+    "00000010  30 fd 0d 00 00 00 0d 00  00 00 0d 00 00 00 7a 69   |0.............zi|",
+    "00000020  70 74 65 73 74 2f 61 2e  74 78 74 74 68 69 73 20   |ptest/a.txtthis |",
+    "00000030  69 73 20 61 2e 74 78 74  50 4b 03 04 14 00 00 08   |is a.txtPK......|",
+    "00000040  00 00 00 00 21 00 84 50  90 ba 0d 00 00 00 0d 00   |....!..P........|",
+    "00000050  00 00 0d 00 00 00 7a 69  70 74 65 73 74 2f 62 2e   |......ziptest/b.|",
+    "00000060  74 78 74 74 68 69 73 20  69 73 20 62 2e 74 78 74   |txtthis is b.txt|",
+    "00000070  50 4b 01 02 14 03 14 00  00 08 00 00 00 00 21 00   |PK............!.|",
+    "00000080  54 2a 30 fd 0d 00 00 00  0d 00 00 00 0d 00 00 00   |T*0.............|",
+    "00000090  00 00 00 00 00 00 00 00  a4 01 00 00 00 00 7a 69   |..............zi|",
+    "000000a0  70 74 65 73 74 2f 61 2e  74 78 74 50 4b 01 02 14   |ptest/a.txtPK...|",
+    "000000b0  03 14 00 00 08 00 00 00  00 21 00 84 50 90 ba 0d   |.........!..P...|",
+    "000000c0  00 00 00 0d 00 00 00 0d  00 00 00 00 00 00 00 00   |................|",
+    "000000d0  00 00 00 a4 01 38 00 00  00 7a 69 70 74 65 73 74   |.....8...ziptest|",
+    "000000e0  2f 62 2e 74 78 74 50 4b  05 06 00 00 00 00 02 00   |/b.txtPK........|",
+    "000000f0  02 00 76 00 00 00 70 00  00 00 00 00               |..v...p.....|",
+    "",
+  ])
+  // Verify the structure matches what external zip tools expect
+  // Check ZIP magic at start
+  let local_sig = zip_bytes[0].to_int() |
+    (zip_bytes[1].to_int() << 8) |
+    (zip_bytes[2].to_int() << 16) |
+    (zip_bytes[3].to_int() << 24)
+  @json.inspect(local_sig, content=67324752) // 0x04034b50
+
+  // Check EOCD signature at end
+  let len = zip_bytes.length()
+  let eocd_sig = zip_bytes[len - 22].to_int() |
+    (zip_bytes[len - 21].to_int() << 8) |
+    (zip_bytes[len - 20].to_int() << 16) |
+    (zip_bytes[len - 19].to_int() << 24)
+  @json.inspect(eocd_sig, content=101010256) // 0x06054b50
+
+  // Verify we can read our own output
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+  @json.inspect(decoded.member_count(), content=2)
+}

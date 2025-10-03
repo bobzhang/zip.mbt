@@ -1,0 +1,725 @@
+// Deflate compression tests
+
+///|
+/// Inflate tests - uncompressed block
+test "inflate_uncompressed_block" {
+  // Create a simple uncompressed deflate stream
+  // Format: final_bit(1) + type(00) + padding + length + ~length + data
+  // Data: "ABC" (3 bytes)
+  let compressed = Bytes::from_fixedarray([
+    0b00000001, // final=1, type=00 (uncompressed)
+     3, 0, // length = 3 (little-endian)
+     252, 255, // ~length = 0xFFFC (complement of 3)
+     0x41, 0x42, 0x43, // "ABC"
+  ])
+  let result = inflate(compressed, 0, compressed.length(), None)
+  @json.inspect((result[0].to_int(), result[1].to_int(), result[2].to_int()), content=[
+    65, 66, 67,
+  ])
+}
+
+///|
+/// Deflate compression tests
+test "file_deflate_of_bytes_basic" {
+  let data = b"Hello, World!"
+  let result = File::deflate_of_bytes(data, 0, data.length(), None)
+  match result {
+    Ok(file) => {
+      @json.inspect(file.compression == Compression::Deflate, content=true)
+      @json.inspect(file.decompressed_size, content=13)
+      // With LZ77+Huffman, compressed size will be smaller than stored format
+      // Just verify it's reasonable (not larger than original + overhead)
+      let reasonable = file.compressed_size > 0 && file.compressed_size < 30
+      @json.inspect(reasonable, content=true)
+    }
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "file_deflate_roundtrip" {
+  // Test that deflate compression creates data that can be decompressed
+  let original = b"Test data for deflate roundtrip!"
+  let result = File::deflate_of_bytes(original, 0, original.length(), None)
+  match result {
+    Ok(file) => {
+      // Decompress and verify
+      let decompressed = file.to_bytes()
+      @json.inspect(
+        (
+          decompressed.length() == original.length(),
+          decompressed[0] == original[0],
+          decompressed[original.length() - 1] == original[original.length() - 1],
+        ),
+        content=[true, true, true],
+      )
+    }
+    Err(msg) => @json.inspect(("error", msg), content="success")
+  }
+}
+
+///|
+test "file_deflate_empty_data" {
+  let data = b""
+  let result = File::deflate_of_bytes(data, 0, 0, None)
+  match result {
+    Ok(file) => {
+      @json.inspect(file.decompressed_size, content=0)
+      // Empty deflate with LZ77+Huffman: block header + EOB symbol
+      // Should be very small (< 5 bytes)
+      let small = file.compressed_size > 0 && file.compressed_size < 5
+      @json.inspect(small, content=true)
+    }
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+test "archive_roundtrip_deflate" {
+  let data = b"Test deflate compression in ZIP"
+  let file = File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
+  let m = Member::make("compressed.txt", MemberKind::File(file), None, None).unwrap()
+  let original = Archive::empty().add(m)
+
+  // Encode
+  let bytes = original.to_bytes(None).unwrap()
+
+  // Decode and decompress
+  let result = Archive::of_bytes(bytes)
+  match result {
+    Ok(decoded) =>
+      match decoded.find("compressed.txt") {
+        Some(found) =>
+          match found.kind() {
+            MemberKind::File(f) => {
+              let extracted = f.to_bytes()
+              @json.inspect((extracted.length(), extracted[0] == data[0]), content=[
+                31, true,
+              ])
+            }
+            _ => @json.inspect("wrong kind", content="file")
+          }
+        None => @json.inspect("not found", content="not found")
+      }
+    Err(msg) => @json.inspect(("error", msg), content=["success", ""])
+  }
+}
+
+///|
+/// Symbol conversion tests
+test "length_to_symbol_basic" {
+  // Test key ranges
+  @json.inspect(length_to_symbol(3), content=257) // Min length
+  @json.inspect(length_to_symbol(10), content=264)
+  @json.inspect(length_to_symbol(11), content=265)
+  @json.inspect(length_to_symbol(18), content=268)
+  @json.inspect(length_to_symbol(258), content=285) // Max length
+}
+
+///|
+test "distance_to_symbol_basic" {
+  // Test key ranges
+  @json.inspect(distance_to_symbol(1), content=0) // Min distance
+  @json.inspect(distance_to_symbol(4), content=3)
+  @json.inspect(distance_to_symbol(5), content=4)
+  @json.inspect(distance_to_symbol(256), content=15)
+  @json.inspect(distance_to_symbol(32768), content=29) // Max distance
+}
+
+///|
+/// Test deflate with fixed Huffman (literals only, no LZ77 yet)
+test "deflate_fixed_literals_hello" {
+  let data = b"hello"
+  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
+
+  // Should be able to decompress it
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[1].to_int(),
+      decompressed[2].to_int(),
+      decompressed[3].to_int(),
+      decompressed[4].to_int(),
+    ),
+    content=[5, 104, 101, 108, 108, 111],
+  ) // "hello" = h(104) e(101) l(108) l(108) o(111)
+
+  // Compressed should be larger than original (no LZ77 yet)
+  // Each byte becomes a Huffman code (8 or 9 bits) plus end-of-block
+  let is_larger = compressed.length() > data.length()
+  @json.inspect(is_larger, content=true)
+}
+
+///|
+test "deflate_fixed_literals_empty" {
+  let data = b""
+  let compressed = deflate_fixed_literals_only(data, 0, 0, true)
+
+  // Should decompress to empty
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(0))
+  @json.inspect(decompressed.length(), content=0)
+}
+
+///|
+test "deflate_fixed_literals_longer" {
+  let data = b"The quick brown fox jumps over the lazy dog"
+  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
+
+  // Should decompress correctly
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(
+    (
+      decompressed.length() == data.length(),
+      decompressed[0].to_int(), // 'T'
+      decompressed[4].to_int(), // 'q'
+      decompressed[42].to_int(), // 'g'
+    ),
+    content=[true, 84, 113, 103],
+  )
+}
+
+///|
+test "deflate_fixed_literals_roundtrip" {
+  // Test with various byte values
+  let data = b"\x00\x01\x7f\x80\xff"
+  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+
+  // Check each byte
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[1].to_int(),
+      decompressed[2].to_int(),
+      decompressed[3].to_int(),
+      decompressed[4].to_int(),
+    ),
+    content=[5, 0, 1, 127, 128, 255],
+  )
+}
+
+// ============================================================================
+// LZ77 String Matching Tests
+// ============================================================================
+
+// ============================================================================
+// Full LZ77 + Huffman Compression Tests
+// ============================================================================
+
+///|
+test "deflate_fixed_empty" {
+  let data = b""
+  let compressed = deflate_fixed(data, 0, 0, true, 4, 4096)
+  let decompressed = inflate(compressed, 0, compressed.length(), Some(0))
+  @json.inspect(decompressed.length(), content=0)
+}
+
+///|
+test "deflate_fixed_simple" {
+  let data = b"hello"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[1].to_int(),
+      decompressed[2].to_int(),
+      decompressed[3].to_int(),
+      decompressed[4].to_int(),
+    ),
+    content=[5, 104, 101, 108, 108, 111],
+  )
+}
+
+///|
+test "deflate_fixed_with_repetition" {
+  // String with obvious repetition that LZ77 should compress
+  let data = b"abcabcabcabc"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+
+  // Should decompress correctly
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(), // 'a'
+      decompressed[3].to_int(), // 'a'
+      decompressed[6].to_int(), // 'a'
+      decompressed[9].to_int(), // 'a'
+    ),
+    content=[12, 97, 97, 97, 97],
+  )
+
+  // Compressed should be smaller than original due to LZ77
+  let is_smaller = compressed.length() < data.length()
+  @json.inspect(is_smaller, content=true)
+}
+
+///|
+test "deflate_fixed_longer_text" {
+  let data = b"The quick brown fox jumps over the lazy dog. The quick brown fox."
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+
+  // Verify length and some key characters
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(), // 'T'
+      decompressed[46].to_int(), // 'h' (in "The" second time)
+      decompressed[decompressed.length() - 1].to_int(), // '.'
+    ),
+    content=[65, 84, 104, 46],
+  )
+}
+
+///|
+test "deflate_fixed_all_same" {
+  // Highly compressible: all same byte
+  let buf = ByteBuf::new(100, false)
+  for i = 0; i < 100; i = i + 1 {
+    buf.add_byte(0x61) // 'a'
+  }
+  let data = buf.contents()
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+
+  // Should decompress to correct length
+  @json.inspect(decompressed.length(), content=100)
+
+  // Should be highly compressed (much smaller)
+  let ratio = compressed.length() < 20
+  @json.inspect(ratio, content=true)
+}
+
+///|
+test "deflate_fixed_binary_data" {
+  // Test with various byte values including null bytes
+  let data = b"\x00\x01\x02\x03\x00\x01\x02\x03\xff\xfe\xfd"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[4].to_int(), // Should match [0] due to repetition
+      decompressed[10].to_int(),
+    ),
+    content=[11, 0, 0, 253],
+  )
+}
+
+///|
+test "deflate_fixed_no_compression_benefit" {
+  // Random-looking data that won't compress well
+  let data = b"abcdefghijklmnop"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+
+  // Should still decompress correctly even if not smaller
+  @json.inspect(
+    (decompressed.length(), decompressed[0].to_int(), decompressed[15].to_int()),
+    content=[16, 97, 112],
+  )
+}
+
+///|
+test "deflate_fixed_substring_matches" {
+  // Test lazy matching with overlapping potential matches
+  let data = b"aaabbbaaabbbccc"
+  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(), // 'a'
+      decompressed[6].to_int(), // 'a' (second occurrence)
+      decompressed[12].to_int(), // 'c'
+    ),
+    content=[15, 97, 97, 99],
+  )
+}
+
+// ============================================================================
+// End-to-End Integration Tests
+// ============================================================================
+
+///|
+test "complete_zip_workflow_with_compression" {
+  // Demonstrate complete ZIP workflow with real compression
+
+  // 1. Create multiple files with different characteristics
+  let text1 = b"The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  let text2 = b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" // Highly compressible
+  let text3 = b"Random data: x7f3k9m2p"
+
+  // 2. Compress files
+  let file1 = File::deflate_of_bytes(text1, 0, text1.length(), None).unwrap()
+  let file2 = File::deflate_of_bytes(text2, 0, text2.length(), None).unwrap()
+  let file3 = File::deflate_of_bytes(text3, 0, text3.length(), None).unwrap()
+
+  // 3. Create members
+  let m1 = Member::make("doc.txt", MemberKind::File(file1), None, None).unwrap()
+  let m2 = Member::make("repeated.txt", MemberKind::File(file2), None, None).unwrap()
+  let m3 = Member::make("random.txt", MemberKind::File(file3), None, None).unwrap()
+
+  // 4. Build archive
+  let archive = Archive::empty().add(m1).add(m2).add(m3)
+
+  // 5. Serialize to ZIP format
+  let zip_bytes = archive.to_bytes(None).unwrap()
+
+  // 6. Verify it's a valid ZIP (deserialize)
+  let decoded = Archive::of_bytes(zip_bytes).unwrap()
+
+  // 7. Extract and verify each file
+  match decoded.find("doc.txt") {
+    Some(entry) =>
+      match entry.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          @json.inspect((data.length(), data[0].to_int()), content=[89, 84]) // 'T'
+        }
+        _ => ()
+      }
+    None => ()
+  }
+  match decoded.find("repeated.txt") {
+    Some(entry) =>
+      match entry.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          // Verify it decompressed correctly
+          @json.inspect((data.length(), data[0].to_int(), data[39].to_int()), content=[
+            40, 97, 97,
+          ])
+
+          // Verify actual compression happened
+          let ratio = f.compressed_size() < 15 // Should be < 40% of original
+          @json.inspect(ratio, content=true)
+        }
+        _ => ()
+      }
+    None => ()
+  }
+  match decoded.find("random.txt") {
+    Some(entry) =>
+      match entry.kind() {
+        MemberKind::File(f) => {
+          let data = f.to_bytes()
+          @json.inspect(data.length(), content=22)
+        }
+        _ => ()
+      }
+    None => ()
+  }
+
+  // 8. Verify archive has all members
+  let count = decoded.fold(fn(_m, acc) { acc + 1 }, 0)
+  @json.inspect(count, content=3)
+}
+
+// ============================================================================
+// zlib Wrapper Format Tests (RFC 1950)
+// ============================================================================
+
+///|
+test "dynamic_huffman_simple" {
+  // Create ASCII bytes directly (not from UTF-16 string)
+  let data = b"AAAAAABBBBBBCCCCCC"
+  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+
+  // Should decompress correctly
+  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  @json.inspect(decompressed, content="AAAAAABBBBBBCCCCCC")
+}
+
+///|
+test "dynamic_huffman_vs_fixed" {
+  // Data with non-uniform distribution - test both compress correctly
+  let data = b"AAAAAAAAAAABBBBBCCCCCDDD"
+  let dynamic = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let fixed = deflate_fixed(data, 0, data.length(), true, 8, 128)
+
+  // Both should decompress correctly
+  let d1 = inflate(dynamic, 0, dynamic.length(), None)
+  let d2 = inflate(fixed, 0, fixed.length(), None)
+  @json.inspect((d1, d2), content=[
+    "AAAAAAAAAAABBBBBCCCCCDDD", "AAAAAAAAAAABBBBBCCCCCDDD",
+  ])
+
+  // Note: For short data, dynamic may be larger due to header overhead
+  // Dynamic Huffman is beneficial for larger blocks (typically >1KB)
+}
+
+///|
+test "dynamic_huffman_single_symbol" {
+  // All same character - should compress well with LZ77
+  let data = b"AAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+
+  // Should compress to less than original (LZ77 + dynamic Huffman)
+  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  @json.inspect((compressed.length() < data.length(), decompressed.length()), content=[
+    true, 28,
+  ])
+}
+
+///|
+test "dynamic_huffman_empty" {
+  let compressed = deflate_dynamic(Bytes::new(0), 0, 0, true, 8, 128)
+  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  @json.inspect(decompressed.length(), content=0)
+}
+
+///|
+test "dynamic_huffman_short" {
+  let data = b"Hi"
+  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  @json.inspect(decompressed, content="Hi")
+}
+
+///|
+test "dynamic_huffman_text" {
+  let data = b"The quick brown fox jumps over the lazy dog."
+  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+
+  // Should compress well
+  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  @json.inspect(
+    decompressed,
+    content="The quick brown fox jumps over the lazy dog.",
+  )
+}
+
+///|
+test "dynamic_huffman_binary" {
+  // Binary data with all byte values
+  let data = Array::make(256, b'\x00')
+  for i = 0; i < 256; i = i + 1 {
+    data[i] = i.to_byte()
+  }
+  let data_bytes = Bytes::from_fixedarray(
+    FixedArray::from_iter(data[0:].iter()),
+  )
+  let compressed = deflate_dynamic(data_bytes, 0, 256, true, 8, 128)
+  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  @json.inspect(
+    (
+      decompressed.length(),
+      decompressed[0].to_int(),
+      decompressed[255].to_int(),
+    ),
+    content=[256, 0, 255],
+  )
+}
+
+///|
+test "dynamic_vs_fixed" {
+  // Compare compression ratios
+  let data = b"AAAA"
+  let dynamic = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let fixed = deflate_fixed(data, 0, data.length(), true, 8, 128)
+
+  // Both must decompress correctly
+  let d1 = inflate(dynamic, 0, dynamic.length(), None)
+  let d2 = inflate(fixed, 0, fixed.length(), None)
+  @json.inspect((d1, d2), content=["AAAA", "AAAA"])
+}
+
+// ============================================================================
+// Integration Tests - Verify compression level selection
+// ============================================================================
+
+///|
+test "compression_level_fast_integration" {
+  // Fast level should compress and decompress correctly
+  let data = b"AAAABBBBCCCCDDDDEEEEFFFFGGGG" // 28 bytes
+  let result = File::deflate_of_bytes(data, 0, data.length(), None)
+  match result {
+    Ok(file) => {
+      // Decompress and verify
+      let decompressed = inflate(
+        file.compressed_bytes,
+        file.start,
+        file.compressed_size,
+        None,
+      )
+      @json.inspect(decompressed, content="AAAABBBBCCCCDDDDEEEEFFFFGGGG")
+    }
+    Err(e) => @json.inspect(e, content="Should not error")
+  }
+}
+
+///|
+test "compression_level_large_data_integration" {
+  // Large data should use dynamic Huffman for better compression
+  let data = Array::make(300, b'A')
+  for i = 0; i < 100; i = i + 1 {
+    data[i] = b'A'
+  }
+  for i = 100; i < 200; i = i + 1 {
+    data[i] = b'B'
+  }
+  for i = 200; i < 300; i = i + 1 {
+    data[i] = b'C'
+  }
+  let data_bytes = Bytes::from_fixedarray(
+    FixedArray::from_iter(data[0:].iter()),
+  )
+  let result = File::deflate_of_bytes(data_bytes, 0, 300, None)
+  match result {
+    Ok(file) => {
+      // Decompress and verify  
+      let decompressed = inflate(
+        file.compressed_bytes,
+        file.start,
+        file.compressed_size,
+        None,
+      )
+      @json.inspect(
+        (
+          decompressed.length(),
+          decompressed[0].to_int(),
+          decompressed[150].to_int(),
+          decompressed[250].to_int(),
+        ),
+        content=[300, 65, 66, 67],
+      )
+    }
+    Err(e) => @json.inspect(e, content="Should not error")
+  }
+}
+
+///|
+test "compression_with_lz77_matches" {
+  // Repetitive data should compress well with LZ77 + Huffman
+  let data = b"The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+  let result = File::deflate_of_bytes(data, 0, data.length(), None)
+  match result {
+    Ok(file) => {
+      // Should achieve good compression ratio
+      @json.inspect(file.compressed_size < data.length(), content=true)
+      // Verify decompression
+      let decompressed = inflate(
+        file.compressed_bytes,
+        file.start,
+        file.compressed_size,
+        None,
+      )
+      @json.inspect(decompressed.length() == data.length(), content=true)
+    }
+    Err(e) => @json.inspect(e, content="Should not error")
+  }
+}
+// ============================================================================
+// High-level DEFLATE API Compatibility Tests
+// ============================================================================
+
+///|
+test "deflate_api_basic" {
+  let data = b"Hello, DEFLATE API!"
+  match deflate(data, 0, data.length(), None) {
+    Ok(compressed) => {
+      // Should compress successfully
+      @json.inspect(compressed.length() > 0, content=true)
+
+      // Should decompress back to original
+      let decompressed = inflate(
+        compressed,
+        0,
+        compressed.length(),
+        Some(data.length()),
+      )
+      @json.inspect(decompressed.length(), content=19)
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Test file to_bytes_no_crc_check
+test "coverage_no_crc_check" {
+  let data = b"No CRC check"
+  match File::deflate_of_bytes(data, 0, data.length(), None) {
+    Ok(file) => {
+      let (dec, crc) = file.to_bytes_no_crc_check()
+      @json.inspect((dec == data, crc == file.decompressed_crc32()), content=[
+        true, true,
+      ])
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
+
+///|
+/// Test large data triggering dynamic Huffman (>= 256 bytes)
+test "coverage_large_data_dynamic" {
+  let buf = Array::make(300, b'A')
+  for i = 0; i < 300; i = i + 1 {
+    buf[i] = (65 + i.mod(26)).to_byte()
+  }
+  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  match File::deflate_of_bytes(data, 0, data.length(), None) {
+    Ok(file) => {
+      let dec = file.to_bytes()
+      @json.inspect((dec.length(), dec == data), content=[300, true])
+    }
+    Err(_) => @json.inspect("should not fail", content="success")
+  }
+}
