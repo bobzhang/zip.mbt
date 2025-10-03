@@ -2,78 +2,25 @@
 package "bobzhang/zip"
 
 import(
-  "bobzhang/zip/deflate"
   "bobzhang/zip/member"
   "bobzhang/zip/types"
   "moonbitlang/core/immut/sorted_map"
 )
 
 // Values
-fn adler32_and_deflate(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[(UInt, Bytes), String]
-
-fn bytes_adler32(Bytes, Int, Int) -> UInt
-
-fn bytes_crc32(Bytes, Int, Int) -> UInt
-
 fn bytes_has_zip_magic(Bytes) -> Bool
 
-fn check_adler32(UInt, UInt) -> Result[Unit, String]
-
-fn check_crc32(UInt, UInt) -> Result[Unit, String]
-
-fn crc32_and_deflate(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[(UInt, Bytes), String]
-
-fn deflate(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[Bytes, String]
-
-fn deflate_dynamic(Bytes, Int, Int, Bool, Int, Int) -> Bytes
-
-fn deflate_fixed(Bytes, Int, Int, Bool, Int, Int) -> Bytes
-
-fn deflate_fixed_literals_only(Bytes, Int, Int, Bool) -> Bytes
-
-fn deflate_stored(Bytes, Int, Int) -> Bytes
-
-fn distance_to_symbol(Int) -> Int
-
 let dos_epoch : @types.Ptime
-
-fn format_file_mode(Int) -> String
-
-fn fpath_ensure_directoryness(String) -> String
-
-fn fpath_ensure_unix(String) -> String
-
-fn fpath_sanitize(String) -> String
 
 let gp_flag_encrypted : UInt16
 
 let gp_flag_utf8 : UInt16
-
-fn inflate(Bytes, Int, Int, Int?) -> Bytes
-
-fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, UInt)
-
-fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, UInt)
-
-fn length_to_symbol(Int) -> Int
 
 let max_file_size : Int64
 
 let max_member_count : Int
 
 let max_path_length : Int
-
-fn ptime_format(@types.Ptime) -> String
-
-fn ptime_of_dos_date_time(UInt16, UInt16) -> @types.Ptime
-
-fn ptime_to_date_time(@types.Ptime) -> ((Int, Int, Int), (Int, Int, Int))
-
-fn ptime_to_dos_date_time(@types.Ptime) -> (UInt16, UInt16)
-
-fn zlib_compress(Bytes, Int, Int, @deflate.DeflateLevel?) -> (UInt, Bytes)
-
-fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, UInt), String]
 
 // Errors
 
@@ -102,7 +49,7 @@ pub typealias @bobzhang/zip/buffer.ByteBuf as ByteBuf
 
 pub typealias @types.Compression as Compression
 
-pub typealias @deflate.DeflateLevel as DeflateLevel
+pub typealias @bobzhang/zip/deflate.DeflateLevel as DeflateLevel
 
 pub typealias @bobzhang/zip/file.File as File
 

@@ -12,7 +12,7 @@ test "inflate_uncompressed_block" {
      252, 255, // ~length = 0xFFFC (complement of 3)
      0x41, 0x42, 0x43, // "ABC"
   ])
-  let result = inflate(compressed, 0, compressed.length(), None)
+  let result = @deflate.inflate(compressed, 0, compressed.length(), None)
   @json.inspect((result[0].to_int(), result[1].to_int(), result[2].to_int()), content=[
     65, 66, 67,
   ])
@@ -107,33 +107,38 @@ test "archive_roundtrip_deflate" {
 
 ///|
 /// Symbol conversion tests
-test "length_to_symbol_basic" {
+test "@deflate.length_to_symbol_basic" {
   // Test key ranges
-  @json.inspect(length_to_symbol(3), content=257) // Min length
-  @json.inspect(length_to_symbol(10), content=264)
-  @json.inspect(length_to_symbol(11), content=265)
-  @json.inspect(length_to_symbol(18), content=268)
-  @json.inspect(length_to_symbol(258), content=285) // Max length
+  @json.inspect(@deflate.length_to_symbol(3), content=257) // Min length
+  @json.inspect(@deflate.length_to_symbol(10), content=264)
+  @json.inspect(@deflate.length_to_symbol(11), content=265)
+  @json.inspect(@deflate.length_to_symbol(18), content=268)
+  @json.inspect(@deflate.length_to_symbol(258), content=285) // Max length
 }
 
 ///|
-test "distance_to_symbol_basic" {
+test "@deflate.distance_to_symbol_basic" {
   // Test key ranges
-  @json.inspect(distance_to_symbol(1), content=0) // Min distance
-  @json.inspect(distance_to_symbol(4), content=3)
-  @json.inspect(distance_to_symbol(5), content=4)
-  @json.inspect(distance_to_symbol(256), content=15)
-  @json.inspect(distance_to_symbol(32768), content=29) // Max distance
+  @json.inspect(@deflate.distance_to_symbol(1), content=0) // Min distance
+  @json.inspect(@deflate.distance_to_symbol(4), content=3)
+  @json.inspect(@deflate.distance_to_symbol(5), content=4)
+  @json.inspect(@deflate.distance_to_symbol(256), content=15)
+  @json.inspect(@deflate.distance_to_symbol(32768), content=29) // Max distance
 }
 
 ///|
 /// Test deflate with fixed Huffman (literals only, no LZ77 yet)
 test "deflate_fixed_literals_hello" {
   let data = b"hello"
-  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
+  let compressed = @deflate.deflate_fixed_literals_only(
+    data,
+    0,
+    data.length(),
+    true,
+  )
 
   // Should be able to decompress it
-  let decompressed = inflate(
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -160,20 +165,30 @@ test "deflate_fixed_literals_hello" {
 ///|
 test "deflate_fixed_literals_empty" {
   let data = b""
-  let compressed = deflate_fixed_literals_only(data, 0, 0, true)
+  let compressed = @deflate.deflate_fixed_literals_only(data, 0, 0, true)
 
   // Should decompress to empty
-  let decompressed = inflate(compressed, 0, compressed.length(), Some(0))
+  let decompressed = @deflate.inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(0),
+  )
   @json.inspect(decompressed.length(), content=0)
 }
 
 ///|
 test "deflate_fixed_literals_longer" {
   let data = b"The quick brown fox jumps over the lazy dog"
-  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
+  let compressed = @deflate.deflate_fixed_literals_only(
+    data,
+    0,
+    data.length(),
+    true,
+  )
 
   // Should decompress correctly
-  let decompressed = inflate(
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -194,8 +209,13 @@ test "deflate_fixed_literals_longer" {
 test "deflate_fixed_literals_roundtrip" {
   // Test with various byte values
   let data = b"\x00\x01\x7f\x80\xff"
-  let compressed = deflate_fixed_literals_only(data, 0, data.length(), true)
-  let decompressed = inflate(
+  let compressed = @deflate.deflate_fixed_literals_only(
+    data,
+    0,
+    data.length(),
+    true,
+  )
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -227,16 +247,21 @@ test "deflate_fixed_literals_roundtrip" {
 ///|
 test "deflate_fixed_empty" {
   let data = b""
-  let compressed = deflate_fixed(data, 0, 0, true, 4, 4096)
-  let decompressed = inflate(compressed, 0, compressed.length(), Some(0))
+  let compressed = @deflate.deflate_fixed(data, 0, 0, true, 4, 4096)
+  let decompressed = @deflate.inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(0),
+  )
   @json.inspect(decompressed.length(), content=0)
 }
 
 ///|
 test "deflate_fixed_simple" {
   let data = b"hello"
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
-  let decompressed = inflate(
+  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -259,8 +284,8 @@ test "deflate_fixed_simple" {
 test "deflate_fixed_with_repetition" {
   // String with obvious repetition that LZ77 should compress
   let data = b"abcabcabcabc"
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
-  let decompressed = inflate(
+  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -287,8 +312,8 @@ test "deflate_fixed_with_repetition" {
 ///|
 test "deflate_fixed_longer_text" {
   let data = b"The quick brown fox jumps over the lazy dog. The quick brown fox."
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
-  let decompressed = inflate(
+  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -315,8 +340,8 @@ test "deflate_fixed_all_same" {
     buf.add_byte(0x61) // 'a'
   }
   let data = buf.contents()
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
-  let decompressed = inflate(
+  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -335,8 +360,8 @@ test "deflate_fixed_all_same" {
 test "deflate_fixed_binary_data" {
   // Test with various byte values including null bytes
   let data = b"\x00\x01\x02\x03\x00\x01\x02\x03\xff\xfe\xfd"
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
-  let decompressed = inflate(
+  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -357,8 +382,8 @@ test "deflate_fixed_binary_data" {
 test "deflate_fixed_no_compression_benefit" {
   // Random-looking data that won't compress well
   let data = b"abcdefghijklmnop"
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
-  let decompressed = inflate(
+  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -376,8 +401,8 @@ test "deflate_fixed_no_compression_benefit" {
 test "deflate_fixed_substring_matches" {
   // Test lazy matching with overlapping potential matches
   let data = b"aaabbbaaabbbccc"
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
-  let decompressed = inflate(
+  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let decompressed = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
@@ -481,10 +506,17 @@ test "complete_zip_workflow_with_compression" {
 test "dynamic_huffman_simple" {
   // Create ASCII bytes directly (not from UTF-16 string)
   let data = b"AAAAAABBBBBBCCCCCC"
-  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let compressed = @deflate.deflate_dynamic(
+    data,
+    0,
+    data.length(),
+    true,
+    8,
+    128,
+  )
 
   // Should decompress correctly
-  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
   @json.inspect(decompressed, content="AAAAAABBBBBBCCCCCC")
 }
 
@@ -492,12 +524,12 @@ test "dynamic_huffman_simple" {
 test "dynamic_huffman_vs_fixed" {
   // Data with non-uniform distribution - test both compress correctly
   let data = b"AAAAAAAAAAABBBBBCCCCCDDD"
-  let dynamic = deflate_dynamic(data, 0, data.length(), true, 8, 128)
-  let fixed = deflate_fixed(data, 0, data.length(), true, 8, 128)
+  let dynamic = @deflate.deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let fixed = @deflate.deflate_fixed(data, 0, data.length(), true, 8, 128)
 
   // Both should decompress correctly
-  let d1 = inflate(dynamic, 0, dynamic.length(), None)
-  let d2 = inflate(fixed, 0, fixed.length(), None)
+  let d1 = @deflate.inflate(dynamic, 0, dynamic.length(), None)
+  let d2 = @deflate.inflate(fixed, 0, fixed.length(), None)
   @json.inspect((d1, d2), content=[
     "AAAAAAAAAAABBBBBCCCCCDDD", "AAAAAAAAAAABBBBBCCCCCDDD",
   ])
@@ -510,10 +542,17 @@ test "dynamic_huffman_vs_fixed" {
 test "dynamic_huffman_single_symbol" {
   // All same character - should compress well with LZ77
   let data = b"AAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let compressed = @deflate.deflate_dynamic(
+    data,
+    0,
+    data.length(),
+    true,
+    8,
+    128,
+  )
 
   // Should compress to less than original (LZ77 + dynamic Huffman)
-  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
   @json.inspect((compressed.length() < data.length(), decompressed.length()), content=[
     true, 28,
   ])
@@ -521,26 +560,40 @@ test "dynamic_huffman_single_symbol" {
 
 ///|
 test "dynamic_huffman_empty" {
-  let compressed = deflate_dynamic(Bytes::new(0), 0, 0, true, 8, 128)
-  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  let compressed = @deflate.deflate_dynamic(Bytes::new(0), 0, 0, true, 8, 128)
+  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
   @json.inspect(decompressed.length(), content=0)
 }
 
 ///|
 test "dynamic_huffman_short" {
   let data = b"Hi"
-  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
-  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  let compressed = @deflate.deflate_dynamic(
+    data,
+    0,
+    data.length(),
+    true,
+    8,
+    128,
+  )
+  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
   @json.inspect(decompressed, content="Hi")
 }
 
 ///|
 test "dynamic_huffman_text" {
   let data = b"The quick brown fox jumps over the lazy dog."
-  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let compressed = @deflate.deflate_dynamic(
+    data,
+    0,
+    data.length(),
+    true,
+    8,
+    128,
+  )
 
   // Should compress well
-  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
   @json.inspect(
     decompressed,
     content="The quick brown fox jumps over the lazy dog.",
@@ -557,8 +610,8 @@ test "dynamic_huffman_binary" {
   let data_bytes = Bytes::from_fixedarray(
     FixedArray::from_iter(data[0:].iter()),
   )
-  let compressed = deflate_dynamic(data_bytes, 0, 256, true, 8, 128)
-  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  let compressed = @deflate.deflate_dynamic(data_bytes, 0, 256, true, 8, 128)
+  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
   @json.inspect(
     (
       decompressed.length(),
@@ -573,12 +626,12 @@ test "dynamic_huffman_binary" {
 test "dynamic_vs_fixed" {
   // Compare compression ratios
   let data = b"AAAA"
-  let dynamic = deflate_dynamic(data, 0, data.length(), true, 8, 128)
-  let fixed = deflate_fixed(data, 0, data.length(), true, 8, 128)
+  let dynamic = @deflate.deflate_dynamic(data, 0, data.length(), true, 8, 128)
+  let fixed = @deflate.deflate_fixed(data, 0, data.length(), true, 8, 128)
 
   // Both must decompress correctly
-  let d1 = inflate(dynamic, 0, dynamic.length(), None)
-  let d2 = inflate(fixed, 0, fixed.length(), None)
+  let d1 = @deflate.inflate(dynamic, 0, dynamic.length(), None)
+  let d2 = @deflate.inflate(fixed, 0, fixed.length(), None)
   @json.inspect((d1, d2), content=["AAAA", "AAAA"])
 }
 
@@ -594,7 +647,7 @@ test "compression_level_fast_integration" {
   match result {
     Ok(file) => {
       // Decompress and verify
-      let decompressed = inflate(
+      let decompressed = @deflate.inflate(
         file.compressed_bytes,
         file.start,
         file.compressed_size,
@@ -626,7 +679,7 @@ test "compression_level_large_data_integration" {
   match result {
     Ok(file) => {
       // Decompress and verify  
-      let decompressed = inflate(
+      let decompressed = @deflate.inflate(
         file.compressed_bytes,
         file.start,
         file.compressed_size,
@@ -656,7 +709,7 @@ test "compression_with_lz77_matches" {
       // Should achieve good compression ratio
       @json.inspect(file.compressed_size < data.length(), content=true)
       // Verify decompression
-      let decompressed = inflate(
+      let decompressed = @deflate.inflate(
         file.compressed_bytes,
         file.start,
         file.compressed_size,
@@ -674,13 +727,13 @@ test "compression_with_lz77_matches" {
 ///|
 test "deflate_api_basic" {
   let data = b"Hello, DEFLATE API!"
-  match deflate(data, 0, data.length(), None) {
+  match @deflate.deflate(data, 0, data.length(), None) {
     Ok(compressed) => {
       // Should compress successfully
       @json.inspect(compressed.length() > 0, content=true)
 
       // Should decompress back to original
-      let decompressed = inflate(
+      let decompressed = @deflate.inflate(
         compressed,
         0,
         compressed.length(),

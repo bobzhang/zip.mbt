@@ -6,18 +6,6 @@
 ///|
 
 ///|
-pub fnalias @crc32.bytes_crc32
-
-///|
-pub fnalias @crc32.check_crc32
-
-///|
-pub fnalias @adler32.bytes_adler32
-
-///|
-pub fnalias @adler32.check_adler32
-
-///|
 /// Helper: UInt to hex string
 // fn UInt::to_hex_string(self : UInt) -> String {
 //   let hex_digits = [
@@ -243,66 +231,12 @@ pub typealias @types.Ptime
 ///|
 pub let dos_epoch : Ptime = @types.dos_epoch
 
-///|
-pub fnalias @types.ptime_to_date_time
-
-///|
-pub fnalias @types.ptime_of_dos_date_time
-
-///|
-pub fnalias @types.ptime_to_dos_date_time
-
-///|
-pub fnalias @types.ptime_format
-
 // ============================================================================
 // DEFLATE and zlib - Re-exported from deflate package
 // ============================================================================
 
 ///|
 pub typealias @deflate.DeflateLevel
-
-///|
-pub fnalias @deflate.inflate
-
-///|
-pub fnalias @deflate.inflate_and_crc32
-
-///|
-pub fnalias @deflate.inflate_and_adler32
-
-///|
-pub fnalias @deflate.deflate
-
-///|
-pub fnalias @deflate.crc32_and_deflate
-
-///|
-pub fnalias @deflate.adler32_and_deflate
-
-///|
-pub fnalias @deflate.deflate_stored
-
-///|
-pub fnalias @deflate.deflate_fixed
-
-///|
-pub fnalias @deflate.deflate_fixed_literals_only
-
-///|
-pub fnalias @deflate.deflate_dynamic
-
-///|
-pub fnalias @deflate.length_to_symbol
-
-///|
-pub fnalias @deflate.distance_to_symbol
-
-///|
-pub fnalias @deflate.zlib_compress
-
-///|
-pub fnalias @deflate.zlib_decompress
 
 ///|
 /// File path utilities for ZIP archives
@@ -313,19 +247,7 @@ pub fnalias @deflate.zlib_decompress
 pub typealias @types.Fpath
 
 ///|
-pub fnalias @types.fpath_ensure_unix
-
-///|
-pub fnalias @types.fpath_ensure_directoryness
-
-///|
-pub fnalias @types.fpath_sanitize
-
-///|
 pub typealias @types.FileMode
-
-///|
-pub fnalias @types.format_file_mode
 
 ///|
 /// Convert string to UTF-8 bytes for ZIP encoding
@@ -633,7 +555,7 @@ fn parse_central_dir_entry(
   }
 
   // Convert DOS time to POSIX time
-  let mtime = ptime_of_dos_date_time(dos_date, dos_time)
+  let mtime = @types.ptime_of_dos_date_time(dos_date, dos_time)
 
   // Parse local file header to get actual data offset
   if data.length() < local_header_offset + 30 {
@@ -759,7 +681,7 @@ pub fn Archive::to_bytes(
   let encode_member = fn(m : Member) {
     let path_bytes = string_to_utf8_bytes(m.path())
     let path_len = path_bytes.length()
-    let (dos_date, dos_time) = ptime_to_dos_date_time(m.mtime())
+    let (dos_date, dos_time) = @types.ptime_to_dos_date_time(m.mtime())
     match m.kind() {
       Dir => {
         // Local file header for directory
@@ -873,7 +795,7 @@ pub fn Archive::to_bytes(
     let (offset, m) = entry
     let path_bytes = string_to_utf8_bytes(m.path())
     let path_len = path_bytes.length()
-    let (dos_date, dos_time) = ptime_to_dos_date_time(m.mtime())
+    let (dos_date, dos_time) = @types.ptime_to_dos_date_time(m.mtime())
     write_uint32_le(
       result,
       pos,

@@ -3,14 +3,14 @@
     "bobzhang/zip/buffer",
     "bobzhang/zip/bitstream",
     "bobzhang/zip/types",
-    "bobzhang/zip/checksum/crc32",
-    "bobzhang/zip/checksum/adler32",
     "bobzhang/zip/huffman",
     "bobzhang/zip/deflate",
     "bobzhang/zip/file",
     "bobzhang/zip/member"
   ],
   "test-import": [
-     "bobzhang/zip/hexdump"
+     "bobzhang/zip/hexdump",
+     "bobzhang/zip/checksum/crc32",
+     "bobzhang/zip/checksum/adler32"
   ]
 }
