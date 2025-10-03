@@ -1,0 +1,57 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip/member"
+
+import(
+  "bobzhang/zip/file"
+)
+
+// Values
+let dos_epoch : Int
+
+fn format_file_mode(Int) -> String
+
+fn fpath_ensure_directoryness(String) -> String
+
+fn fpath_ensure_unix(String) -> String
+
+let max_member_count : Int
+
+let max_path_length : Int
+
+fn ptime_format(Int) -> String
+
+// Errors
+
+// Types and methods
+pub struct Member {
+  path : String
+  kind : MemberKind
+  mode : Int
+  mtime : Int
+}
+fn Member::format(Self) -> String
+fn Member::format_long(Self) -> String
+fn Member::is_dir(Self) -> Bool
+fn Member::is_file(Self) -> Bool
+fn Member::kind(Self) -> MemberKind
+fn Member::make(String, MemberKind, Int?, Int?) -> Result[Self, String]
+fn Member::mode(Self) -> Int
+fn Member::mtime(Self) -> Int
+fn Member::path(Self) -> String
+
+pub(all) enum MemberKind {
+  Dir
+  File(@file.File)
+}
+
+// Type aliases
+pub typealias @file.File as File
+
+pub typealias Int as FileMode
+
+pub typealias String as Fpath
+
+pub typealias Int as Ptime
+
+// Traits
+

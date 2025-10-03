@@ -6,6 +6,7 @@
       "alias": "lib"
     },
     "bobzhang/zip/file",
+    "bobzhang/zip/member",
     {
       "path": "bobzhang/zip/hexdump",
       "alias": "hexdump"

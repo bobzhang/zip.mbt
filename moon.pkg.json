@@ -7,7 +7,8 @@
     "bobzhang/zip/checksum/adler32",
     "bobzhang/zip/huffman",
     "bobzhang/zip/deflate",
-    "bobzhang/zip/file"
+    "bobzhang/zip/file",
+    "bobzhang/zip/member"
   ],
   "test-import": [
      "bobzhang/zip/hexdump"

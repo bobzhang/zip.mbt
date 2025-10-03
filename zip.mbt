@@ -307,26 +307,15 @@ pub fnalias @types.fpath_ensure_directoryness
 pub fnalias @types.fpath_sanitize
 
 ///|
-/// Unix file mode (permission bits)
-pub typealias Int as FileMode
+pub typealias @types.FileMode
+
+///|
+pub fnalias @types.format_file_mode
 
 ///|
 /// Convert string to UTF-8 bytes for ZIP encoding
 fn string_to_utf8_bytes(s : String) -> Bytes {
   @encoding/utf8.encode(s)
-}
-
-///|
-/// Format Unix file mode like ls -l (e.g., "rwxr-xr-x")
-pub fn format_file_mode(mode : FileMode) -> String {
-  fn format_entity(m : Int) -> String {
-    let r = if (m & 0o4) != 0 { "r" } else { "-" }
-    let w = if (m & 0o2) != 0 { "w" } else { "-" }
-    let x = if (m & 0o1) != 0 { "x" } else { "-" }
-    r + w + x
-  }
-
-  format_entity(mode >> 6) + format_entity(mode >> 3) + format_entity(mode)
 }
 
 ///|
@@ -356,154 +345,21 @@ let version_made_by_default : UInt16 = @file.version_made_by_default
 let version_needed_default : UInt16 = @file.version_needed_default
 
 ///|
-/// Archive Member - represents a file or directory in a ZIP archive
-pub(all) enum MemberKind {
-  Dir // Directory entry
-  File(File) // File entry with compressed data
-}
+// ============================================================================
+// Member - Re-exported from member package
+// ============================================================================
 
 ///|
-/// Maximum number of members in a ZIP archive (non-ZIP64)
-pub let max_member_count : Int = 65535
+pub typealias @member.Member
 
 ///|
-/// Maximum path length in ZIP archives
-pub let max_path_length : Int = 65535
+pub typealias @member.MemberKind
 
 ///|
-/// Archive member (file or directory)
-pub struct Member {
-  path : Fpath
-  kind : MemberKind
-  mode : FileMode
-  mtime : Ptime
-}
+pub let max_member_count : Int = @member.max_member_count
 
 ///|
-/// Create a new archive member
-pub fn Member::make(
-  path : Fpath,
-  kind : MemberKind,
-  mode : FileMode?,
-  mtime : Ptime?,
-) -> Result[Member, String] {
-  // Ensure Unix-style path
-  let normalized_path = fpath_ensure_unix(path)
-
-  // Ensure directories end with /
-  let final_path = match kind {
-    Dir => fpath_ensure_directoryness(normalized_path)
-    File(_) => normalized_path
-  }
-
-  // Check path length
-  if final_path.length() > max_path_length {
-    Err("Path length \{final_path.length()} exceeds maximum \{max_path_length}")
-  } else {
-    // Set default mode
-    let file_mode = mode.unwrap_or(
-      match kind {
-        Dir => 0o755
-        File(_) => 0o644
-      },
-    )
-
-    // Set default mtime (truncate to dos_epoch if before)
-    let modification_time = mtime.unwrap_or(dos_epoch)
-    let final_mtime = if modification_time < dos_epoch {
-      dos_epoch
-    } else {
-      modification_time
-    }
-    Ok({ path: final_path, kind, mode: file_mode, mtime: final_mtime })
-  }
-}
-
-///|
-/// Get the path of a member
-pub fn Member::path(self : Member) -> Fpath {
-  self.path
-}
-
-///|
-/// Get the kind of a member
-pub fn Member::kind(self : Member) -> MemberKind {
-  self.kind
-}
-
-///|
-/// Get the file mode of a member
-pub fn Member::mode(self : Member) -> FileMode {
-  self.mode
-}
-
-///|
-/// Get the modification time of a member
-pub fn Member::mtime(self : Member) -> Ptime {
-  self.mtime
-}
-
-///|
-/// Check if member is a directory
-pub fn Member::is_dir(self : Member) -> Bool {
-  match self.kind {
-    Dir => true
-    File(_) => false
-  }
-}
-
-///|
-/// Check if member is a file
-pub fn Member::is_file(self : Member) -> Bool {
-  match self.kind {
-    Dir => false
-    File(_) => true
-  }
-}
-
-///|
-/// Format member info (like ls -l)
-pub fn Member::format(self : Member) -> String {
-  let is_dir_char = match self.kind {
-    Dir => "d"
-    File(_) => "-"
-  }
-  let mode_str = format_file_mode(self.mode)
-  let size = match self.kind {
-    Dir => 0
-    File(f) => f.decompressed_size
-  }
-  let time_str = ptime_format(self.mtime)
-
-  // Format size with padding (8 characters)
-  let size_str = size.to_string()
-  let spaces_needed = 8 - size_str.length()
-  let mut padding = ""
-  for i = 0; i < spaces_needed; i = i + 1 {
-    padding = padding + " "
-  }
-  let padded_size = padding + size_str
-  is_dir_char + mode_str + " " + padded_size + " " + time_str + " " + self.path
-}
-
-///|
-/// Format member info with detailed compression information
-pub fn Member::format_long(self : Member) -> String {
-  let basic = self.format()
-  match self.kind {
-    Dir => basic
-    File(f) => {
-      let compression_str = f.compression.to_string()
-      let ratio = if f.decompressed_size == 0 {
-        "0%"
-      } else {
-        let pct = f.compressed_size * 100 / f.decompressed_size
-        pct.to_string() + "%"
-      }
-      basic + " [" + compression_str + ", " + ratio + " compressed]"
-    }
-  }
-}
+pub let max_path_length : Int = @member.max_path_length
 
 ///|
 /// ZIP Archive - represents a complete ZIP file

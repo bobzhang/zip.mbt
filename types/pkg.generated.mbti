@@ -4,6 +4,8 @@ package "bobzhang/zip/types"
 // Values
 let dos_epoch : Int
 
+fn format_file_mode(Int) -> String
+
 fn fpath_ensure_directoryness(String) -> String
 
 fn fpath_ensure_unix(String) -> String
@@ -37,6 +39,8 @@ impl Eq for Compression
 impl Show for Compression
 
 // Type aliases
+pub typealias Int as FileMode
+
 pub typealias String as Fpath
 
 pub typealias Int as Ptime

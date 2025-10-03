@@ -3,7 +3,7 @@ package "bobzhang/zip"
 
 import(
   "bobzhang/zip/deflate"
-  "bobzhang/zip/file"
+  "bobzhang/zip/member"
   "moonbitlang/core/immut/sorted_map"
 )
 
@@ -82,44 +82,23 @@ fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, UInt), String]
 
 // Types and methods
 pub struct Archive {
-  members : @sorted_map.SortedMap[String, Member]
+  members : @sorted_map.SortedMap[String, @member.Member]
 }
-fn Archive::add(Self, Member) -> Self
+fn Archive::add(Self, @member.Member) -> Self
 fn Archive::empty() -> Self
 fn Archive::encoding_size(Self) -> Int
-fn Archive::find(Self, String) -> Member?
-fn[T] Archive::fold(Self, (Member, T) -> T, T) -> T
+fn Archive::find(Self, String) -> @member.Member?
+fn[T] Archive::fold(Self, (@member.Member, T) -> T, T) -> T
 fn Archive::is_empty(Self) -> Bool
 fn Archive::mem(Self, String) -> Bool
 fn Archive::member_count(Self) -> Int
 fn Archive::of_bytes(Bytes) -> Result[Self, String]
-fn Archive::of_map(@sorted_map.SortedMap[String, Member]) -> Self
+fn Archive::of_map(@sorted_map.SortedMap[String, @member.Member]) -> Self
 fn Archive::remove(Self, String) -> Self
-fn Archive::to_array(Self) -> Array[Member]
+fn Archive::to_array(Self) -> Array[@member.Member]
 fn Archive::to_bytes(Self, String?) -> Result[Bytes, String]
-fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, Member]
+fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, @member.Member]
 fn Archive::write_bytes(Self, Bytes, Int, String?) -> Result[Int, String]
-
-pub struct Member {
-  path : String
-  kind : MemberKind
-  mode : Int
-  mtime : Int
-}
-fn Member::format(Self) -> String
-fn Member::format_long(Self) -> String
-fn Member::is_dir(Self) -> Bool
-fn Member::is_file(Self) -> Bool
-fn Member::kind(Self) -> MemberKind
-fn Member::make(String, MemberKind, Int?, Int?) -> Result[Self, String]
-fn Member::mode(Self) -> Int
-fn Member::mtime(Self) -> Int
-fn Member::path(Self) -> String
-
-pub(all) enum MemberKind {
-  Dir
-  File(@file.File)
-}
 
 // Type aliases
 pub typealias @bobzhang/zip/checksum/adler32.Adler32 as Adler32
@@ -134,7 +113,7 @@ pub typealias @bobzhang/zip/checksum/crc32.Crc32 as Crc32
 
 pub typealias @deflate.DeflateLevel as DeflateLevel
 
-pub typealias @file.File as File
+pub typealias @bobzhang/zip/file.File as File
 
 pub typealias Int as FileMode
 
@@ -143,6 +122,10 @@ pub typealias String as Fpath
 pub typealias @bobzhang/zip/huffman.HuffmanDecoder as HuffmanDecoder
 
 pub typealias @bobzhang/zip/huffman.HuffmanEncoder as HuffmanEncoder
+
+pub typealias @member.Member as Member
+
+pub typealias @member.MemberKind as MemberKind
 
 pub typealias Int as Ptime
 
