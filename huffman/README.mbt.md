@@ -22,7 +22,7 @@ The `huffman` package implements Huffman encoding and decoding for DEFLATE compr
 
 #### `HuffmanDecoder`
 
-```moonbit
+```
 pub struct HuffmanDecoder {
   pub counts : Array[Int]    // counts[i] = # of codes with length i
   pub symbols : Array[Int]   // Symbols sorted by code
@@ -34,7 +34,7 @@ Decodes Huffman-encoded symbols.
 
 #### `HuffmanEncoder`
 
-```moonbit
+```
 pub struct HuffmanEncoder {
   pub codes : Array[SymInfo]  // codes[symbol] = (code, length)
   pub mut max_sym : Int       // Maximum encoded symbol
@@ -45,7 +45,7 @@ Encodes symbols to Huffman codes.
 
 #### `SymInfo`
 
-```moonbit
+```
 pub typealias Int as SymInfo
 ```
 
@@ -55,7 +55,7 @@ Packed representation: `(code << 16) | code_length`
 
 #### Fixed Huffman Trees
 
-```moonbit
+```
 pub let fixed_litlen_decoder : HuffmanDecoder
 pub let fixed_dist_decoder : HuffmanDecoder
 pub let fixed_litlen_encoder : HuffmanEncoder
@@ -102,7 +102,7 @@ Set encoding information for a symbol.
 
 #### Symbol Info Functions
 
-```moonbit
+```
 pub fn sym_info_make(code : Int, code_length : Int) -> SymInfo
 pub fn sym_info_code(info : SymInfo) -> Int
 pub fn sym_info_code_length(info : SymInfo) -> Int
@@ -137,7 +137,7 @@ Reverse bit order (for canonical Huffman codes).
 
 ### Decoding
 
-```moonbit
+```
 // Initialize from code lengths
 let decoder = HuffmanDecoder::new()
 let lengths = [8, 8, 8, 7, 7, 9]  // Code lengths for symbols 0-5
@@ -149,7 +149,7 @@ let symbol = decoder.read_symbol(bit_stream)
 
 ### Encoding
 
-```moonbit
+```
 // Build encoder from code lengths
 let encoder = HuffmanEncoder::new()
 for i = 0; i < symbol_count; i = i + 1 {
@@ -166,7 +166,7 @@ bit_writer.write_bits(code, length)
 
 ### Building Canonical Huffman
 
-```moonbit
+```
 // From frequency counts, build optimal code lengths
 let lengths = build_optimal_code_lengths(frequencies, max_symbol, 15)
 
@@ -206,17 +206,17 @@ for sym = 0; sym <= max_symbol; sym = sym + 1 {
 ### Canonical Huffman Construction
 
 1. **Count codes of each length**
-   ```moonbit
+   ```
    count[len] = number of symbols with code length 'len'
    ```
 
 2. **Compute first code for each length**
-   ```moonbit
+   ```
    code[len] = (code[len-1] + count[len-1]) << 1
    ```
 
 3. **Assign codes sequentially**
-   ```moonbit
+   ```
    for each symbol with length 'len':
      code[sym] = next_code[len]++
    ```
@@ -226,7 +226,7 @@ for sym = 0; sym <= max_symbol; sym = sym + 1 {
 ### Symbol Decoding
 
 Uses a level-by-level tree walk:
-```moonbit
+```
 fn read_symbol(decoder, bit_stream):
   len = 1, base = 0, offs = 0
   loop:
