@@ -66,7 +66,7 @@ test "zlib_roundtrip_empty" {
 ///|
 test "zlib_roundtrip_repetitive" {
   // Highly compressible data
-  let buf = ByteBuf::new(100, false)
+  let buf = @buffer.ByteBuf::new(100, false)
   for i = 0; i < 100; i = i + 1 {
     buf.add_byte(0x61) // 'a'
   }
@@ -155,7 +155,7 @@ test "zlib_bad_checksum" {
   let (_, compressed) = @deflate.zlib_compress(data, 0, data.length(), None)
 
   // Corrupt last byte of Adler-32
-  let buf = ByteBuf::new(compressed.length(), false)
+  let buf = @buffer.ByteBuf::new(compressed.length(), false)
   for i = 0; i < compressed.length() - 1; i = i + 1 {
     buf.add_byte(compressed[i].to_int())
   }

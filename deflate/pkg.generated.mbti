@@ -35,7 +35,7 @@ fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, UInt), String]
 // Errors
 
 // Types and methods
-pub enum DeflateLevel {
+pub(all) enum DeflateLevel {
   None
   Fast
   Default
@@ -43,10 +43,6 @@ pub enum DeflateLevel {
 }
 impl Eq for DeflateLevel
 impl Show for DeflateLevel
-
-type FrequencyCounter
-
-type InflateDecoder
 
 // Type aliases
 

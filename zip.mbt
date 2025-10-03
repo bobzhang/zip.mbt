@@ -198,13 +198,7 @@ test "distance_value_table" {
 
 ///|
 /// Huffman coding - Re-exported from huffman package
-pub typealias @huffman.HuffmanDecoder
-
-///|
-pub typealias @huffman.HuffmanEncoder
-
-///|
-pub typealias @huffman.SymInfo
+// typealias @huffman.(HuffmanDecoder, HuffmanEncoder, SymInfo)
 
 ///|
 // let fixed_litlen_decoder : HuffmanDecoder = @huffman.fixed_litlen_decoder
@@ -213,30 +207,18 @@ pub typealias @huffman.SymInfo
 // let fixed_dist_decoder : HuffmanDecoder = @huffman.fixed_dist_decoder
 
 ///|
-/// ByteBuf - Re-exported from buffer package
-pub typealias @buffer.ByteBuf
-
-///|
-/// BitWriter - Re-exported from bitstream package
-pub typealias @bitstream.BitWriter
-
-///|
 /// Compression - Re-exported from types package
-pub typealias @types.Compression
+typealias @types.Compression
 
 ///|
 /// Ptime - POSIX time utilities re-exported from types package
-pub typealias @types.Ptime
 
 ///|
-pub let dos_epoch : Ptime = @types.dos_epoch
+pub let dos_epoch : @types.Ptime = @types.dos_epoch
 
 // ============================================================================
 // DEFLATE and zlib - Re-exported from deflate package
 // ============================================================================
-
-///|
-pub typealias @deflate.DeflateLevel
 
 ///|
 /// File path utilities for ZIP archives
@@ -244,10 +226,7 @@ pub typealias @deflate.DeflateLevel
 ///|
 /// File path type and utilities
 /// Re-exports from types/fpath package
-pub typealias @types.Fpath
-
-///|
-pub typealias @types.FileMode
+typealias @types.Fpath
 
 ///|
 /// Convert string to UTF-8 bytes for ZIP encoding
@@ -261,7 +240,7 @@ fn string_to_utf8_bytes(s : String) -> Bytes {
 // ============================================================================
 
 ///|
-pub typealias @file.File
+typealias @file.File
 
 ///|
 // ============================================================================

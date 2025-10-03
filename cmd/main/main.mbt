@@ -24,7 +24,7 @@ fn main {
 fn test_simple_zip() -> Unit {
   println("Test 1: Creating simple.zip with one file...")
   let content = b"Hello from MoonBit ZIP library!\nThis is a test file.\n"
-  let file = @lib.File::stored_of_bytes(content, 0, content.length())
+  let file = @file.File::stored_of_bytes(content, 0, content.length())
   match file {
     Ok(f) => {
       let m = @lib.Member::make(
@@ -63,9 +63,9 @@ fn test_simple_zip() -> Unit {
 ///|
 fn test_multi_file_zip() -> Unit {
   println("\nTest 2: Creating multi-file.zip with multiple files...")
-  let file1 = @lib.File::stored_of_bytes(b"Content of file 1", 0, 17).unwrap()
-  let file2 = @lib.File::stored_of_bytes(b"Content of file 2", 0, 17).unwrap()
-  let file3 = @lib.File::stored_of_bytes(b"Content of file 3", 0, 17).unwrap()
+  let file1 = @file.File::stored_of_bytes(b"Content of file 1", 0, 17).unwrap()
+  let file2 = @file.File::stored_of_bytes(b"Content of file 2", 0, 17).unwrap()
+  let file3 = @file.File::stored_of_bytes(b"Content of file 3", 0, 17).unwrap()
   let m1 = @lib.Member::make(
     "file1.txt",
     @lib.MemberKind::File(file1),
@@ -120,7 +120,7 @@ fn test_directory_zip() -> Unit {
   println("\nTest 3: Creating archive with directories...")
   let dir = @lib.Member::make("docs/", @lib.MemberKind::Dir, Some(0o755), None).unwrap()
   let file_data = b"Documentation file content"
-  let file = @lib.File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
   let readme = @lib.Member::make(
     "docs/README.md",
     @lib.MemberKind::File(file),

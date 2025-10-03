@@ -5,7 +5,7 @@
 test "e2e_debug_member_lookup" {
   // Minimal test to debug member lookup
   let data = b"test"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = Member::make("simple.txt", MemberKind::File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   @json.inspect(archive.member_count(), content=1)
@@ -25,7 +25,7 @@ test "e2e_simple_stored_file" {
   let orig_len = original_data.length()
 
   // Step 1: Create stored file (no compression)
-  let stored_file = File::stored_of_bytes(original_data, 0, orig_len).unwrap()
+  let stored_file = @file.File::stored_of_bytes(original_data, 0, orig_len).unwrap()
 
   // Verify we can decompress immediately
   let test_decompress = stored_file.to_bytes()
@@ -92,7 +92,12 @@ test "e2e_single_file_roundtrip" {
   let orig_len = original_data.length()
 
   // Step 1: Compress with DEFLATE
-  let compressed_file = File::deflate_of_bytes(original_data, 0, orig_len, None).unwrap()
+  let compressed_file = @file.File::deflate_of_bytes(
+    original_data,
+    0,
+    orig_len,
+    None,
+  ).unwrap()
 
   // Step 2: Create a member
   let m = Member::make(
@@ -161,19 +166,24 @@ test "e2e_multiple_files_with_compression_levels" {
   let mixed_data = repeat_bytes(b"Test123!@#$%^&*()_+-=[]{}|;:',.<>?/~`", 20)
 
   // Create files with different compression levels  
-  let file1 = File::deflate_of_bytes(
+  let file1 = @file.File::deflate_of_bytes(
     text_data,
     0,
     text_data.length(),
     None, // Use default level
   ).unwrap()
-  let file2 = File::deflate_of_bytes(
+  let file2 = @file.File::deflate_of_bytes(
     repetitive_data,
     0,
     repetitive_data.length(),
     None,
   ).unwrap()
-  let file3 = File::deflate_of_bytes(mixed_data, 0, mixed_data.length(), None).unwrap()
+  let file3 = @file.File::deflate_of_bytes(
+    mixed_data,
+    0,
+    mixed_data.length(),
+    None,
+  ).unwrap()
 
   // Create members
   let m1 = Member::make("text.txt", MemberKind::File(file1), Some(0o644), None).unwrap()
@@ -245,9 +255,19 @@ test "e2e_directory_structure_with_files" {
   let code_len = code.length()
 
   // Compress files
-  let readme_file = File::deflate_of_bytes(readme, 0, readme.length(), None).unwrap()
-  let config_file = File::deflate_of_bytes(config, 0, config.length(), None).unwrap()
-  let code_file = File::deflate_of_bytes(code, 0, code.length(), None).unwrap()
+  let readme_file = @file.File::deflate_of_bytes(
+    readme,
+    0,
+    readme.length(),
+    None,
+  ).unwrap()
+  let config_file = @file.File::deflate_of_bytes(
+    config,
+    0,
+    config.length(),
+    None,
+  ).unwrap()
+  let code_file = @file.File::deflate_of_bytes(code, 0, code.length(), None).unwrap()
 
   // Create directory and file members
   let root_dir = Member::make("project/", MemberKind::Dir, Some(0o755), None).unwrap()
@@ -341,7 +361,7 @@ test "e2e_large_file_compression" {
   @json.inspect(original_size > 10000, content=true)
 
   // Compress with default level
-  let compressed_file = File::deflate_of_bytes(
+  let compressed_file = @file.File::deflate_of_bytes(
     large_data,
     0,
     large_data.length(),
@@ -415,7 +435,7 @@ test "e2e_stored_vs_deflate_comparison" {
   let data_len = data.length()
 
   // Create stored (uncompressed) file
-  let stored_file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let stored_file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let stored_m = Member::make(
     "stored.bin",
     MemberKind::File(stored_file),
@@ -424,7 +444,7 @@ test "e2e_stored_vs_deflate_comparison" {
   ).unwrap()
 
   // Create deflated file
-  let deflated_file = File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
+  let deflated_file = @file.File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
   let deflated_m = Member::make(
     "deflated.bin",
     MemberKind::File(deflated_file),
@@ -475,7 +495,7 @@ test "e2e_stored_vs_deflate_comparison" {
 test "e2e_empty_file_handling" {
   // Test with an empty file
   let empty_data = b""
-  let empty_file = File::deflate_of_bytes(empty_data, 0, 0, None).unwrap()
+  let empty_file = @file.File::deflate_of_bytes(empty_data, 0, 0, None).unwrap()
   let m = Member::make(
     "empty.txt",
     MemberKind::File(empty_file),
@@ -522,7 +542,7 @@ test "e2e_binary_data_roundtrip" {
   let bin_len = binary_data.length()
 
   // Compress
-  let compressed_file = File::deflate_of_bytes(
+  let compressed_file = @file.File::deflate_of_bytes(
     binary_data,
     0,
     binary_data.length(),
@@ -572,7 +592,7 @@ test "e2e_archive_iteration" {
   let mut archive = Archive::empty()
   for entry in files {
     let (name, data) = entry
-    let file = File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
+    let file = @file.File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
     let m = Member::make(name, MemberKind::File(file), Some(0o644), None).unwrap()
     archive = archive.add(m)
   }
@@ -596,7 +616,7 @@ test "e2e_unicode_filename_support" {
   // Test with UTF-8 filenames (if supported)
   let data = b"Unicode filename test"
   let data_len = data.length()
-  let file = File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
+  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None).unwrap()
   let m = Member::make(
     "test_文件.txt", // Chinese characters
     MemberKind::File(file),
@@ -631,7 +651,7 @@ test "e2e_simple_stored_zip" {
   // Create a simple ZIP with one stored file
   // This should produce a deterministic output we can verify
   let content = b"Hello, World!"
-  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+  let file = @file.File::stored_of_bytes(content, 0, content.length()).unwrap()
 
   // Use a specific timestamp for deterministic output
   let fixed_time = dos_epoch // 1980-01-01 00:00:00
@@ -671,7 +691,7 @@ test "e2e_simple_stored_zip" {
 test "e2e_zip_structure_verification" {
   // Create a ZIP and verify its structure matches ZIP spec
   let content = b"test"
-  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+  let file = @file.File::stored_of_bytes(content, 0, content.length()).unwrap()
   let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   let zip_bytes = archive.to_bytes(None).unwrap()
@@ -695,9 +715,9 @@ test "e2e_zip_structure_verification" {
 ///|
 test "e2e_multi_file_deterministic" {
   // Create a multi-file archive with deterministic content
-  let file1 = File::stored_of_bytes(b"File 1", 0, 6).unwrap()
-  let file2 = File::stored_of_bytes(b"File 2", 0, 6).unwrap()
-  let file3 = File::stored_of_bytes(b"File 3", 0, 6).unwrap()
+  let file1 = @file.File::stored_of_bytes(b"File 1", 0, 6).unwrap()
+  let file2 = @file.File::stored_of_bytes(b"File 2", 0, 6).unwrap()
+  let file3 = @file.File::stored_of_bytes(b"File 3", 0, 6).unwrap()
   let m1 = Member::make(
     "a.txt",
     MemberKind::File(file1),
@@ -741,10 +761,10 @@ test "e2e_multi_file_deterministic" {
 test "e2e_deflate_compatibility" {
   // Test deflate compression creates valid streams
   let original = b"AAAAAAAAAA" // Highly compressible (RLE pattern)
-  let file = File::deflate_of_bytes(original, 0, original.length(), None).unwrap()
+  let file = @file.File::deflate_of_bytes(original, 0, original.length(), None).unwrap()
 
   // Verify it's marked as deflate
-  @json.inspect(file.compression() == Compression::Deflate, content=true)
+  @json.inspect(file.compression() is Deflate, content=true)
 
   // Verify decompression works
   let decompressed = file.to_bytes()
@@ -794,7 +814,7 @@ test "e2e_directory_in_zip" {
   // Create archive with explicit directory entry
   let dir = Member::make("docs/", MemberKind::Dir, Some(0o755), Some(dos_epoch)).unwrap()
   let file_data = b"readme content"
-  let file = File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
   let f = Member::make(
     "docs/README.md",
     MemberKind::File(file),
@@ -832,7 +852,7 @@ test "e2e_directory_in_zip" {
 test "e2e_metadata_preservation" {
   // Test that metadata (mode, mtime) is preserved through encode/decode
   let content = b"test"
-  let file = File::stored_of_bytes(content, 0, content.length()).unwrap()
+  let file = @file.File::stored_of_bytes(content, 0, content.length()).unwrap()
   let custom_mode = 0o755
   let custom_time = dos_epoch.0 + 86400 // One day after DOS epoch
   let m = Member::make(
@@ -1044,8 +1064,8 @@ test "e2e_read_real_zip_file" {
 ///|
 test "e2e_create_and_read_ziptest_equivalent" {
   // Create the same archive using MoonBit and verify it matches
-  let file1 = File::stored_of_bytes(b"this is a.txt", 0, 13).unwrap()
-  let file2 = File::stored_of_bytes(b"this is b.txt", 0, 13).unwrap()
+  let file1 = @file.File::stored_of_bytes(b"this is a.txt", 0, 13).unwrap()
+  let file2 = @file.File::stored_of_bytes(b"this is b.txt", 0, 13).unwrap()
   let member1 = Member::make(
     "ziptest/a.txt",
     MemberKind::File(file1),
@@ -1096,8 +1116,8 @@ test "e2e_create_and_read_ziptest_equivalent" {
 ///|
 test "e2e_ziptest_roundtrip_compatibility" {
   // Test that we can create a zip file and external tools can read it
-  let file1 = File::stored_of_bytes(b"this is a.txt", 0, 13).unwrap()
-  let file2 = File::stored_of_bytes(b"this is b.txt", 0, 13).unwrap()
+  let file1 = @file.File::stored_of_bytes(b"this is a.txt", 0, 13).unwrap()
+  let file2 = @file.File::stored_of_bytes(b"this is b.txt", 0, 13).unwrap()
   let member1 = Member::make(
     "ziptest/a.txt",
     MemberKind::File(file1),

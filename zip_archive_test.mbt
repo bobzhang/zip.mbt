@@ -10,7 +10,7 @@ test "archive_empty" {
 ///|
 test "archive_add_and_find" {
   let data = b"test"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m1 = Member::make("file1.txt", MemberKind::File(file), None, None).unwrap()
   let m2 = Member::make("file2.txt", MemberKind::File(file), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
@@ -28,7 +28,7 @@ test "archive_add_and_find" {
 ///|
 test "archive_find_member" {
   let data = b"hello"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   match archive.find("test.txt") {
@@ -40,7 +40,7 @@ test "archive_find_member" {
 ///|
 test "archive_remove" {
   let data = b"x"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m1 = Member::make("file1.txt", MemberKind::File(file), None, None).unwrap()
   let m2 = Member::make("file2.txt", MemberKind::File(file), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2).remove("file1.txt")
@@ -54,8 +54,8 @@ test "archive_remove" {
 test "archive_replace_member" {
   let data1 = b"version1"
   let data2 = b"version2"
-  let file1 = File::stored_of_bytes(data1, 0, data1.length()).unwrap()
-  let file2 = File::stored_of_bytes(data2, 0, data2.length()).unwrap()
+  let file1 = @file.File::stored_of_bytes(data1, 0, data1.length()).unwrap()
+  let file2 = @file.File::stored_of_bytes(data2, 0, data2.length()).unwrap()
   let m1 = Member::make("test.txt", MemberKind::File(file1), None, None).unwrap()
   let m2 = Member::make("test.txt", MemberKind::File(file2), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
@@ -74,7 +74,7 @@ test "archive_replace_member" {
 ///|
 test "archive_fold" {
   let data = b"x"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m1 = Member::make("b.txt", MemberKind::File(file), None, None).unwrap()
   let m2 = Member::make("a.txt", MemberKind::File(file), None, None).unwrap()
   let m3 = Member::make("c.txt", MemberKind::File(file), None, None).unwrap()
@@ -123,7 +123,7 @@ test "zip_magic_too_short" {
 /// ZIP encoding tests
 test "archive_encoding_size" {
   let data = b"test"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   let size = archive.encoding_size()
@@ -148,7 +148,7 @@ test "archive_to_bytes_empty" {
 ///|
 test "archive_to_bytes_single_file" {
   let data = b"Hello ZIP!"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = Member::make("hello.txt", MemberKind::File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   let result = archive.to_bytes(None)
@@ -176,8 +176,8 @@ test "archive_to_bytes_directory" {
 test "archive_to_bytes_multiple_files" {
   let data1 = b"file 1"
   let data2 = b"file 2"
-  let file1 = File::stored_of_bytes(data1, 0, data1.length()).unwrap()
-  let file2 = File::stored_of_bytes(data2, 0, data2.length()).unwrap()
+  let file1 = @file.File::stored_of_bytes(data1, 0, data1.length()).unwrap()
+  let file2 = @file.File::stored_of_bytes(data2, 0, data2.length()).unwrap()
   let m1 = Member::make("a.txt", MemberKind::File(file1), None, None).unwrap()
   let m2 = Member::make("b.txt", MemberKind::File(file2), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
@@ -215,7 +215,7 @@ test "archive_of_bytes_empty" {
 ///|
 test "archive_roundtrip_single_file" {
   let data = b"Hello, ZIP world!"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = Member::make("hello.txt", MemberKind::File(file), None, None).unwrap()
   let original = Archive::empty().add(m)
 
@@ -255,9 +255,9 @@ test "archive_roundtrip_multiple_files" {
   let data1 = b"File 1 content"
   let data2 = b"File 2 content"
   let data3 = b"File 3 content"
-  let file1 = File::stored_of_bytes(data1, 0, data1.length()).unwrap()
-  let file2 = File::stored_of_bytes(data2, 0, data2.length()).unwrap()
-  let file3 = File::stored_of_bytes(data3, 0, data3.length()).unwrap()
+  let file1 = @file.File::stored_of_bytes(data1, 0, data1.length()).unwrap()
+  let file2 = @file.File::stored_of_bytes(data2, 0, data2.length()).unwrap()
+  let file3 = @file.File::stored_of_bytes(data3, 0, data3.length()).unwrap()
   let m1 = Member::make("docs/file1.txt", MemberKind::File(file1), None, None).unwrap()
   let m2 = Member::make("docs/file2.txt", MemberKind::File(file2), None, None).unwrap()
   let m3 = Member::make("readme.txt", MemberKind::File(file3), None, None).unwrap()
@@ -286,7 +286,7 @@ test "archive_roundtrip_multiple_files" {
 ///|
 test "archive_roundtrip_with_directory" {
   let data = b"test"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let dir = Member::make("mydir/", MemberKind::Dir, None, None).unwrap()
   let f = Member::make("mydir/file.txt", MemberKind::File(file), None, None).unwrap()
   let original = Archive::empty().add(dir).add(f)
@@ -322,7 +322,7 @@ test "archive_of_bytes_invalid" {
 /// Archive map conversion tests
 test "archive_to_map" {
   let data = b"x"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m1 = Member::make("a.txt", MemberKind::File(file), None, None).unwrap()
   let m2 = Member::make("b.txt", MemberKind::File(file), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
@@ -336,7 +336,7 @@ test "archive_to_map" {
 ///|
 test "archive_of_map_roundtrip" {
   let data = b"test"
-  let file = File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = Member::make("test.txt", MemberKind::File(file), None, None).unwrap()
   let original = Archive::empty().add(m)
   let map = original.to_map()
@@ -375,7 +375,7 @@ test "coverage_archive_to_array" {
     Ok(d) => {
       let a = a.add(d)
       let data = b"F"
-      match File::deflate_of_bytes(data, 0, data.length(), None) {
+      match @file.File::deflate_of_bytes(data, 0, data.length(), None) {
         Ok(file) =>
           match Member::make("dir/f.txt", MemberKind::File(file), None, None) {
             Ok(f) => {
@@ -397,9 +397,9 @@ test "coverage_archive_first" {
   let a = Archive::empty()
   let d1 = b"A"
   let d2 = b"B"
-  match File::deflate_of_bytes(d1, 0, d1.length(), None) {
+  match @file.File::deflate_of_bytes(d1, 0, d1.length(), None) {
     Ok(f1) =>
-      match File::deflate_of_bytes(d2, 0, d2.length(), None) {
+      match @file.File::deflate_of_bytes(d2, 0, d2.length(), None) {
         Ok(f2) =>
           match Member::make("a.txt", MemberKind::File(f1), None, None) {
             Ok(m1) =>

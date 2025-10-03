@@ -33,31 +33,9 @@ fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, @member.Member]
 fn Archive::write_bytes(Self, Bytes, Int, String?) -> Result[Int, String]
 
 // Type aliases
-pub typealias @bobzhang/zip/bitstream.BitWriter as BitWriter
-
-pub typealias @bobzhang/zip/buffer.ByteBuf as ByteBuf
-
-pub typealias @types.Compression as Compression
-
-pub typealias @bobzhang/zip/deflate.DeflateLevel as DeflateLevel
-
-pub typealias @bobzhang/zip/file.File as File
-
-pub typealias Int as FileMode
-
-pub typealias String as Fpath
-
-pub typealias @bobzhang/zip/huffman.HuffmanDecoder as HuffmanDecoder
-
-pub typealias @bobzhang/zip/huffman.HuffmanEncoder as HuffmanEncoder
-
 pub typealias @member.Member as Member
 
 pub typealias @member.MemberKind as MemberKind
-
-pub typealias @types.Ptime as Ptime
-
-pub typealias Int as SymInfo
 
 // Traits
 

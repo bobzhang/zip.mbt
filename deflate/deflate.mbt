@@ -24,7 +24,7 @@ let litlen_sym_max : Int = 285
 let litlen_end_of_block_sym : Int = 256
 
 ///|
-let litlen_first_len_sym : Int = 257
+// let litlen_first_len_sym : Int = 257
 
 ///|
 let dist_sym_max : Int = 29
@@ -145,7 +145,7 @@ let dist_value_of_sym : Array[Int] = [
 
 ///|
 /// Inflate decoder state
-struct InflateDecoder {
+priv struct InflateDecoder {
   src : Bytes // Source compressed data
   src_max : Int // Maximum valid index in src
   mut src_pos : Int // Current read position
@@ -868,7 +868,7 @@ fn write_length_distance(
 
 ///|
 /// Frequency counter for dynamic Huffman
-struct FrequencyCounter {
+priv struct FrequencyCounter {
   litlen_freqs : Array[Int]
   dist_freqs : Array[Int]
 }
@@ -1222,7 +1222,7 @@ pub fn deflate_dynamic(
 // ============================================================================
 
 ///|
-pub enum DeflateLevel {
+pub(all) enum DeflateLevel {
   None // No compression, use stored blocks only
   Fast // Fast compression with fixed Huffman
   Default // Default compression with dynamic Huffman
