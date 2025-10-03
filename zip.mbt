@@ -214,7 +214,7 @@ typealias @types.Compression
 /// Ptime - POSIX time utilities re-exported from types package
 
 ///|
-pub let dos_epoch : @types.Ptime = @types.dos_epoch
+// pub let dos_epoch : @types.Ptime = @types.dos_epoch
 
 // ============================================================================
 // DEFLATE and zlib - Re-exported from deflate package

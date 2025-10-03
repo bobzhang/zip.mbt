@@ -31,7 +31,7 @@ fn test_simple_zip() -> Unit {
         "hello.txt",
         File(f),
         Some(0o644),
-        Some(@lib.dos_epoch),
+        Some(@types.dos_epoch),
       )
       match m {
         Ok(mem) => {

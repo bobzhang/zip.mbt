@@ -79,14 +79,14 @@ test "member_default_mtime" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = @member.make("file.txt", File(file), None, None).unwrap()
-  @json.inspect(m.mtime(), content=["Ptime", 315532800]) // dos_epoch
+  @json.inspect(m.mtime(), content=["Ptime", 315532800]) // @types.dos_epoch
 }
 
 ///|
 test "member_custom_mode_and_mtime" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let custom_time = dos_epoch.0 + 1000
+  let custom_time = @types.dos_epoch.0 + 1000
   let m = @member.make("file.txt", File(file), Some(0o777), Some(custom_time)).unwrap()
   @json.inspect((m.mode(), m.mtime()), content=[511, ["Ptime", 315533800]]) // 0o777 = 511
 }
@@ -206,12 +206,12 @@ test "coverage_file_accessors" {
 ///|
 /// Test member with early mtime (before DOS epoch)
 test "coverage_member_early_mtime" {
-  let early = dos_epoch.0 - 86400 // One day before DOS epoch
+  let early = @types.dos_epoch.0 - 86400 // One day before DOS epoch
   let data = b"X"
   match @file.File::deflate_of_bytes(data, 0, data.length(), None) {
     Ok(file) =>
       match @member.make("test.txt", File(file), Some(0o644), Some(early)) {
-        Ok(m) => @json.inspect(m.mtime() >= dos_epoch, content=true)
+        Ok(m) => @json.inspect(m.mtime() >= @types.dos_epoch, content=true)
         Err(_) => @json.inspect("should not fail", content="success")
       }
     Err(_) => @json.inspect("should not fail", content="success")

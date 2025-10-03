@@ -3,12 +3,10 @@ package "bobzhang/zip"
 
 import(
   "bobzhang/zip/member"
-  "bobzhang/zip/types"
   "moonbitlang/core/immut/sorted_map"
 )
 
 // Values
-let dos_epoch : @types.Ptime
 
 // Errors
 

@@ -7,6 +7,7 @@
     },
     "bobzhang/zip/file",
     "bobzhang/zip/member",
+    "bobzhang/zip/types",
     {
       "path": "bobzhang/zip/hexdump",
       "alias": "hexdump"

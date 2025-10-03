@@ -629,7 +629,7 @@ test "e2e_simple_stored_zip" {
   let file = @file.File::stored_of_bytes(content, 0, content.length()).unwrap()
 
   // Use a specific timestamp for deterministic output
-  let fixed_time = dos_epoch // 1980-01-01 00:00:00
+  let fixed_time = @types.dos_epoch // 1980-01-01 00:00:00
   let m = @member.make("hello.txt", File(file), Some(0o644), Some(fixed_time)).unwrap()
   let archive = Archive::empty().add(m)
   let zip_bytes = archive.to_bytes(None).unwrap()
@@ -688,9 +688,24 @@ test "e2e_multi_file_deterministic" {
   let file1 = @file.File::stored_of_bytes(b"File 1", 0, 6).unwrap()
   let file2 = @file.File::stored_of_bytes(b"File 2", 0, 6).unwrap()
   let file3 = @file.File::stored_of_bytes(b"File 3", 0, 6).unwrap()
-  let m1 = @member.make("a.txt", File(file1), Some(0o644), Some(dos_epoch)).unwrap()
-  let m2 = @member.make("b.txt", File(file2), Some(0o644), Some(dos_epoch)).unwrap()
-  let m3 = @member.make("c.txt", File(file3), Some(0o644), Some(dos_epoch)).unwrap()
+  let m1 = @member.make(
+    "a.txt",
+    File(file1),
+    Some(0o644),
+    Some(@types.dos_epoch),
+  ).unwrap()
+  let m2 = @member.make(
+    "b.txt",
+    File(file2),
+    Some(0o644),
+    Some(@types.dos_epoch),
+  ).unwrap()
+  let m3 = @member.make(
+    "c.txt",
+    File(file3),
+    Some(0o644),
+    Some(@types.dos_epoch),
+  ).unwrap()
   let archive = Archive::empty().add(m1).add(m2).add(m3)
   let zip_bytes = archive.to_bytes(None).unwrap()
 
@@ -767,14 +782,14 @@ test "e2e_empty_archive_exact_format" {
 ///|
 test "e2e_directory_in_zip" {
   // Create archive with explicit directory entry
-  let dir = @member.make("docs/", Dir, Some(0o755), Some(dos_epoch)).unwrap()
+  let dir = @member.make("docs/", Dir, Some(0o755), Some(@types.dos_epoch)).unwrap()
   let file_data = b"readme content"
   let file = @file.File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
   let f = @member.make(
     "docs/README.md",
     File(file),
     Some(0o644),
-    Some(dos_epoch),
+    Some(@types.dos_epoch),
   ).unwrap()
   let archive = Archive::empty().add(dir).add(f)
   let zip_bytes = archive.to_bytes(None).unwrap()
@@ -809,7 +824,7 @@ test "e2e_metadata_preservation" {
   let content = b"test"
   let file = @file.File::stored_of_bytes(content, 0, content.length()).unwrap()
   let custom_mode = 0o755
-  let custom_time = dos_epoch.0 + 86400 // One day after DOS epoch
+  let custom_time = @types.dos_epoch.0 + 86400 // One day after DOS epoch
   let m = @member.make(
     "executable.sh",
     File(file),
