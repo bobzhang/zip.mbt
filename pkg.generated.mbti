@@ -12,16 +12,6 @@ fn bytes_has_zip_magic(Bytes) -> Bool
 
 let dos_epoch : @types.Ptime
 
-let gp_flag_encrypted : UInt16
-
-let gp_flag_utf8 : UInt16
-
-let max_file_size : Int64
-
-let max_member_count : Int
-
-let max_path_length : Int
-
 // Errors
 
 // Types and methods

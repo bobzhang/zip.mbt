@@ -264,24 +264,6 @@ fn string_to_utf8_bytes(s : String) -> Bytes {
 pub typealias @file.File
 
 ///|
-pub let gp_flag_encrypted : UInt16 = @file.gp_flag_encrypted
-
-///|
-pub let gp_flag_utf8 : UInt16 = @file.gp_flag_utf8
-
-///|
-pub let max_file_size : Int64 = @file.max_file_size
-
-///|
-let gp_flag_default : UInt16 = @file.gp_flag_default
-
-///|
-let version_made_by_default : UInt16 = @file.version_made_by_default
-
-///|
-let version_needed_default : UInt16 = @file.version_needed_default
-
-///|
 // ============================================================================
 // Member - Re-exported from member package
 // ============================================================================
@@ -293,10 +275,7 @@ pub typealias @member.Member
 pub typealias @member.MemberKind
 
 ///|
-pub let max_member_count : Int = @member.max_member_count
-
-///|
-pub let max_path_length : Int = @member.max_path_length
+// pub let max_member_count : Int = @member.max_member_count
 
 ///|
 /// Create an empty archive
@@ -666,9 +645,9 @@ pub fn Archive::to_bytes(
 ) -> Result[Bytes, String] {
   // Check member count limit
   let count = self.member_count()
-  if count > max_member_count {
+  if count > @member.max_member_count {
     return Err(
-      "Archive has \{count} members, exceeds maximum \{max_member_count}",
+      "Archive has \{count} members, exceeds maximum \{@member.max_member_count}",
     )
   }
   let total_size = self.encoding_size()
@@ -691,9 +670,9 @@ pub fn Archive::to_bytes(
           zip_local_file_sig.to_int64().to_int().reinterpret_as_uint(),
         )
         pos = pos + 4
-        write_uint16_le(result, pos, version_needed_default) // version needed
+        write_uint16_le(result, pos, @file.version_needed_default) // version needed
         pos = pos + 2
-        write_uint16_le(result, pos, gp_flag_default) // gp flags
+        write_uint16_le(result, pos, @file.gp_flag_default) // gp flags
         pos = pos + 2
         write_uint16_le(result, pos, 0) // compression method (stored)
         pos = pos + 2
@@ -804,11 +783,11 @@ pub fn Archive::to_bytes(
     pos = pos + 4
     match m.kind() {
       Dir => {
-        write_uint16_le(result, pos, version_made_by_default)
+        write_uint16_le(result, pos, @file.version_made_by_default)
         pos = pos + 2
-        write_uint16_le(result, pos, version_needed_default)
+        write_uint16_le(result, pos, @file.version_needed_default)
         pos = pos + 2
-        write_uint16_le(result, pos, gp_flag_default)
+        write_uint16_le(result, pos, @file.gp_flag_default)
         pos = pos + 2
         write_uint16_le(result, pos, 0) // compression
         pos = pos + 2
