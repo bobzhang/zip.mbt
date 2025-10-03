@@ -14,27 +14,19 @@ typealias Int as UInt16
 pub typealias @crc32.Crc32
 
 ///|
-pub fn bytes_crc32(bytes : Bytes, start : Int, len : Int) -> UInt {
-  @crc32.bytes_crc32(bytes, start, len)
-}
+pub fnalias @crc32.bytes_crc32
 
 ///|
-pub fn check_crc32(expect : UInt, found : UInt) -> Result[Unit, String] {
-  @crc32.check_crc32(expect, found)
-}
+pub fnalias @crc32.check_crc32
 
 ///|
 pub typealias @adler32.Adler32
 
 ///|
-pub fn bytes_adler32(bytes : Bytes, start : Int, len : Int) -> UInt {
-  @adler32.bytes_adler32(bytes, start, len)
-}
+pub fnalias @adler32.bytes_adler32
 
 ///|
-pub fn check_adler32(expect : UInt, found : UInt) -> Result[Unit, String] {
-  @adler32.check_adler32(expect, found)
-}
+pub fnalias @adler32.check_adler32
 
 ///|
 /// Helper: UInt to hex string
@@ -241,24 +233,16 @@ pub typealias @types.Ptime
 pub let dos_epoch : Ptime = @types.dos_epoch
 
 ///|
-pub fn ptime_to_date_time(ptime : Ptime) -> ((Int, Int, Int), (Int, Int, Int)) {
-  @types.ptime_to_date_time(ptime)
-}
+pub fnalias @types.ptime_to_date_time
 
 ///|
-pub fn ptime_of_dos_date_time(dos_date : Int, dos_time : Int) -> Ptime {
-  @types.ptime_of_dos_date_time(dos_date, dos_time)
-}
+pub fnalias @types.ptime_of_dos_date_time
 
 ///|
-pub fn ptime_to_dos_date_time(ptime : Ptime) -> (Int, Int) {
-  @types.ptime_to_dos_date_time(ptime)
-}
+pub fnalias @types.ptime_to_dos_date_time
 
 ///|
-pub fn ptime_format(ptime : Ptime) -> String {
-  @types.ptime_format(ptime)
-}
+pub fnalias @types.ptime_format
 
 ///|
 /// Inflate decoder state
@@ -607,19 +591,13 @@ pub fn inflate_and_adler32(
 pub typealias @types.Fpath
 
 ///|
-pub fn fpath_ensure_unix(path : Fpath) -> Fpath {
-  @types.fpath_ensure_unix(path)
-}
+pub fnalias @types.fpath_ensure_unix
 
 ///|
-pub fn fpath_ensure_directoryness(path : Fpath) -> Fpath {
-  @types.fpath_ensure_directoryness(path)
-}
+pub fnalias @types.fpath_ensure_directoryness
 
 ///|
-pub fn fpath_sanitize(path : Fpath) -> Fpath {
-  @types.fpath_sanitize(path)
-}
+pub fnalias @types.fpath_sanitize
 
 ///|
 /// Unix file mode (permission bits)
