@@ -5,6 +5,7 @@
       "path": "bobzhang/zip",
       "alias": "lib"
     },
+    "bobzhang/zip/file",
     {
       "path": "bobzhang/zip/hexdump",
       "alias": "hexdump"

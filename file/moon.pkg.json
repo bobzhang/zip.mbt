@@ -1,0 +1,8 @@
+{
+  "is-main": false,
+  "import": [
+    "bobzhang/zip/types",
+    "bobzhang/zip/checksum/crc32",
+    "bobzhang/zip/deflate"
+  ]
+}

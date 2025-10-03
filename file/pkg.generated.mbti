@@ -1,0 +1,58 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip/file"
+
+import(
+  "bobzhang/zip/deflate"
+  "bobzhang/zip/types"
+)
+
+// Values
+let gp_flag_default : Int
+
+let gp_flag_encrypted : Int
+
+let gp_flag_utf8 : Int
+
+let max_file_size : Int64
+
+let version_made_by_default : Int
+
+let version_needed_default : Int
+
+// Errors
+
+// Types and methods
+pub struct File {
+  version_made_by : Int
+  version_needed_to_extract : Int
+  gp_flags : Int
+  compression : @types.Compression
+  start : Int
+  compressed_size : Int
+  compressed_bytes : Bytes
+  decompressed_size : Int
+  decompressed_crc32 : UInt
+}
+fn File::can_extract(Self) -> Bool
+fn File::compressed_bytes(Self) -> Bytes
+fn File::compressed_bytes_to_bytes(Self) -> Bytes
+fn File::compressed_size(Self) -> Int
+fn File::compression(Self) -> @types.Compression
+fn File::decompressed_crc32(Self) -> UInt
+fn File::decompressed_size(Self) -> Int
+fn File::deflate_of_bytes(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[Self, String]
+fn File::gp_flags(Self) -> Int
+fn File::is_encrypted(Self) -> Bool
+fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, Int?, Int?, Int?) -> Result[Self, String]
+fn File::start(Self) -> Int
+fn File::stored_of_bytes(Bytes, Int, Int) -> Result[Self, String]
+fn File::to_bytes(Self) -> Bytes
+fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt)
+fn File::version_made_by(Self) -> Int
+fn File::version_needed_to_extract(Self) -> Int
+
+// Type aliases
+pub typealias @types.Compression as Compression
+
+// Traits
+

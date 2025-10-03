@@ -3,7 +3,7 @@ package "bobzhang/zip"
 
 import(
   "bobzhang/zip/deflate"
-  "bobzhang/zip/types"
+  "bobzhang/zip/file"
   "moonbitlang/core/immut/sorted_map"
 )
 
@@ -29,6 +29,8 @@ fn deflate_dynamic(Bytes, Int, Int, Bool, Int, Int) -> Bytes
 fn deflate_fixed(Bytes, Int, Int, Bool, Int, Int) -> Bytes
 
 fn deflate_fixed_literals_only(Bytes, Int, Int, Bool) -> Bytes
+
+fn deflate_stored(Bytes, Int, Int) -> Bytes
 
 let dist_value_of_sym : Array[Int]
 
@@ -98,35 +100,6 @@ fn Archive::to_bytes(Self, String?) -> Result[Bytes, String]
 fn Archive::to_map(Self) -> @sorted_map.SortedMap[String, Member]
 fn Archive::write_bytes(Self, Bytes, Int, String?) -> Result[Int, String]
 
-pub struct File {
-  version_made_by : Int
-  version_needed_to_extract : Int
-  gp_flags : Int
-  compression : @types.Compression
-  start : Int
-  compressed_size : Int
-  compressed_bytes : Bytes
-  decompressed_size : Int
-  decompressed_crc32 : UInt
-}
-fn File::can_extract(Self) -> Bool
-fn File::compressed_bytes(Self) -> Bytes
-fn File::compressed_bytes_to_bytes(Self) -> Bytes
-fn File::compressed_size(Self) -> Int
-fn File::compression(Self) -> @types.Compression
-fn File::decompressed_crc32(Self) -> UInt
-fn File::decompressed_size(Self) -> Int
-fn File::deflate_of_bytes(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[Self, String]
-fn File::gp_flags(Self) -> Int
-fn File::is_encrypted(Self) -> Bool
-fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, Int?, Int?, Int?) -> Result[Self, String]
-fn File::start(Self) -> Int
-fn File::stored_of_bytes(Bytes, Int, Int) -> Result[Self, String]
-fn File::to_bytes(Self) -> Bytes
-fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt)
-fn File::version_made_by(Self) -> Int
-fn File::version_needed_to_extract(Self) -> Int
-
 pub struct Member {
   path : String
   kind : MemberKind
@@ -145,7 +118,7 @@ fn Member::path(Self) -> String
 
 pub(all) enum MemberKind {
   Dir
-  File(File)
+  File(@file.File)
 }
 
 // Type aliases
@@ -155,11 +128,13 @@ pub typealias @bobzhang/zip/bitstream.BitWriter as BitWriter
 
 pub typealias @bobzhang/zip/buffer.ByteBuf as ByteBuf
 
-pub typealias @types.Compression as Compression
+pub typealias @bobzhang/zip/types.Compression as Compression
 
 pub typealias @bobzhang/zip/checksum/crc32.Crc32 as Crc32
 
 pub typealias @deflate.DeflateLevel as DeflateLevel
+
+pub typealias @file.File as File
 
 pub typealias Int as FileMode
 
