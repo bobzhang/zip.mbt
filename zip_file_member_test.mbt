@@ -54,7 +54,10 @@ test "member_make_file" {
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let m = @member.make("test.txt", File(file), None, None).unwrap()
   @json.inspect((m.path(), m.is_file(), m.is_dir(), m.mode()), content=[
-    "test.txt", true, false, 420,
+    "test.txt",
+    true,
+    false,
+    ["FileMode", 420],
   ]) // 0o644 = 420
 }
 
@@ -62,7 +65,10 @@ test "member_make_file" {
 test "member_make_dir" {
   let m = @member.make("mydir", Dir, None, None).unwrap()
   @json.inspect((m.path(), m.is_dir(), m.is_file(), m.mode()), content=[
-    "mydir/", true, false, 493,
+    "mydir/",
+    true,
+    false,
+    ["FileMode", 493],
   ]) // 0o755 = 493
 }
 
@@ -87,8 +93,16 @@ test "member_custom_mode_and_mtime" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let custom_time = @types.dos_epoch.0 + 1000
-  let m = @member.make("file.txt", File(file), Some(0o777), Some(custom_time)).unwrap()
-  @json.inspect((m.mode(), m.mtime()), content=[511, ["Ptime", 315533800]]) // 0o777 = 511
+  let m = @member.make(
+    "file.txt",
+    File(file),
+    Some(@types.FileMode(0o777)),
+    Some(custom_time),
+  ).unwrap()
+  @json.inspect((m.mode(), m.mtime()), content=[
+    ["FileMode", 511],
+    ["Ptime", 315533800],
+  ]) // 0o777 = 511
 }
 
 ///|
@@ -210,7 +224,13 @@ test "coverage_member_early_mtime" {
   let data = b"X"
   match @file.File::deflate_of_bytes(data, 0, data.length(), None) {
     Ok(file) =>
-      match @member.make("test.txt", File(file), Some(0o644), Some(early)) {
+      match
+        @member.make(
+          "test.txt",
+          File(file),
+          Some(@types.FileMode(0o644)),
+          Some(early),
+        ) {
         Ok(m) => @json.inspect(m.mtime() >= @types.dos_epoch, content=true)
         Err(_) => @json.inspect("should not fail", content="success")
       }

@@ -77,8 +77,8 @@ pub fn Member::make(
     // Set default mode
     let file_mode = mode.unwrap_or(
       match kind {
-        Dir => 0o755
-        File(_) => 0o644
+        Dir => FileMode(0o755)
+        File(_) => FileMode(0o644)
       },
     )
 

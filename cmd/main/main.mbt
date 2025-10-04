@@ -30,7 +30,7 @@ fn test_simple_zip() -> Unit {
       let m = @member.make(
         @fpath.Fpath("hello.txt"),
         File(f),
-        Some(0o644),
+        Some(@types.FileMode(0o644)),
         Some(@types.dos_epoch),
       )
       match m {
@@ -103,13 +103,18 @@ fn test_multi_file_zip() -> Unit {
 ///|
 fn test_directory_zip() -> Unit {
   println("\nTest 3: Creating archive with directories...")
-  let dir = @member.make(@fpath.Fpath("docs/"), Dir, Some(0o755), None).unwrap()
+  let dir = @member.make(
+    @fpath.Fpath("docs/"),
+    Dir,
+    Some(@types.FileMode(0o755)),
+    None,
+  ).unwrap()
   let data = b"# README\nThis is documentation.\n"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
   let readme = @member.make(
     @fpath.Fpath("docs/README.md"),
     File(file),
-    Some(0o644),
+    Some(@types.FileMode(0o644)),
     None,
   ).unwrap()
   let archive = @lib.Archive::empty().add(dir).add(readme)

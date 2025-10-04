@@ -211,6 +211,10 @@ test "distance_value_table" {
 typealias @types.Compression
 
 ///|
+/// FileMode - File permission mode re-exported from types package
+typealias @types.FileMode
+
+///|
 /// Ptime - POSIX time utilities re-exported from types package
 
 ///|
@@ -523,12 +527,12 @@ fn parse_central_dir_entry(
   let mode = (external_attrs >> 16).reinterpret_as_int() & 0xFFFF
   let file_mode = if mode == 0 {
     if is_dir {
-      0o755
+      @types.FileMode(0o755)
     } else {
-      0o644
+      @types.FileMode(0o644)
     }
   } else {
-    mode
+    @types.FileMode(mode)
   }
 
   // Convert DOS time to POSIX time
@@ -809,7 +813,7 @@ pub fn Archive::to_bytes(
         write_uint32_le(
           result,
           pos,
-          (m.mode() << 16).to_int64().to_int().reinterpret_as_uint(),
+          (m.mode().to_int() << 16).to_int64().to_int().reinterpret_as_uint(),
         ) // external file attributes
         pos = pos + 4
         write_uint32_le(
@@ -861,7 +865,7 @@ pub fn Archive::to_bytes(
         write_uint32_le(
           result,
           pos,
-          (m.mode() << 16).to_int64().to_int().reinterpret_as_uint(),
+          (m.mode().to_int() << 16).to_int64().to_int().reinterpret_as_uint(),
         ) // external file attributes
         pos = pos + 4
         write_uint32_le(

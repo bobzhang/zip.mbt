@@ -9,7 +9,7 @@ import(
 // Values
 let dos_epoch : Ptime
 
-fn format_file_mode(Int) -> String
+fn format_file_mode(FileMode) -> String
 
 fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
 
@@ -43,6 +43,18 @@ fn Compression::to_string(Self) -> String
 impl Eq for Compression
 impl Show for Compression
 
+pub(all) struct FileMode(Int)
+fn FileMode::from_int(Int) -> Self
+#deprecated
+fn FileMode::inner(Self) -> Int
+fn FileMode::to_int(Self) -> Int
+impl Compare for FileMode
+impl Eq for FileMode
+impl Hash for FileMode
+impl Show for FileMode
+impl ToJson for FileMode
+impl @json.FromJson for FileMode
+
 pub(all) struct Ptime(Int)
 #deprecated
 fn Ptime::inner(Self) -> Int
@@ -53,8 +65,6 @@ impl ToJson for Ptime
 impl @json.FromJson for Ptime
 
 // Type aliases
-pub typealias Int as FileMode
-
 pub typealias @fpath.Fpath as Fpath
 
 // Traits

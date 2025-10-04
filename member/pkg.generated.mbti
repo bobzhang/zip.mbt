@@ -10,7 +10,7 @@ import(
 // Values
 let dos_epoch : @types.Ptime
 
-fn format_file_mode(Int) -> String
+fn format_file_mode(@types.FileMode) -> String
 
 fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
 
@@ -28,7 +28,7 @@ fn ptime_format(@types.Ptime) -> String
 pub struct Member {
   path : @fpath.Fpath
   kind : MemberKind
-  mode : Int
+  mode : @types.FileMode
   mtime : @types.Ptime
 }
 fn Member::format(Self) -> String
@@ -37,8 +37,8 @@ fn Member::is_dir(Self) -> Bool
 fn Member::is_file(Self) -> Bool
 fn Member::kind(Self) -> MemberKind
 #as_free_fn
-fn Member::make(@fpath.Fpath, MemberKind, Int?, @types.Ptime?) -> Result[Self, String]
-fn Member::mode(Self) -> Int
+fn Member::make(@fpath.Fpath, MemberKind, @types.FileMode?, @types.Ptime?) -> Result[Self, String]
+fn Member::mode(Self) -> @types.FileMode
 fn Member::mtime(Self) -> @types.Ptime
 fn Member::path(Self) -> @fpath.Fpath
 
@@ -50,7 +50,7 @@ pub(all) enum MemberKind {
 // Type aliases
 pub typealias @file.File as File
 
-pub typealias Int as FileMode
+pub typealias @types.FileMode as FileMode
 
 pub typealias @fpath.Fpath as Fpath
 
