@@ -262,7 +262,11 @@ test "coverage_archive_too_short" {
   } catch {
     msg => {
       let msg_str = msg.to_string()
-      @json.inspect(msg_str.contains("end of central directory"), content=true)
+      // Check for either old or new error message format
+      @json.inspect(
+        msg_str.contains("end of central directory") || msg_str.contains("EOCD"),
+        content=true,
+      )
     }
   }
 }

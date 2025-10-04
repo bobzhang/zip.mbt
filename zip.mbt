@@ -243,11 +243,6 @@ fn String::utf8(s : String) -> Bytes {
 typealias @file.File
 
 ///|
-// ============================================================================
-// Member - Re-exported from member package
-// ============================================================================
-
-///|
 /// FIXME(upstream): find all references does not work
 typealias @member.Member
 
@@ -296,12 +291,14 @@ const ZIP_CENTRAL_DIR_SIG : UInt = 0x02014b50
 /// ZIP file decoding utilities
 
 ///|
-/// Find the end of central directory record (EOCD)
-/// Returns the position of EOCD or None if not found
-fn find_eocd(data : Bytes) -> Int? {
+/// Find and parse the end of central directory record (EOCD)
+/// Returns (cd_offset, cd_size, entry_count)
+/// EOCD structure (22 bytes): signature(4) + disk(2) + cd_disk(2) + 
+/// entries_this_disk(2) + entries_total(2) + cd_size(4) + cd_offset(4) + comment_len(2)
+fn find_and_parse_eocd(data : Bytes) -> (Int, Int, Int) raise {
   let len = data.length()
-  if len < 22 {
-    return None // Too small to contain EOCD
+  guard len >= 22 else {
+    fail("File too small to contain EOCD (minimum 22 bytes)")
   }
 
   // EOCD is at the end, search backwards
@@ -309,42 +306,35 @@ fn find_eocd(data : Bytes) -> Int? {
   let search_start = if len > 65557 { len - 65557 } else { 0 }
   for i = len - 22; i >= search_start; i = i - 1 {
     if data[i:] is [u32le(ZIP_EOCD_SIG), ..] {
-      return Some(i)
+      // Found EOCD signature, now parse it
+      match data[i + 4:] {
+        [
+          u16le(disk), // Disk number (multi-disk not supported)
+          u16le(cd_disk), // Disk where central directory starts
+          u16le(entries_this_disk), // Number of entries on this disk
+          u16le(entries_total), // Total number of entries
+          u32le(cd_size), // Size of central directory
+          // Offset of start of central directory
+          u32le(cd_offset),
+          ..,
+        ] => {
+          guard disk == 0 && cd_disk == 0 else {
+            fail("Multi-disk archives not supported")
+          }
+          guard entries_this_disk == entries_total else {
+            fail("Inconsistent entry count in EOCD")
+          }
+          return (
+            cd_offset.reinterpret_as_int(),
+            cd_size.reinterpret_as_int(),
+            entries_total.reinterpret_as_int(),
+          )
+        }
+        _ => fail("Truncated EOCD record")
+      }
     }
   }
-  None
-}
-
-///|
-/// Parse end of central directory record
-/// EOCD structure (22 bytes): signature(4) + disk(2) + cd_disk(2) + 
-/// entries_this_disk(2) + entries_total(2) + cd_size(4) + cd_offset(4) + comment_len(2)
-fn parse_eocd(data : Bytes, pos : Int) -> (Int, Int, Int) raise {
-  match data[pos + 4:] {
-    [
-      u16le(disk), // Disk number (multi-disk not supported)
-      u16le(cd_disk), // Disk where central directory starts
-      u16le(entries_this_disk), // Number of entries on this disk
-      u16le(entries_total), // Total number of entries
-      u32le(cd_size), // Size of central directory
-      // Offset of start of central directory
-      u32le(cd_offset),
-      ..,
-    ] => {
-      if disk != 0 || cd_disk != 0 {
-        fail("Multi-disk archives not supported")
-      }
-      if entries_this_disk != entries_total {
-        fail("Inconsistent entry count in EOCD")
-      }
-      (
-        cd_offset.reinterpret_as_int(),
-        cd_size.reinterpret_as_int(),
-        entries_total.reinterpret_as_int(),
-      )
-    }
-    _ => fail("Truncated EOCD record")
-  }
+  fail("Could not find end of central directory")
 }
 
 ///|
@@ -376,22 +366,18 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
       u32le(external_attrs), // External file attributes (Unix permissions)
       // Offset of local file header
       u32le(local_header_offset),
-      ..,
+      .. next,
     ] => {
       if sig != ZIP_CENTRAL_DIR_SIG {
         fail("Invalid central directory signature")
       }
       // Convert UInt to appropriate types
-      let version_made_by : UInt16 = version_made_by
-        .reinterpret_as_int()
-        .to_uint16()
-      let version_needed : UInt16 = version_needed
-        .reinterpret_as_int()
-        .to_uint16()
-      let gp_flags : UInt16 = gp_flags.reinterpret_as_int().to_uint16()
+      let version_made_by : UInt16 = version_made_by.to_uint16()
+      let version_needed : UInt16 = version_needed.to_uint16()
+      let gp_flags : UInt16 = gp_flags.to_uint16()
       let compression_method = compression_method.reinterpret_as_int()
-      let dos_time : UInt16 = dos_time.reinterpret_as_int().to_uint16()
-      let dos_date : UInt16 = dos_date.reinterpret_as_int().to_uint16()
+      let dos_time : UInt16 = dos_time.to_uint16()
+      let dos_date : UInt16 = dos_date.to_uint16()
       let compressed_size = compressed_size.reinterpret_as_int()
       let uncompressed_size = uncompressed_size.reinterpret_as_int()
       let filename_len = filename_len.reinterpret_as_int()
@@ -403,13 +389,14 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
       if data.length() < pos + 46 + filename_len {
         fail("Truncated filename in central directory")
       }
-      let filename_arr = Array::make(filename_len, b'\x00')
-      for i = 0; i < filename_len; i = i + 1 {
-        filename_arr[i] = data[pos + 46 + i]
-      }
-      let filename_bytes = Bytes::from_fixedarray(
-        FixedArray::from_iter(filename_arr[0:].iter()),
-      )
+      // let filename_arr = Array::make(filename_len, b'\x00')
+      // for i = 0; i < filename_len; i = i + 1 {
+      //   filename_arr[i] = next[ i]
+      // }
+      // let filename_bytes = Bytes::from_fixedarray(
+      //   FixedArray::from_iter(filename_arr[0:].iter()),
+      // )
+      let filename_bytes = next[:filename_len]
       // Convert UTF-8 bytes to string - decode returns String, throws on error
       let path_str = @encoding/utf8.decode(filename_bytes) catch {
         _ => fail("Failed to decode UTF-8 filename")
@@ -417,7 +404,6 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
       let path = @fpath.Fpath(path_str)
 
       // Calculate next position
-      let next_pos = pos + 46 + filename_len + extra_len + comment_len
 
       // Determine if directory (path ends with /)
       let is_dir = path.length() > 0 && path[path.length() - 1] == '/'
@@ -433,47 +419,43 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
       } else {
         @types.FileMode(mode)
       }
-
-      // Convert DOS time to POSIX time
-      let mtime = @types.ptime_of_dos_date_time(dos_date, dos_time)
-
       // Parse local file header to get actual data offset
       // Local file header structure (30 bytes fixed + variable):
       // sig(4) + version_needed(2) + gp_flags(2) + compression(2) + dos_time(2) +
       // dos_date(2) + crc32(4) + compressed_size(4) + uncompressed_size(4) +
       // filename_len(2) + extra_len(2) + filename + extra + file_data
-      let data_offset = match data[local_header_offset:] {
-        [
-          u32le(local_sig), // Signature (0x04034b50)
-          u16le(_), // Version needed to extract
-          u16le(_), // General purpose bit flags
-          u16le(_), // Compression method
-          u16le(_), // Last mod file time
-          u16le(_), // Last mod file date
-          u32le(_), // CRC-32 checksum
-          u32le(_), // Compressed size
-          u32le(_), // Uncompressed size
-          u16le(local_filename_len), // Filename length
-          // Extra field length
-          u16le(local_extra_len),
-          ..,
-        ] => {
-          if local_sig != ZIP_LOCAL_FILE_SIG {
-            fail("Invalid local file header signature")
-          }
-          let local_filename_len = local_filename_len.reinterpret_as_int()
-          let local_extra_len = local_extra_len.reinterpret_as_int()
-          local_header_offset + 30 + local_filename_len + local_extra_len
-        }
-        _ => fail("Invalid local header offset")
-      }
 
       // Create member
       let kind = if is_dir {
         @member.Dir
       } else {
         let compression = @types.compression(compression_method)
-        let file = File::make(
+        let data_offset = match data[local_header_offset:] {
+          [
+            u32le(local_sig), // Signature (0x04034b50)
+            u16le(_), // Version needed to extract
+            u16le(_), // General purpose bit flags
+            u16le(_), // Compression method
+            u16le(_), // Last mod file time
+            u16le(_), // Last mod file date
+            u32le(_), // CRC-32 checksum
+            u32le(_), // Compressed size
+            u32le(_), // Uncompressed size
+            u16le(local_filename_len), // Filename length
+            // Extra field length
+            u16le(local_extra_len),
+            ..,
+          ] => {
+            if local_sig != ZIP_LOCAL_FILE_SIG {
+              fail("Invalid local file header signature")
+            }
+            let local_filename_len = local_filename_len.reinterpret_as_int()
+            let local_extra_len = local_extra_len.reinterpret_as_int()
+            local_header_offset + 30 + local_filename_len + local_extra_len
+          }
+          _ => fail("Invalid local header offset")
+        }
+        File::make(
           data,
           data_offset,
           compressed_size,
@@ -484,9 +466,12 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
           Some(version_needed),
           Some(gp_flags),
         )
-        File(file)
+        |> File
       }
+      // Convert DOS time to POSIX time
+      let mtime = @types.ptime_of_dos_date_time(dos_date, dos_time)
       let m = @member.make(path, kind, Some(file_mode), Some(mtime))
+      let next_pos = pos + 46 + filename_len + extra_len + comment_len
       (m, next_pos)
     }
     _ => fail("Truncated central directory entry")
@@ -497,27 +482,27 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
 /// Decode ZIP archive from bytes
 pub fn Archive::of_bytes(data : Bytes) -> Archive raise {
   // Check magic
-  if not(bytes_has_zip_magic(data)) {
+  if !bytes_has_zip_magic(data) {
     fail("Not a ZIP file: missing magic signature")
   }
 
-  // Find EOCD
-  let eocd_pos = match find_eocd(data) {
-    Some(pos) => pos
-    None => fail("Could not find end of central directory")
-  }
-
-  // Parse EOCD
-  let (cd_offset, _cd_size, entry_count) = parse_eocd(data, eocd_pos)
+  // Find and parse EOCD
+  let (cd_offset, _cd_size, entry_count) = find_and_parse_eocd(data)
 
   // Parse central directory entries
   let mut archive = Archive::empty()
-  let mut pos = cd_offset
-  for _i = 0; _i < entry_count; _i = _i + 1 {
+  // let mut pos = cd_offset
+  for i = 0, pos = cd_offset; i < entry_count; {
     let (m, next_pos) = parse_central_dir_entry(data, pos)
     // Add member (last one wins if duplicate paths)
     archive = archive.add(m)
-    pos = next_pos
+    continue i + 1, next_pos
   }
+  // for _ in 0..<entry_count {
+  //   let (m, next_pos) = parse_central_dir_entry(data, pos)
+  //   // Add member (last one wins if duplicate paths)
+  //   archive = archive.add(m)
+  //   pos = next_pos
+  // }
   archive
 }
