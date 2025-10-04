@@ -26,6 +26,7 @@ pub fn Compression::to_int(self : Compression) -> Int {
 
 ///|
 /// Convert ZIP method number to compression format
+#as_free_fn(compression)
 pub fn Compression::from_int(compression_method : Int) -> Compression {
   match compression_method {
     0 => Stored
