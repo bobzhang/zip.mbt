@@ -26,20 +26,17 @@ fn write_bytes(arr : Array[Byte], pos : Int, data : Bytes) -> Unit {
 /// Calculate the size needed to encode an archive
 pub fn Archive::encoding_size(self : Archive) -> Int {
   let mut size = 0
-  // For each member: local file header + data + central directory header
-  self.members.each(fn(_path, m) {
-    let path_bytes = m.path().length()
+  for _, m in self.members {
+    let path_bytes = m.path().to_string().utf8().length()
+    // Local file header (30) + path + central directory header (46) + path
+    size += 30 + path_bytes + 46 + path_bytes
     match m.kind() {
-      Dir =>
-        // Local file header (30) + path + central directory header (46) + path
-        size = size + 30 + path_bytes + 46 + path_bytes
-      File(f) =>
-        // Local file header (30) + path + data + central directory header (46) + path
-        size = size + 30 + path_bytes + f.compressed_size + 46 + path_bytes
+      Dir => ()
+      File(f) => size += f.compressed_size
     }
-  })
+  }
   // End of central directory record (22)
-  size = size + 22
+  size += 22
   size
 }
 

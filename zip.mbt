@@ -384,18 +384,9 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
       let extra_len = extra_len.reinterpret_as_int()
       let comment_len = comment_len.reinterpret_as_int()
       let local_header_offset = local_header_offset.reinterpret_as_int()
-
-      // Read filename
-      if data.length() < pos + 46 + filename_len {
-        fail("Truncated filename in central directory")
+      guard next.length() >= filename_len else {
+        fail("Truncated central directory entry")
       }
-      // let filename_arr = Array::make(filename_len, b'\x00')
-      // for i = 0; i < filename_len; i = i + 1 {
-      //   filename_arr[i] = next[ i]
-      // }
-      // let filename_bytes = Bytes::from_fixedarray(
-      //   FixedArray::from_iter(filename_arr[0:].iter()),
-      // )
       let filename_bytes = next[:filename_len]
       // Convert UTF-8 bytes to string - decode returns String, throws on error
       let path_str = @encoding/utf8.decode(filename_bytes) catch {
@@ -498,11 +489,5 @@ pub fn Archive::of_bytes(data : Bytes) -> Archive raise {
     archive = archive.add(m)
     continue i + 1, next_pos
   }
-  // for _ in 0..<entry_count {
-  //   let (m, next_pos) = parse_central_dir_entry(data, pos)
-  //   // Add member (last one wins if duplicate paths)
-  //   archive = archive.add(m)
-  //   pos = next_pos
-  // }
   archive
 }
