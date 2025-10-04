@@ -319,7 +319,7 @@ fn find_eocd(data : Bytes) -> Int? {
 /// Parse end of central directory record
 /// EOCD structure (22 bytes): signature(4) + disk(2) + cd_disk(2) + 
 /// entries_this_disk(2) + entries_total(2) + cd_size(4) + cd_offset(4) + comment_len(2)
-fn parse_eocd(data : Bytes, pos : Int) -> Result[(Int, Int, Int), String] {
+fn parse_eocd(data : Bytes, pos : Int) -> (Int, Int, Int) raise {
   match data[pos + 4:] {
     [
       u16le(disk), // Disk number (multi-disk not supported)
@@ -332,20 +332,18 @@ fn parse_eocd(data : Bytes, pos : Int) -> Result[(Int, Int, Int), String] {
       ..,
     ] => {
       if disk != 0 || cd_disk != 0 {
-        return Err("Multi-disk archives not supported")
+        fail("Multi-disk archives not supported")
       }
       if entries_this_disk != entries_total {
-        return Err("Inconsistent entry count in EOCD")
+        fail("Inconsistent entry count in EOCD")
       }
-      Ok(
-        (
-          cd_offset.reinterpret_as_int(),
-          cd_size.reinterpret_as_int(),
-          entries_total.reinterpret_as_int(),
-        ),
+      (
+        cd_offset.reinterpret_as_int(),
+        cd_size.reinterpret_as_int(),
+        entries_total.reinterpret_as_int(),
       )
     }
-    _ => Err("Truncated EOCD record")
+    _ => fail("Truncated EOCD record")
   }
 }
 
@@ -356,10 +354,7 @@ fn parse_eocd(data : Bytes, pos : Int) -> Result[(Int, Int, Int), String] {
 /// dos_time(2) + dos_date(2) + crc32(4) + compressed_size(4) + uncompressed_size(4) +
 /// filename_len(2) + extra_len(2) + comment_len(2) + disk_num(2) + internal_attrs(2) +
 /// external_attrs(4) + local_header_offset(4) + filename + extra + comment
-fn parse_central_dir_entry(
-  data : Bytes,
-  pos : Int,
-) -> Result[(Member, Int), String] {
+fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
   // Returns (member, next_position)
   match data[pos:] {
     [
@@ -384,7 +379,7 @@ fn parse_central_dir_entry(
       ..,
     ] => {
       if sig != ZIP_CENTRAL_DIR_SIG {
-        return Err("Invalid central directory signature")
+        fail("Invalid central directory signature")
       }
       // Convert UInt to appropriate types
       let version_made_by : UInt16 = version_made_by
@@ -406,7 +401,7 @@ fn parse_central_dir_entry(
 
       // Read filename
       if data.length() < pos + 46 + filename_len {
-        return Err("Truncated filename in central directory")
+        fail("Truncated filename in central directory")
       }
       let filename_arr = Array::make(filename_len, b'\x00')
       for i = 0; i < filename_len; i = i + 1 {
@@ -417,7 +412,7 @@ fn parse_central_dir_entry(
       )
       // Convert UTF-8 bytes to string - decode returns String, throws on error
       let path_str = @encoding/utf8.decode(filename_bytes) catch {
-        _ => return Err("Failed to decode UTF-8 filename")
+        _ => fail("Failed to decode UTF-8 filename")
       }
       let path = @fpath.Fpath(path_str)
 
@@ -464,13 +459,13 @@ fn parse_central_dir_entry(
           ..,
         ] => {
           if local_sig != ZIP_LOCAL_FILE_SIG {
-            return Err("Invalid local file header signature")
+            fail("Invalid local file header signature")
           }
           let local_filename_len = local_filename_len.reinterpret_as_int()
           let local_extra_len = local_extra_len.reinterpret_as_int()
           local_header_offset + 30 + local_filename_len + local_extra_len
         }
-        _ => return Err("Invalid local header offset")
+        _ => fail("Invalid local header offset")
       }
 
       // Create member
@@ -478,65 +473,51 @@ fn parse_central_dir_entry(
         @member.Dir
       } else {
         let compression = @types.compression(compression_method)
-        let file = match
-          File::make(
-            data,
-            data_offset,
-            compressed_size,
-            compression,
-            uncompressed_size,
-            crc32,
-            Some(version_made_by),
-            Some(version_needed),
-            Some(gp_flags),
-          ) {
-          Ok(f) => f
-          Err(msg) => return Err(msg)
-        }
+        let file = File::make(
+          data,
+          data_offset,
+          compressed_size,
+          compression,
+          uncompressed_size,
+          crc32,
+          Some(version_made_by),
+          Some(version_needed),
+          Some(gp_flags),
+        )
         File(file)
       }
-      let m = match @member.make(path, kind, Some(file_mode), Some(mtime)) {
-        Ok(mem) => mem
-        Err(msg) => return Err(msg)
-      }
-      Ok((m, next_pos))
+      let m = @member.make(path, kind, Some(file_mode), Some(mtime))
+      (m, next_pos)
     }
-    _ => Err("Truncated central directory entry")
+    _ => fail("Truncated central directory entry")
   }
 }
 
 ///|
 /// Decode ZIP archive from bytes
-pub fn Archive::of_bytes(data : Bytes) -> Result[Archive, String] {
+pub fn Archive::of_bytes(data : Bytes) -> Archive raise {
   // Check magic
   if not(bytes_has_zip_magic(data)) {
-    return Err("Not a ZIP file: missing magic signature")
+    fail("Not a ZIP file: missing magic signature")
   }
 
   // Find EOCD
   let eocd_pos = match find_eocd(data) {
     Some(pos) => pos
-    None => return Err("Could not find end of central directory")
+    None => fail("Could not find end of central directory")
   }
 
   // Parse EOCD
-  let (cd_offset, _cd_size, entry_count) = match parse_eocd(data, eocd_pos) {
-    Ok(result) => result
-    Err(msg) => return Err(msg)
-  }
+  let (cd_offset, _cd_size, entry_count) = parse_eocd(data, eocd_pos)
 
   // Parse central directory entries
   let mut archive = Archive::empty()
   let mut pos = cd_offset
   for _i = 0; _i < entry_count; _i = _i + 1 {
-    match parse_central_dir_entry(data, pos) {
-      Ok((m, next_pos)) => {
-        // Add member (last one wins if duplicate paths)
-        archive = archive.add(m)
-        pos = next_pos
-      }
-      Err(msg) => return Err(msg)
-    }
+    let (m, next_pos) = parse_central_dir_entry(data, pos)
+    // Add member (last one wins if duplicate paths)
+    archive = archive.add(m)
+    pos = next_pos
   }
-  Ok(archive)
+  archive
 }

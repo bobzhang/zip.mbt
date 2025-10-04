@@ -37,6 +37,7 @@ pub(all) enum Compression {
   Zstd
   Other(Int)
 }
+#as_free_fn(compression)
 fn Compression::from_int(Int) -> Self
 fn Compression::to_int(Self) -> Int
 fn Compression::to_string(Self) -> String

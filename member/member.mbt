@@ -60,7 +60,7 @@ pub fn Member::make(
   kind : MemberKind,
   mode : FileMode?,
   mtime : Ptime?,
-) -> Result[Member, String] {
+) -> Member raise {
   // Ensure Unix-style path
   let normalized_path = fpath_ensure_unix(path)
 
@@ -72,25 +72,26 @@ pub fn Member::make(
 
   // Check path length
   if final_path.length() > max_path_length {
-    Err("Path length \{final_path.length()} exceeds maximum \{max_path_length}")
-  } else {
-    // Set default mode
-    let file_mode = mode.unwrap_or(
-      match kind {
-        Dir => FileMode(0o755)
-        File(_) => FileMode(0o644)
-      },
+    fail(
+      "Path length \{final_path.length()} exceeds maximum \{max_path_length}",
     )
-
-    // Set default mtime (truncate to dos_epoch if before)
-    let modification_time = mtime.unwrap_or(dos_epoch)
-    let final_mtime = if modification_time < dos_epoch {
-      dos_epoch
-    } else {
-      modification_time
-    }
-    Ok({ path: final_path, kind, mode: file_mode, mtime: final_mtime })
   }
+  // Set default mode
+  let file_mode = mode.unwrap_or(
+    match kind {
+      Dir => FileMode(0o755)
+      File(_) => FileMode(0o644)
+    },
+  )
+
+  // Set default mtime (truncate to dos_epoch if before)
+  let modification_time = mtime.unwrap_or(dos_epoch)
+  let final_mtime = if modification_time < dos_epoch {
+    dos_epoch
+  } else {
+    modification_time
+  }
+  { path: final_path, kind, mode: file_mode, mtime: final_mtime }
 }
 
 ///|

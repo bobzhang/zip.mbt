@@ -40,12 +40,12 @@ fn File::compressed_size(Self) -> Int
 fn File::compression(Self) -> @types.Compression
 fn File::decompressed_crc32(Self) -> UInt
 fn File::decompressed_size(Self) -> Int
-fn File::deflate_of_bytes(Bytes, Int, Int, @deflate.DeflateLevel?) -> Result[Self, String]
+fn File::deflate_of_bytes(Bytes, Int, Int, @deflate.DeflateLevel?) -> Self raise
 fn File::gp_flags(Self) -> UInt16
 fn File::is_encrypted(Self) -> Bool
-fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, UInt16?, UInt16?, UInt16?) -> Result[Self, String]
+fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, UInt16?, UInt16?, UInt16?) -> Self raise
 fn File::start(Self) -> Int
-fn File::stored_of_bytes(Bytes, Int, Int) -> Result[Self, String]
+fn File::stored_of_bytes(Bytes, Int, Int) -> Self raise
 fn File::to_bytes(Self) -> Bytes
 fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt)
 fn File::version_made_by(Self) -> UInt16

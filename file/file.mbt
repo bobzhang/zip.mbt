@@ -166,26 +166,23 @@ pub fn File::make(
   version_made_by : UInt16?,
   version_needed : UInt16?,
   gp_flags : UInt16?,
-) -> Result[File, String] {
+) -> File raise {
   if compressed_size.to_int64() > max_file_size ||
     decompressed_size.to_int64() > max_file_size {
-    Err(
+    fail(
       "Maximum ZIP file size \{max_file_size} exceeded: compressed=\{compressed_size}, decompressed=\{decompressed_size}",
     )
-  } else {
-    Ok({
-      version_made_by: version_made_by.unwrap_or(version_made_by_default),
-      version_needed_to_extract: version_needed.unwrap_or(
-        version_needed_default,
-      ),
-      gp_flags: gp_flags.unwrap_or(gp_flag_default),
-      compression,
-      start,
-      compressed_size,
-      compressed_bytes,
-      decompressed_size,
-      decompressed_crc32,
-    })
+  }
+  {
+    version_made_by: version_made_by.unwrap_or(version_made_by_default),
+    version_needed_to_extract: version_needed.unwrap_or(version_needed_default),
+    gp_flags: gp_flags.unwrap_or(gp_flag_default),
+    compression,
+    start,
+    compressed_size,
+    compressed_bytes,
+    decompressed_size,
+    decompressed_crc32,
   }
 }
 
@@ -195,7 +192,7 @@ pub fn File::stored_of_bytes(
   bytes : Bytes,
   start : Int,
   len : Int,
-) -> Result[File, String] {
+) -> File raise {
   let crc = @crc32.bytes_crc32(bytes, start, len)
   File::make(bytes, start, len, Compression::Stored, len, crc, None, None, None)
 }
@@ -208,7 +205,7 @@ pub fn File::deflate_of_bytes(
   start : Int,
   len : Int,
   level : @deflate.DeflateLevel?,
-) -> Result[File, String] {
+) -> File raise {
   // Determine compression parameters based on level
   let (good_match, max_chain, use_dynamic) = match level {
     Some(@deflate.DeflateLevel::None) => {

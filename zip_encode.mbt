@@ -45,14 +45,11 @@ pub fn Archive::encoding_size(self : Archive) -> Int {
 
 ///|
 /// Encode archive to bytes
-pub fn Archive::to_bytes(
-  self : Archive,
-  first : Fpath?,
-) -> Result[Bytes, String] {
+pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
   // Check member count limit
   let count = self.member_count()
   if count > @member.max_member_count {
-    return Err(
+    fail(
       "Archive has \{count} members, exceeds maximum \{@member.max_member_count}",
     )
   }
@@ -306,7 +303,7 @@ pub fn Archive::to_bytes(
   pos = pos + 4
   write_uint16_le(result, pos, 0) // comment length
   pos = pos + 2
-  Ok(Bytes::from_fixedarray(FixedArray::from_iter(result[0:pos].iter())))
+  Bytes::from_fixedarray(FixedArray::from_iter(result[0:pos].iter()))
 }
 
 ///|
@@ -318,16 +315,12 @@ pub fn Archive::write_bytes(
   _buffer : Bytes,
   offset : Int,
   first : Fpath?,
-) -> Result[Int, String] {
-  match self.to_bytes(first) {
-    Ok(encoded) => {
-      let size = encoded.length()
-      // Note: In MoonBit, Bytes is immutable so we can't write to it
-      // This function exists for API compatibility but recommends using to_bytes()
-      Err(
-        "write_bytes not supported (Bytes is immutable): use to_bytes() instead. Would write \{size} bytes at offset \{offset}",
-      )
-    }
-    Err(msg) => Err(msg)
-  }
+) -> Int raise {
+  let encoded = self.to_bytes(first)
+  let size = encoded.length()
+  // Note: In MoonBit, Bytes is immutable so we can't write to it
+  // This function exists for API compatibility but recommends using to_bytes()
+  fail(
+    "write_bytes not supported (Bytes is immutable): use to_bytes() instead. Would write \{size} bytes at offset \{offset}",
+  )
 }

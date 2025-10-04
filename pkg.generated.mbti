@@ -21,13 +21,13 @@ fn[T] Archive::fold(Self, (@member.Member, T) -> T, T) -> T
 fn Archive::is_empty(Self) -> Bool
 fn Archive::mem(Self, @fpath.Fpath) -> Bool
 fn Archive::member_count(Self) -> Int
-fn Archive::of_bytes(Bytes) -> Result[Self, String]
+fn Archive::of_bytes(Bytes) -> Self raise
 fn Archive::of_map(@sorted_map.SortedMap[@fpath.Fpath, @member.Member]) -> Self
 fn Archive::remove(Self, @fpath.Fpath) -> Self
 fn Archive::to_array(Self) -> Array[@member.Member]
-fn Archive::to_bytes(Self, @fpath.Fpath?) -> Result[Bytes, String]
+fn Archive::to_bytes(Self, @fpath.Fpath?) -> Bytes raise
 fn Archive::to_map(Self) -> @sorted_map.SortedMap[@fpath.Fpath, @member.Member]
-fn Archive::write_bytes(Self, Bytes, Int, @fpath.Fpath?) -> Result[Int, String]
+fn Archive::write_bytes(Self, Bytes, Int, @fpath.Fpath?) -> Int raise
 
 // Type aliases
 pub typealias @member.MemberKind as MemberKind
