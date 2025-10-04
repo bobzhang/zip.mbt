@@ -1,9 +1,9 @@
 ///|
 /// Helper to write 16-bit little-endian integer to buffer
-/// Note: Buffer stdlib doesn't have write_uint16_le, so we provide it
-fn write_uint16_le(buf : @buffer.Buffer, value : UInt16) -> Unit {
-  buf.write_byte((value & 0xFF).to_byte())
-  buf.write_byte(((value >> 8) & 0xFF).to_byte())
+/// Note: stdlib Buffer doesn't have write_uint16_le, so we provide it as extension
+fn @buffer.Buffer::write_uint16_le(self : Self, value : UInt16) -> Unit {
+  self.write_byte((value & 0xFF).to_byte())
+  self.write_byte(((value >> 8) & 0xFF).to_byte())
 }
 
 ///|
@@ -50,16 +50,16 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
 
         // Local file header for directory
         buf.write_uint_le(ZIP_LOCAL_FILE_SIG)
-        write_uint16_le(buf, @file.version_needed_default) // version needed
-        write_uint16_le(buf, @file.gp_flag_default) // gp flags
-        write_uint16_le(buf, 0) // compression method (stored)
-        write_uint16_le(buf, dos_time) // last mod time
-        write_uint16_le(buf, dos_date)
+        buf.write_uint16_le(@file.version_needed_default) // version needed
+        buf.write_uint16_le(@file.gp_flag_default) // gp flags
+        buf.write_uint16_le(0) // compression method (stored)
+        buf.write_uint16_le(dos_time) // last mod time
+        buf.write_uint16_le(dos_date)
         buf.write_uint_le((0 : UInt)) // CRC-32
         buf.write_uint_le((0 : UInt)) // compressed size
         buf.write_uint_le((0 : UInt)) // uncompressed size
-        write_uint16_le(buf, path_bytes.length().to_uint16()) // file name length
-        write_uint16_le(buf, 0) // extra field length
+        buf.write_uint16_le(path_bytes.length().to_uint16()) // file name length
+        buf.write_uint16_le(0) // extra field length
         buf.write_bytes(path_bytes)
         central_dir_entries.push((local_header_offset, m))
       }
@@ -69,11 +69,11 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
 
         // Local file header for file
         buf.write_uint_le(ZIP_LOCAL_FILE_SIG)
-        write_uint16_le(buf, f.version_needed_to_extract)
-        write_uint16_le(buf, f.gp_flags)
-        write_uint16_le(buf, f.compression.to_int().to_uint16())
-        write_uint16_le(buf, dos_time)
-        write_uint16_le(buf, dos_date)
+        buf.write_uint16_le(f.version_needed_to_extract)
+        buf.write_uint16_le(f.gp_flags)
+        buf.write_uint16_le(f.compression.to_int().to_uint16())
+        buf.write_uint16_le(dos_time)
+        buf.write_uint16_le(dos_date)
         buf.write_uint_le(f.decompressed_crc32)
         buf.write_uint_le(
           f.compressed_size.to_int64().to_int().reinterpret_as_uint(),
@@ -81,8 +81,8 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
         buf.write_uint_le(
           f.decompressed_size.to_int64().to_int().reinterpret_as_uint(),
         )
-        write_uint16_le(buf, path_bytes.length().to_uint16())
-        write_uint16_le(buf, 0) // extra field length
+        buf.write_uint16_le(path_bytes.length().to_uint16())
+        buf.write_uint16_le(0) // extra field length
         buf.write_bytes(path_bytes)
 
         // Write compressed data
@@ -125,20 +125,20 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
     buf.write_uint_le(ZIP_CENTRAL_DIR_SIG)
     match m.kind() {
       Dir => {
-        write_uint16_le(buf, @file.version_made_by_default)
-        write_uint16_le(buf, @file.version_needed_default)
-        write_uint16_le(buf, @file.gp_flag_default)
-        write_uint16_le(buf, 0) // compression
-        write_uint16_le(buf, dos_time)
-        write_uint16_le(buf, dos_date)
+        buf.write_uint16_le(@file.version_made_by_default)
+        buf.write_uint16_le(@file.version_needed_default)
+        buf.write_uint16_le(@file.gp_flag_default)
+        buf.write_uint16_le(0) // compression
+        buf.write_uint16_le(dos_time)
+        buf.write_uint16_le(dos_date)
         buf.write_uint_le((0 : UInt)) // CRC
         buf.write_uint_le((0 : UInt)) // compressed size
         buf.write_uint_le((0 : UInt)) // uncompressed size
-        write_uint16_le(buf, path_bytes.length().to_uint16()) // file name length
-        write_uint16_le(buf, 0) // extra field length
-        write_uint16_le(buf, 0) // file comment length
-        write_uint16_le(buf, 0) // disk number start
-        write_uint16_le(buf, 0) // internal file attributes
+        buf.write_uint16_le(path_bytes.length().to_uint16()) // file name length
+        buf.write_uint16_le(0) // extra field length
+        buf.write_uint16_le(0) // file comment length
+        buf.write_uint16_le(0) // disk number start
+        buf.write_uint16_le(0) // internal file attributes
         buf.write_uint_le(
           (m.mode().to_int() << 16).to_int64().to_int().reinterpret_as_uint(),
         ) // external file attributes
@@ -146,12 +146,12 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
         buf.write_bytes(path_bytes)
       }
       File(f) => {
-        write_uint16_le(buf, f.version_made_by)
-        write_uint16_le(buf, f.version_needed_to_extract)
-        write_uint16_le(buf, f.gp_flags)
-        write_uint16_le(buf, f.compression.to_int().to_uint16())
-        write_uint16_le(buf, dos_time)
-        write_uint16_le(buf, dos_date)
+        buf.write_uint16_le(f.version_made_by)
+        buf.write_uint16_le(f.version_needed_to_extract)
+        buf.write_uint16_le(f.gp_flags)
+        buf.write_uint16_le(f.compression.to_int().to_uint16())
+        buf.write_uint16_le(dos_time)
+        buf.write_uint16_le(dos_date)
         buf.write_uint_le(f.decompressed_crc32)
         buf.write_uint_le(
           f.compressed_size.to_int64().to_int().reinterpret_as_uint(),
@@ -159,11 +159,11 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
         buf.write_uint_le(
           f.decompressed_size.to_int64().to_int().reinterpret_as_uint(),
         )
-        write_uint16_le(buf, path_bytes.length().to_uint16())
-        write_uint16_le(buf, 0) // extra field length
-        write_uint16_le(buf, 0) // file comment length
-        write_uint16_le(buf, 0) // disk number start
-        write_uint16_le(buf, 0) // internal file attributes
+        buf.write_uint16_le(path_bytes.length().to_uint16())
+        buf.write_uint16_le(0) // extra field length
+        buf.write_uint16_le(0) // file comment length
+        buf.write_uint16_le(0) // disk number start
+        buf.write_uint16_le(0) // internal file attributes
         buf.write_uint_le(
           (m.mode().to_int() << 16).to_int64().to_int().reinterpret_as_uint(),
         ) // external file attributes
@@ -176,13 +176,13 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
 
   // Write end of central directory record
   buf.write_uint_le(ZIP_EOCD_SIG)
-  write_uint16_le(buf, 0) // disk number
-  write_uint16_le(buf, 0) // disk with central directory
-  write_uint16_le(buf, count.to_uint16()) // entries on this disk
-  write_uint16_le(buf, count.to_uint16()) // total entries
+  buf.write_uint16_le(0) // disk number
+  buf.write_uint16_le(0) // disk with central directory
+  buf.write_uint16_le(count.to_uint16()) // entries on this disk
+  buf.write_uint16_le(count.to_uint16()) // total entries
   buf.write_uint_le(central_dir_size.to_int64().to_int().reinterpret_as_uint())
   buf.write_uint_le(central_dir_start.to_int64().to_int().reinterpret_as_uint())
-  write_uint16_le(buf, 0) // comment length
+  buf.write_uint16_le(0) // comment length
   buf.to_bytes()
 }
 
