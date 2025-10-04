@@ -1,25 +1,9 @@
 ///|
-/// Helper to write 16-bit little-endian integer to array
-fn write_uint16_le(arr : Array[Byte], pos : Int, value : UInt16) -> Unit {
-  arr[pos] = (value & 0xFF).to_byte()
-  arr[pos + 1] = ((value >> 8) & 0xFF).to_byte()
-}
-
-///|
-/// Helper to write 32-bit little-endian integer to array
-fn write_uint32_le(arr : Array[Byte], pos : Int, value : UInt) -> Unit {
-  arr[pos] = (value & (0xFF : UInt)).reinterpret_as_int().to_byte()
-  arr[pos + 1] = ((value >> 8) & (0xFF : UInt)).reinterpret_as_int().to_byte()
-  arr[pos + 2] = ((value >> 16) & (0xFF : UInt)).reinterpret_as_int().to_byte()
-  arr[pos + 3] = ((value >> 24) & (0xFF : UInt)).reinterpret_as_int().to_byte()
-}
-
-///|
-/// Helper to write bytes to array
-fn write_bytes(arr : Array[Byte], pos : Int, data : Bytes) -> Unit {
-  for i = 0; i < data.length(); i = i + 1 {
-    arr[pos + i] = data[i]
-  }
+/// Helper to write 16-bit little-endian integer to buffer
+/// Note: Buffer stdlib doesn't have write_uint16_le, so we provide it
+fn write_uint16_le(buf : @buffer.Buffer, value : UInt16) -> Unit {
+  buf.write_byte((value & 0xFF).to_byte())
+  buf.write_byte(((value >> 8) & 0xFF).to_byte())
 }
 
 ///|
@@ -51,93 +35,60 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
     )
   }
   let total_size = self.encoding_size()
-  // Allocate slightly more space to account for any rounding
-  let result = Array::make(total_size + 1024, b'\x00')
-  let mut pos = 0
+  // Use Buffer from stdlib instead of manual array indexing
+  let buf = @buffer.new(size_hint=total_size)
   let central_dir_entries : Array[(Int, Member)] = []
 
   // Helper to encode a member
   let encode_member = fn(m : Member) {
     let path_bytes = m.path().to_string().utf8()
-    let path_len = path_bytes.length()
     let (dos_date, dos_time) = @types.ptime_to_dos_date_time(m.mtime())
     match m.kind() {
       Dir => {
+        // Record position for central directory
+        let local_header_offset = buf.length()
+
         // Local file header for directory
-        write_uint32_le(
-          result,
-          pos,
-          ZIP_LOCAL_FILE_SIG,
-          // zip_local_file_sig.to_int64().to_int().reinterpret_as_uint(),
-        )
-        pos = pos + 4
-        write_uint16_le(result, pos, @file.version_needed_default) // version needed
-        pos = pos + 2
-        write_uint16_le(result, pos, @file.gp_flag_default) // gp flags
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // compression method (stored)
-        pos = pos + 2
-        write_uint16_le(result, pos, dos_time) // last mod time
-        pos = pos + 2
-        write_uint16_le(result, pos, dos_date)
-        pos = pos + 2
-        write_uint32_le(result, pos, (0 : UInt)) // CRC-32
-        pos = pos + 4
-        write_uint32_le(result, pos, (0 : UInt)) // compressed size
-        pos = pos + 4
-        write_uint32_le(result, pos, (0 : UInt)) // uncompressed size
-        pos = pos + 4
-        write_uint16_le(result, pos, path_len.to_uint16()) // file name length
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // extra field length
-        pos = pos + 2
-        write_bytes(result, pos, path_bytes)
-        pos = pos + path_len
-        central_dir_entries.push((pos - 30 - path_len, m))
+        buf.write_uint_le(ZIP_LOCAL_FILE_SIG)
+        write_uint16_le(buf, @file.version_needed_default) // version needed
+        write_uint16_le(buf, @file.gp_flag_default) // gp flags
+        write_uint16_le(buf, 0) // compression method (stored)
+        write_uint16_le(buf, dos_time) // last mod time
+        write_uint16_le(buf, dos_date)
+        buf.write_uint_le((0 : UInt)) // CRC-32
+        buf.write_uint_le((0 : UInt)) // compressed size
+        buf.write_uint_le((0 : UInt)) // uncompressed size
+        write_uint16_le(buf, path_bytes.length().to_uint16()) // file name length
+        write_uint16_le(buf, 0) // extra field length
+        buf.write_bytes(path_bytes)
+        central_dir_entries.push((local_header_offset, m))
       }
       File(f) => {
         // Record position for central directory
-        let local_header_offset = pos
+        let local_header_offset = buf.length()
 
         // Local file header for file
-        write_uint32_le(result, pos, ZIP_LOCAL_FILE_SIG)
-        pos = pos + 4
-        write_uint16_le(result, pos, f.version_needed_to_extract)
-        pos = pos + 2
-        write_uint16_le(result, pos, f.gp_flags)
-        pos = pos + 2
-        write_uint16_le(result, pos, f.compression.to_int().to_uint16())
-        pos = pos + 2
-        write_uint16_le(result, pos, dos_time)
-        pos = pos + 2
-        write_uint16_le(result, pos, dos_date)
-        pos = pos + 2
-        write_uint32_le(result, pos, f.decompressed_crc32)
-        pos = pos + 4
-        write_uint32_le(
-          result,
-          pos,
+        buf.write_uint_le(ZIP_LOCAL_FILE_SIG)
+        write_uint16_le(buf, f.version_needed_to_extract)
+        write_uint16_le(buf, f.gp_flags)
+        write_uint16_le(buf, f.compression.to_int().to_uint16())
+        write_uint16_le(buf, dos_time)
+        write_uint16_le(buf, dos_date)
+        buf.write_uint_le(f.decompressed_crc32)
+        buf.write_uint_le(
           f.compressed_size.to_int64().to_int().reinterpret_as_uint(),
         )
-        pos = pos + 4
-        write_uint32_le(
-          result,
-          pos,
+        buf.write_uint_le(
           f.decompressed_size.to_int64().to_int().reinterpret_as_uint(),
         )
-        pos = pos + 4
-        write_uint16_le(result, pos, path_len.to_uint16())
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // extra field length
-        pos = pos + 2
-        write_bytes(result, pos, path_bytes)
-        pos = pos + path_len
+        write_uint16_le(buf, path_bytes.length().to_uint16())
+        write_uint16_le(buf, 0) // extra field length
+        buf.write_bytes(path_bytes)
 
         // Write compressed data
-        for i = 0; i < f.compressed_size; i = i + 1 {
-          result[pos + i] = f.compressed_bytes[f.start + i]
-        }
-        pos = pos + f.compressed_size
+        buf.write_bytesview(
+          f.compressed_bytes[f.start:f.start + f.compressed_size],
+        )
         central_dir_entries.push((local_header_offset, m))
       }
     }
@@ -166,141 +117,73 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
   }
 
   // Write central directory
-  let central_dir_start = pos
+  let central_dir_start = buf.length()
   for entry in central_dir_entries {
     let (offset, m) = entry
     let path_bytes = m.path().to_string().utf8()
-    let path_len = path_bytes.length()
     let (dos_date, dos_time) = @types.ptime_to_dos_date_time(m.mtime())
-    write_uint32_le(result, pos, ZIP_CENTRAL_DIR_SIG)
-    pos = pos + 4
+    buf.write_uint_le(ZIP_CENTRAL_DIR_SIG)
     match m.kind() {
       Dir => {
-        write_uint16_le(result, pos, @file.version_made_by_default)
-        pos = pos + 2
-        write_uint16_le(result, pos, @file.version_needed_default)
-        pos = pos + 2
-        write_uint16_le(result, pos, @file.gp_flag_default)
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // compression
-        pos = pos + 2
-        write_uint16_le(result, pos, dos_time)
-        pos = pos + 2
-        write_uint16_le(result, pos, dos_date)
-        pos = pos + 2
-        write_uint32_le(result, pos, (0 : UInt)) // CRC
-        pos = pos + 4
-        write_uint32_le(result, pos, (0 : UInt)) // compressed size
-        pos = pos + 4
-        write_uint32_le(result, pos, (0 : UInt)) // uncompressed size
-        pos = pos + 4
-        write_uint16_le(result, pos, path_len.to_uint16()) // file name length
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // extra field length
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // file comment length
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // disk number start
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // internal file attributes
-        pos = pos + 2
-        write_uint32_le(
-          result,
-          pos,
+        write_uint16_le(buf, @file.version_made_by_default)
+        write_uint16_le(buf, @file.version_needed_default)
+        write_uint16_le(buf, @file.gp_flag_default)
+        write_uint16_le(buf, 0) // compression
+        write_uint16_le(buf, dos_time)
+        write_uint16_le(buf, dos_date)
+        buf.write_uint_le((0 : UInt)) // CRC
+        buf.write_uint_le((0 : UInt)) // compressed size
+        buf.write_uint_le((0 : UInt)) // uncompressed size
+        write_uint16_le(buf, path_bytes.length().to_uint16()) // file name length
+        write_uint16_le(buf, 0) // extra field length
+        write_uint16_le(buf, 0) // file comment length
+        write_uint16_le(buf, 0) // disk number start
+        write_uint16_le(buf, 0) // internal file attributes
+        buf.write_uint_le(
           (m.mode().to_int() << 16).to_int64().to_int().reinterpret_as_uint(),
         ) // external file attributes
-        pos = pos + 4
-        write_uint32_le(
-          result,
-          pos,
-          offset.to_int64().to_int().reinterpret_as_uint(),
-        ) // relative offset
-        pos = pos + 4
-        write_bytes(result, pos, path_bytes)
-        pos = pos + path_len
+        buf.write_uint_le(offset.to_int64().to_int().reinterpret_as_uint()) // relative offset
+        buf.write_bytes(path_bytes)
       }
       File(f) => {
-        write_uint16_le(result, pos, f.version_made_by)
-        pos = pos + 2
-        write_uint16_le(result, pos, f.version_needed_to_extract)
-        pos = pos + 2
-        write_uint16_le(result, pos, f.gp_flags)
-        pos = pos + 2
-        write_uint16_le(result, pos, f.compression.to_int().to_uint16())
-        pos = pos + 2
-        write_uint16_le(result, pos, dos_time)
-        pos = pos + 2
-        write_uint16_le(result, pos, dos_date)
-        pos = pos + 2
-        write_uint32_le(result, pos, f.decompressed_crc32)
-        pos = pos + 4
-        write_uint32_le(
-          result,
-          pos,
+        write_uint16_le(buf, f.version_made_by)
+        write_uint16_le(buf, f.version_needed_to_extract)
+        write_uint16_le(buf, f.gp_flags)
+        write_uint16_le(buf, f.compression.to_int().to_uint16())
+        write_uint16_le(buf, dos_time)
+        write_uint16_le(buf, dos_date)
+        buf.write_uint_le(f.decompressed_crc32)
+        buf.write_uint_le(
           f.compressed_size.to_int64().to_int().reinterpret_as_uint(),
         )
-        pos = pos + 4
-        write_uint32_le(
-          result,
-          pos,
+        buf.write_uint_le(
           f.decompressed_size.to_int64().to_int().reinterpret_as_uint(),
         )
-        pos = pos + 4
-        write_uint16_le(result, pos, path_len.to_uint16())
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // extra field length
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // file comment length
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // disk number start
-        pos = pos + 2
-        write_uint16_le(result, pos, 0) // internal file attributes
-        pos = pos + 2
-        write_uint32_le(
-          result,
-          pos,
+        write_uint16_le(buf, path_bytes.length().to_uint16())
+        write_uint16_le(buf, 0) // extra field length
+        write_uint16_le(buf, 0) // file comment length
+        write_uint16_le(buf, 0) // disk number start
+        write_uint16_le(buf, 0) // internal file attributes
+        buf.write_uint_le(
           (m.mode().to_int() << 16).to_int64().to_int().reinterpret_as_uint(),
         ) // external file attributes
-        pos = pos + 4
-        write_uint32_le(
-          result,
-          pos,
-          offset.to_int64().to_int().reinterpret_as_uint(),
-        ) // relative offset
-        pos = pos + 4
-        write_bytes(result, pos, path_bytes)
-        pos = pos + path_len
+        buf.write_uint_le(offset.to_int64().to_int().reinterpret_as_uint()) // relative offset
+        buf.write_bytes(path_bytes)
       }
     }
   }
-  let central_dir_size = pos - central_dir_start
+  let central_dir_size = buf.length() - central_dir_start
 
   // Write end of central directory record
-  write_uint32_le(result, pos, ZIP_EOCD_SIG)
-  pos = pos + 4
-  write_uint16_le(result, pos, 0) // disk number
-  pos = pos + 2
-  write_uint16_le(result, pos, 0) // disk with central directory
-  pos = pos + 2
-  write_uint16_le(result, pos, count.to_uint16()) // entries on this disk
-  pos = pos + 2
-  write_uint16_le(result, pos, count.to_uint16()) // total entries
-  pos = pos + 2
-  write_uint32_le(
-    result,
-    pos,
-    central_dir_size.to_int64().to_int().reinterpret_as_uint(),
-  )
-  pos = pos + 4
-  write_uint32_le(
-    result,
-    pos,
-    central_dir_start.to_int64().to_int().reinterpret_as_uint(),
-  )
-  pos = pos + 4
-  write_uint16_le(result, pos, 0) // comment length
-  pos = pos + 2
-  Bytes::from_fixedarray(FixedArray::from_iter(result[0:pos].iter()))
+  buf.write_uint_le(ZIP_EOCD_SIG)
+  write_uint16_le(buf, 0) // disk number
+  write_uint16_le(buf, 0) // disk with central directory
+  write_uint16_le(buf, count.to_uint16()) // entries on this disk
+  write_uint16_le(buf, count.to_uint16()) // total entries
+  buf.write_uint_le(central_dir_size.to_int64().to_int().reinterpret_as_uint())
+  buf.write_uint_le(central_dir_start.to_int64().to_int().reinterpret_as_uint())
+  write_uint16_le(buf, 0) // comment length
+  buf.to_bytes()
 }
 
 ///|
