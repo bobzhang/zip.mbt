@@ -545,17 +545,17 @@ fn parse_central_dir_entry(
       // Determine if directory (path ends with /)
       let is_dir = path.length() > 0 && path[path.length() - 1] == '/'
 
-  // Extract file mode from external attributes (Unix: high 16 bits)
-  let mode = (external_attrs >> 16).reinterpret_as_int() & 0xFFFF
-  let file_mode = if mode == 0 {
-    if is_dir {
-      @types.FileMode(0o755)
-    } else {
-      @types.FileMode(0o644)
-    }
-  } else {
-    @types.FileMode(mode)
-  }
+      // Extract file mode from external attributes (Unix: high 16 bits)
+      let mode = (external_attrs >> 16).reinterpret_as_int() & 0xFFFF
+      let file_mode = if mode == 0 {
+        if is_dir {
+          @types.FileMode(0o755)
+        } else {
+          @types.FileMode(0o644)
+        }
+      } else {
+        @types.FileMode(mode)
+      }
 
       // Convert DOS time to POSIX time
       let mtime = @types.ptime_of_dos_date_time(dos_date, dos_time)
