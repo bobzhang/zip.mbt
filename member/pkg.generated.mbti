@@ -4,6 +4,7 @@ package "bobzhang/zip/member"
 import(
   "bobzhang/zip/file"
   "bobzhang/zip/types"
+  "bobzhang/zip/types/fpath"
 )
 
 // Values
@@ -11,9 +12,9 @@ let dos_epoch : @types.Ptime
 
 fn format_file_mode(Int) -> String
 
-fn fpath_ensure_directoryness(String) -> String
+fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
 
-fn fpath_ensure_unix(String) -> String
+fn fpath_ensure_unix(@fpath.Fpath) -> @fpath.Fpath
 
 let max_member_count : Int
 
@@ -25,7 +26,7 @@ fn ptime_format(@types.Ptime) -> String
 
 // Types and methods
 pub struct Member {
-  path : String
+  path : @fpath.Fpath
   kind : MemberKind
   mode : Int
   mtime : @types.Ptime
@@ -36,10 +37,10 @@ fn Member::is_dir(Self) -> Bool
 fn Member::is_file(Self) -> Bool
 fn Member::kind(Self) -> MemberKind
 #as_free_fn
-fn Member::make(String, MemberKind, Int?, @types.Ptime?) -> Result[Self, String]
+fn Member::make(@fpath.Fpath, MemberKind, Int?, @types.Ptime?) -> Result[Self, String]
 fn Member::mode(Self) -> Int
 fn Member::mtime(Self) -> @types.Ptime
-fn Member::path(Self) -> String
+fn Member::path(Self) -> @fpath.Fpath
 
 pub(all) enum MemberKind {
   Dir
@@ -51,7 +52,7 @@ pub typealias @file.File as File
 
 pub typealias Int as FileMode
 
-pub typealias String as Fpath
+pub typealias @fpath.Fpath as Fpath
 
 pub typealias @types.Ptime as Ptime
 

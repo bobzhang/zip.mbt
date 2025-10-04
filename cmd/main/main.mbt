@@ -28,7 +28,7 @@ fn test_simple_zip() -> Unit {
   match file {
     Ok(f) => {
       let m = @member.make(
-        "hello.txt",
+        @fpath.Fpath("hello.txt"),
         File(f),
         Some(0o644),
         Some(@types.dos_epoch),
@@ -66,9 +66,9 @@ fn test_multi_file_zip() -> Unit {
   let file1 = @file.File::stored_of_bytes(b"Content of file 1", 0, 17).unwrap()
   let file2 = @file.File::stored_of_bytes(b"Content of file 2", 0, 17).unwrap()
   let file3 = @file.File::stored_of_bytes(b"Content of file 3", 0, 17).unwrap()
-  let m1 = @member.make("file1.txt", File(file1), None, None).unwrap()
-  let m2 = @member.make("file2.txt", File(file2), None, None).unwrap()
-  let m3 = @member.make("file3.txt", File(file3), None, None).unwrap()
+  let m1 = @member.make(@fpath.Fpath("file1.txt"), File(file1), None, None).unwrap()
+  let m2 = @member.make(@fpath.Fpath("file2.txt"), File(file2), None, None).unwrap()
+  let m3 = @member.make(@fpath.Fpath("file3.txt"), File(file3), None, None).unwrap()
   println("  Original members:")
   println("    - \{m1.path()}")
   println("    - \{m2.path()}")
@@ -88,9 +88,9 @@ fn test_multi_file_zip() -> Unit {
           for i = 0; i < members.length(); i = i + 1 {
             println("    - \{members[i].path()}")
           }
-          let has_all = decoded.mem("file1.txt") &&
-            decoded.mem("file2.txt") &&
-            decoded.mem("file3.txt")
+          let has_all = decoded.mem(@fpath.Fpath("file1.txt")) &&
+            decoded.mem(@fpath.Fpath("file2.txt")) &&
+            decoded.mem(@fpath.Fpath("file3.txt"))
           println("  ✓ All files present: \{has_all}")
         }
         Err(e) => println("  ✗ Decode failed: \{e}")
@@ -103,22 +103,27 @@ fn test_multi_file_zip() -> Unit {
 ///|
 fn test_directory_zip() -> Unit {
   println("\nTest 3: Creating archive with directories...")
-  let dir = @member.make("docs/", Dir, Some(0o755), None).unwrap()
-  let file_data = b"Documentation file content"
-  let file = @file.File::stored_of_bytes(file_data, 0, file_data.length()).unwrap()
-  let readme = @member.make("docs/README.md", File(file), Some(0o644), None).unwrap()
+  let dir = @member.make(@fpath.Fpath("docs/"), Dir, Some(0o755), None).unwrap()
+  let data = b"# README\nThis is documentation.\n"
+  let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
+  let readme = @member.make(
+    @fpath.Fpath("docs/README.md"),
+    File(file),
+    Some(0o644),
+    None,
+  ).unwrap()
   let archive = @lib.Archive::empty().add(dir).add(readme)
   match archive.to_bytes(None) {
     Ok(zip_bytes) => {
       println("  ✓ Created ZIP: \{zip_bytes.length()} bytes")
       match @lib.Archive::of_bytes(zip_bytes) {
         Ok(decoded) => {
-          match decoded.find("docs/") {
+          match decoded.find(@fpath.Fpath("docs/")) {
             Some(d) =>
               println("  ✓ Directory entry found: is_dir=\{d.is_dir()}")
             None => println("  ✗ Directory not found")
           }
-          match decoded.find("docs/README.md") {
+          match decoded.find(@fpath.Fpath("docs/README.md")) {
             Some(f) => println("  ✓ File entry found: is_file=\{f.is_file()}")
             None => println("  ✗ File not found")
           }

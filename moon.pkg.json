@@ -1,6 +1,7 @@
 {
   "import": [
     "bobzhang/zip/types",
+    "bobzhang/zip/types/fpath",
     
     "bobzhang/zip/file",
     "bobzhang/zip/member"

@@ -53,6 +53,7 @@ Where:
 ## Usage Example
 
 ```moonbit
+///|
 test {
   let data = b"Hello, World!\x00\x01\x02"
 

@@ -83,8 +83,8 @@ test "archive_fold" {
   let paths = archive.fold(
     fn(m, acc) {
       match acc {
-        "" => m.path()
-        _ => acc + "," + m.path()
+        "" => m.path().to_string()
+        _ => acc + "," + m.path().to_string()
       }
     },
     "",

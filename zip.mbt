@@ -326,7 +326,7 @@ test "archive_to_bytes_empty" {
 test "archive_to_bytes_single_file" {
   let data = b"Hello ZIP!"
   let file = @file.File::stored_of_bytes(data, 0, data.length()).unwrap()
-  let m = @member.make("hello.txt", File(file), None, None).unwrap()
+  let m = @member.make(@fpath.Fpath("hello.txt"), File(file), None, None).unwrap()
   let archive = Archive::empty().add(m)
   let result = archive.to_bytes(None)
   match result {
@@ -340,7 +340,7 @@ test "archive_to_bytes_single_file" {
 
 ///|
 test "archive_to_bytes_directory" {
-  let m = @member.make("mydir/", Dir, None, None).unwrap()
+  let m = @member.make(@fpath.Fpath("mydir/"), Dir, None, None).unwrap()
   let archive = Archive::empty().add(m)
   let result = archive.to_bytes(None)
   match result {
@@ -355,8 +355,8 @@ test "archive_to_bytes_multiple_files" {
   let data2 = b"file 2"
   let file1 = @file.File::stored_of_bytes(data1, 0, data1.length()).unwrap()
   let file2 = @file.File::stored_of_bytes(data2, 0, data2.length()).unwrap()
-  let m1 = @member.make("a.txt", File(file1), None, None).unwrap()
-  let m2 = @member.make("b.txt", File(file2), None, None).unwrap()
+  let m1 = @member.make(@fpath.Fpath("a.txt"), File(file1), None, None).unwrap()
+  let m2 = @member.make(@fpath.Fpath("b.txt"), File(file2), None, None).unwrap()
   let archive = Archive::empty().add(m1).add(m2)
   let result = archive.to_bytes(None)
   match result {
@@ -508,9 +508,10 @@ fn parse_central_dir_entry(
     FixedArray::from_iter(filename_arr[0:].iter()),
   )
   // Convert UTF-8 bytes to string - decode returns String, throws on error
-  let path = @encoding/utf8.decode(filename_bytes) catch {
+  let path_str = @encoding/utf8.decode(filename_bytes) catch {
     _ => return Err("Failed to decode UTF-8 filename")
   }
+  let path = @fpath.Fpath(path_str)
 
   // Calculate next position
   let next_pos = pos + 46 + filename_len + extra_len + comment_len
@@ -655,7 +656,7 @@ pub fn Archive::to_bytes(
 
   // Helper to encode a member
   let encode_member = fn(m : Member) {
-    let path_bytes = string_to_utf8_bytes(m.path())
+    let path_bytes = string_to_utf8_bytes(m.path().to_string())
     let path_len = path_bytes.length()
     let (dos_date, dos_time) = @types.ptime_to_dos_date_time(m.mtime())
     match m.kind() {
@@ -766,7 +767,7 @@ pub fn Archive::to_bytes(
   let central_dir_start = pos
   for entry in central_dir_entries {
     let (offset, m) = entry
-    let path_bytes = string_to_utf8_bytes(m.path())
+    let path_bytes = string_to_utf8_bytes(m.path().to_string())
     let path_len = path_bytes.length()
     let (dos_date, dos_time) = @types.ptime_to_dos_date_time(m.mtime())
     write_uint32_le(

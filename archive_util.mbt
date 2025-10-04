@@ -60,7 +60,7 @@ pub fn Archive::to_array(self : Archive) -> Array[Member] {
 /// Convert archive to a SortedMap from path to member
 pub fn Archive::to_map(
   self : Archive,
-) -> @immut/sorted_map.SortedMap[String, Member] {
+) -> @immut/sorted_map.SortedMap[Fpath, Member] {
   self.members
 }
 
@@ -68,7 +68,7 @@ pub fn Archive::to_map(
 /// Create archive from a SortedMap
 /// Warning: Assumes each key k maps to member m with Member::path(m) == k
 pub fn Archive::of_map(
-  map : @immut/sorted_map.SortedMap[String, Member],
+  map : @immut/sorted_map.SortedMap[Fpath, Member],
 ) -> Archive {
   { members: map }
 }

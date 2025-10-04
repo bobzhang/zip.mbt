@@ -8,6 +8,7 @@
     "bobzhang/zip/file",
     "bobzhang/zip/member",
     "bobzhang/zip/types",
+    "bobzhang/zip/types/fpath",
     {
       "path": "bobzhang/zip/hexdump",
       "alias": "hexdump"

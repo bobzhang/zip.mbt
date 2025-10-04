@@ -120,14 +120,15 @@ Remove redundant separators and normalize path.
 ### Compression Types
 
 ```moonbit
+///|
 test {
   // Create from ZIP method code
-  let compression = Compression::from_int(8)  // DEFLATE
-  
+  let compression = Compression::from_int(8) // DEFLATE
+
   // Convert to method code
   let method_code = compression.to_int()
   @json.inspect(method_code, content=8)
-  
+
   // Test stored compression
   let stored = Compression::from_int(0)
   @json.inspect(stored.to_int(), content=0)

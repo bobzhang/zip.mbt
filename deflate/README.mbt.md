@@ -137,20 +137,22 @@ Low-level functions for writing Huffman-encoded symbols.
 ### Basic Compression
 
 ```moonbit
+///|
 test {
   let data = b"Hello, DEFLATE compression!"
-  
+
   // Compress with default settings
   let compressed = deflate_dynamic(
-    data, 0, data.length(),
-    true,      // is_final block
-    8,         // good_match (balanced)
-    1024       // max_chain (balanced)
+    data,
+    0,
+    data.length(),
+    true, // is_final block
+    8, // good_match (balanced)
+    1024, // max_chain (balanced)
   )
 
   // Decompress
   let decompressed = inflate(compressed, 0, compressed.length(), None)
-  
   @json.inspect(decompressed.length(), content=27)
 }
 ```

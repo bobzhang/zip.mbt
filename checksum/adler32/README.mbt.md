@@ -63,6 +63,7 @@ result = (s2 << 16) | s1
 ## Usage Example
 
 ```moonbit
+///|
 test {
   let data = b"Hello, World!"
   let adler = bytes_adler32(data, 0, data.length())

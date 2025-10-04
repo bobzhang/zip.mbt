@@ -61,6 +61,7 @@ The lookup table is precomputed using the IEEE 802.3 polynomial: `0xEDB88320`
 ## Usage Example
 
 ```moonbit
+///|
 test {
   let data = b"Hello, World!"
   let crc = bytes_crc32(data, 0, data.length())

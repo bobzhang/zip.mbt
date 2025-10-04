@@ -2,6 +2,7 @@
 package "bobzhang/zip/types"
 
 import(
+  "bobzhang/zip/types/fpath"
   "moonbitlang/core/json"
 )
 
@@ -10,11 +11,11 @@ let dos_epoch : Ptime
 
 fn format_file_mode(Int) -> String
 
-fn fpath_ensure_directoryness(String) -> String
+fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
 
-fn fpath_ensure_unix(String) -> String
+fn fpath_ensure_unix(@fpath.Fpath) -> @fpath.Fpath
 
-fn fpath_sanitize(String) -> String
+fn fpath_sanitize(@fpath.Fpath) -> @fpath.Fpath
 
 fn ptime_format(Ptime) -> String
 
@@ -54,7 +55,7 @@ impl @json.FromJson for Ptime
 // Type aliases
 pub typealias Int as FileMode
 
-pub typealias String as Fpath
+pub typealias @fpath.Fpath as Fpath
 
 // Traits
 

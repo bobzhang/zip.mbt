@@ -55,24 +55,24 @@ If there are partial bits (< 8), pads with zeros to reach a byte boundary.
 ## Usage Example
 
 ```moonbit
+///|
 test {
   let output = @buffer.ByteBuf::new(100, false)
   let writer = BitWriter::new(output)
 
   // Write a 3-bit value
-  writer.write_bits(0b101, 3)  // Writes: 101
+  writer.write_bits(0b101, 3) // Writes: 101
 
   // Write a 5-bit value
-  writer.write_bits(0b11010, 5)  // Writes: 11010
+  writer.write_bits(0b11010, 5) // Writes: 11010
 
   // At this point, 8 bits written, one byte flushed to ByteBuf: 0b01011101
 
   // Write more bits
-  writer.write_bits(0xFF, 7)  // Writes: 1111111
+  writer.write_bits(0xFF, 7) // Writes: 1111111
 
   // Flush remaining bits (pads to byte boundary)
   writer.flush()
-
   let result = output.contents()
   @json.inspect(result.length(), content=2)
   @json.inspect(result[0].to_int(), content=213) // 0b11010101

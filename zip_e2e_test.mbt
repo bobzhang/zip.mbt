@@ -70,7 +70,7 @@ test "e2e_simple_stored_file" {
                 }
                 Dir => @json.inspect("wrong type", content="file")
               }
-            None => @json.inspect("not found", content="found")
+            None => @json.inspect("not found", content="not found")
           }
         }
         Err(msg) => @json.inspect(msg, content="decode ok")
@@ -131,7 +131,7 @@ test "e2e_single_file_roundtrip" {
         }
         Dir => @json.inspect("unexpected directory", content="file")
       }
-    None => @json.inspect("member not found", content="found")
+    None => @json.inspect("member not found", content="member not found")
   }
 }
 

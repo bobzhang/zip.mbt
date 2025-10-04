@@ -37,8 +37,9 @@ Convert any path to Unix-style (forward slashes).
 
 **Example:**
 ```moonbit
+///|
 test {
-  let windows_path = "C:\\Users\\name\\file.txt"
+  let windows_path : Fpath = "C:\\Users\\name\\file.txt"
   let unix_path = ensure_unix(windows_path)
   @json.inspect(unix_path, content="C:/Users/name/file.txt")
 }

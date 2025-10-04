@@ -1,6 +1,6 @@
 ///|
 test "ensure_unix" {
-  let path = "dir\\subdir\\file.txt"
+  let path : Fpath = "dir\\subdir\\file.txt"
   let result = ensure_unix(path)
   @json.inspect(result, content="dir/subdir/file.txt")
 }

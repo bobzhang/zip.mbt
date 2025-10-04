@@ -54,13 +54,14 @@ Get the buffer contents as immutable `Bytes`.
 ## Usage Example
 
 ```moonbit
+///|
 test {
-  let buf = ByteBuf::new(100, false)  // Initial capacity 100, growable
+  let buf = ByteBuf::new(100, false) // Initial capacity 100, growable
   buf.add_byte(0x50)
   buf.add_byte(0x4B)
   let data = b"test data!"
   buf.add_bytes(data, 0, 10)
-  buf.recopy(0, 2)  // Copy first 2 bytes to end
+  buf.recopy(0, 2) // Copy first 2 bytes to end
   let result = buf.contents()
   @json.inspect(result.length(), content=14)
   @json.inspect((result[0].to_int(), result[1].to_int()), content=[80, 75])

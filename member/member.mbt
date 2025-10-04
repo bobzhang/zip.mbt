@@ -157,7 +157,14 @@ pub fn Member::format(self : Member) -> String {
     padding = padding + " "
   }
   let padded_size = padding + size_str
-  is_dir_char + mode_str + " " + padded_size + " " + time_str + " " + self.path
+  is_dir_char +
+  mode_str +
+  " " +
+  padded_size +
+  " " +
+  time_str +
+  " " +
+  self.path.to_string()
 }
 
 ///|

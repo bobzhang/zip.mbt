@@ -2,6 +2,7 @@
   "is-main": false,
   "import": [
     "bobzhang/zip/file",
-    "bobzhang/zip/types"
+    "bobzhang/zip/types",
+    "bobzhang/zip/types/fpath"
   ]
 }

@@ -1,19 +1,36 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/types/fpath"
 
+import(
+  "moonbitlang/core/json"
+)
+
 // Values
-fn ensure_directoryness(String) -> String
+fn ensure_directoryness(Fpath) -> Fpath
 
-fn ensure_unix(String) -> String
+fn ensure_unix(Fpath) -> Fpath
 
-fn sanitize(String) -> String
+fn sanitize(Fpath) -> Fpath
 
 // Errors
 
 // Types and methods
+pub(all) struct Fpath(String)
+#alias("_[_]")
+fn Fpath::at(Self, Int) -> Int
+#deprecated
+fn Fpath::inner(Self) -> String
+fn Fpath::is_empty(Self) -> Bool
+fn Fpath::length(Self) -> Int
+impl Add for Fpath
+impl Compare for Fpath
+impl Eq for Fpath
+impl Hash for Fpath
+impl Show for Fpath
+impl ToJson for Fpath
+impl @json.FromJson for Fpath
 
 // Type aliases
-pub typealias String as Fpath
 
 // Traits
 
