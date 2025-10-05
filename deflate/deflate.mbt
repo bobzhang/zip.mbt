@@ -1240,7 +1240,7 @@ pub fn deflate(
   bytes : Bytes,
   start : Int,
   len : Int,
-  level : DeflateLevel?,
+  level? : DeflateLevel,
 ) -> Result[Bytes, String] {
   let (good_match, max_chain, use_dynamic) = match level {
     Some(DeflateLevel::None) =>
@@ -1270,7 +1270,12 @@ pub fn crc32_and_deflate(
   level : DeflateLevel?,
 ) -> Result[(UInt, Bytes), String] {
   let crc = @crc32.bytes_crc32(bytes, start, len)
-  match deflate(bytes, start, len, level) {
+  // Convert Option to explicit match for labeled optional parameter
+  let result = match level {
+    Some(lvl) => deflate(bytes, start, len, level=lvl)
+    None => deflate(bytes, start, len)
+  }
+  match result {
     Ok(compressed) => Ok((crc, compressed))
     Err(msg) => Err(msg)
   }
@@ -1286,7 +1291,12 @@ pub fn adler32_and_deflate(
   level : DeflateLevel?,
 ) -> Result[(UInt, Bytes), String] {
   let adler = @adler32.bytes_adler32(bytes, start, len)
-  match deflate(bytes, start, len, level) {
+  // Convert Option to explicit match for labeled optional parameter
+  let result = match level {
+    Some(lvl) => deflate(bytes, start, len, level=lvl)
+    None => deflate(bytes, start, len)
+  }
+  match result {
     Ok(compressed) => Ok((adler, compressed))
     Err(msg) => Err(msg)
   }
@@ -1308,7 +1318,7 @@ pub fn zlib_compress(
   bytes : Bytes,
   start : Int,
   len : Int,
-  level : DeflateLevel?,
+  level? : DeflateLevel,
 ) -> (UInt, Bytes) {
   // Determine compression parameters
   let (good_match, max_chain, flevel) = match level {

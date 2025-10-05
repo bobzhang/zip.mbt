@@ -8,7 +8,7 @@ fn build_optimal_code_lengths(Array[Int], Int, Int) -> Array[Int]
 
 fn crc32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(UInt, Bytes), String]
 
-fn deflate(Bytes, Int, Int, DeflateLevel?) -> Result[Bytes, String]
+fn deflate(Bytes, Int, Int, level? : DeflateLevel) -> Result[Bytes, String]
 
 fn deflate_dynamic(Bytes, Int, Int, Bool, Int, Int) -> Bytes
 
@@ -28,7 +28,7 @@ fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, UInt)
 
 fn length_to_symbol(Int) -> Int
 
-fn zlib_compress(Bytes, Int, Int, DeflateLevel?) -> (UInt, Bytes)
+fn zlib_compress(Bytes, Int, Int, level? : DeflateLevel) -> (UInt, Bytes)
 
 fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, UInt), String]
 

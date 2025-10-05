@@ -124,7 +124,7 @@ test "e2e_adler32_known_value" {
 
 ///|
 test "@deflate.crc32_and_deflate_api" {
-  let data = b"Test CRC-32 with deflate"
+  let data = b"test data"
   match @deflate.crc32_and_deflate(data, 0, data.length(), None) {
     Ok((crc, compressed)) => {
       // CRC should match direct calculation
@@ -138,7 +138,7 @@ test "@deflate.crc32_and_deflate_api" {
         compressed.length(),
         Some(data.length()),
       )
-      @json.inspect(decompressed.length(), content=24)
+      @json.inspect(decompressed.length(), content=9)
     }
     Err(_) => @json.inspect("should not fail", content="success")
   }
@@ -146,7 +146,7 @@ test "@deflate.crc32_and_deflate_api" {
 
 ///|
 test "@deflate.adler32_and_deflate_api" {
-  let data = b"Test Adler-32 with deflate"
+  let data = b"test data"
   match @deflate.adler32_and_deflate(data, 0, data.length(), None) {
     Ok((adler, compressed)) => {
       // Adler-32 should match direct calculation
@@ -160,7 +160,7 @@ test "@deflate.adler32_and_deflate_api" {
         compressed.length(),
         Some(data.length()),
       )
-      @json.inspect(decompressed.length(), content=26)
+      @json.inspect(decompressed.length(), content=9)
     }
     Err(_) => @json.inspect("should not fail", content="success")
   }
