@@ -46,8 +46,8 @@ fn File::is_encrypted(Self) -> Bool
 fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, UInt16?, UInt16?, UInt16?) -> Self raise
 fn File::start(Self) -> Int
 fn File::stored_of_bytes(Bytes, Int, Int) -> Self raise
-fn File::to_bytes(Self) -> Bytes
-fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt)
+fn File::to_bytes(Self) -> Bytes raise
+fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt) raise
 fn File::version_made_by(Self) -> UInt16
 fn File::version_needed_to_extract(Self) -> UInt16
 

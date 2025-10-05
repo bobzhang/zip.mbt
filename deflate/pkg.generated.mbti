@@ -2,27 +2,27 @@
 package "bobzhang/zip/deflate"
 
 // Values
-fn adler32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> Result[(UInt, Bytes), String]
+fn adler32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> (UInt, Bytes) raise
 
-fn crc32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> Result[(UInt, Bytes), String]
+fn crc32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> (UInt, Bytes) raise
 
-fn deflate(Bytes, Int, Int, level? : DeflateLevel) -> Result[Bytes, String]
+fn deflate(Bytes, Int, Int, level? : DeflateLevel) -> Bytes raise
 
 fn deflate_dynamic(Bytes, Int, Int, Bool, Int, Int) -> Bytes
 
 fn deflate_fixed(Bytes, Int, Int, Bool, Int, Int) -> Bytes
 
-fn deflate_stored(Bytes, Int, Int) -> Bytes
+fn deflate_stored(Bytes, Int, Int) -> Bytes raise
 
-fn inflate(Bytes, Int, Int, Int?) -> Bytes
+fn inflate(Bytes, Int, Int, Int?) -> Bytes raise
 
-fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, UInt)
+fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, UInt) raise
 
-fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, UInt)
+fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, UInt) raise
 
 fn zlib_compress(Bytes, Int, Int, level? : DeflateLevel) -> (UInt, Bytes)
 
-fn zlib_decompress(Bytes, Int, Int) -> Result[(Bytes, UInt), String]
+fn zlib_decompress(Bytes, Int, Int) -> (Bytes, UInt) raise
 
 // Errors
 

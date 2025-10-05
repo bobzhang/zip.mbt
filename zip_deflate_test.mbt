@@ -543,9 +543,7 @@ test "compression_with_lz77_matches" {
 ///|
 test "deflate_api_basic" {
   let data = b"Hello, DEFLATE API!"
-  guard @deflate.deflate(data, 0, data.length()) is Ok(compressed) else {
-    fail("deflate should not fail")
-  }
+  let compressed = @deflate.deflate(data, 0, data.length())
   // Should compress successfully
   @json.inspect(compressed.length() > 0, content=true)
 

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zip/huffman"
+package "bobzhang/zip/deflate/internal/huffman"
 
 // Values
 let fixed_dist_decoder : HuffmanDecoder

@@ -26,9 +26,7 @@ test "python_compat_empty" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -60,9 +58,7 @@ test "python_compat_single_byte" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -94,9 +90,7 @@ test "python_compat_repeated_10" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -128,9 +122,7 @@ test "python_compat_repeated_100" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -162,9 +154,7 @@ test "python_compat_repeated_1000" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -196,9 +186,7 @@ test "python_compat_hello_world" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -230,9 +218,7 @@ test "python_compat_lorem_ipsum" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -264,9 +250,7 @@ test "python_compat_binary_sequence" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -298,9 +282,7 @@ test "python_compat_pattern_abc" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -332,9 +314,7 @@ test "python_compat_mixed" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -366,9 +346,7 @@ test "python_compat_zeros_100" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -400,9 +378,7 @@ test "python_compat_zeros_1000" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -434,9 +410,7 @@ test "python_compat_level_none" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -468,9 +442,7 @@ test "python_compat_level_fast" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -502,9 +474,7 @@ test "python_compat_level_default" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -536,9 +506,7 @@ test "python_compat_level_best" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -570,9 +538,7 @@ test "python_compat_alternating" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -604,9 +570,7 @@ test "python_compat_long_match" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -638,9 +602,7 @@ test "python_compat_json_data" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,
@@ -672,9 +634,7 @@ test "python_compat_large_text" {
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
   // but should decompress to the same input
-  guard @deflate.deflate(input, 0, input.length()) is Ok(our_compressed) else {
-    fail("Failed to compress data")
-  }
+  let our_compressed = @deflate.deflate(input, 0, input.length())
   let roundtrip = @deflate.inflate(
     our_compressed,
     0,

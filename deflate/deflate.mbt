@@ -183,13 +183,13 @@ fn InflateDecoder::new(
 
 ///|
 /// Read N bits from the bit stream (N < 32)
-fn InflateDecoder::read_bits(self : InflateDecoder, count : Int) -> Int {
+fn InflateDecoder::read_bits(self : InflateDecoder, count : Int) -> Int raise {
   let mut bits = self.src_bits
   let mut bits_len = self.src_bits_len
   // Refill bit buffer if needed
   while bits_len < count {
     if self.src_pos > self.src_max {
-      abort("Corrupted deflate stream: unexpected end of data")
+      fail("Corrupted deflate stream: unexpected end of data")
     }
     let byte = self.src[self.src_pos].to_int()
     bits = bits | (byte << bits_len)
@@ -209,7 +209,7 @@ fn InflateDecoder::read_int(
   self : InflateDecoder,
   base : Int,
   bit_count : Int,
-) -> Int {
+) -> Int raise {
   if bit_count == 0 {
     base
   } else {
@@ -225,7 +225,7 @@ fn read_symbol_loop(
   len : Int,
   base : Int,
   offs : Int,
-) -> Int {
+) -> Int raise {
   let new_offs = 2 * offs + decoder_state.read_bits(1)
   let count = decoder.count(len)
   if new_offs < count {
@@ -246,7 +246,7 @@ fn read_symbol_loop(
 fn InflateDecoder::read_symbol(
   self : InflateDecoder,
   decoder : HuffmanDecoder,
-) -> Int {
+) -> Int raise {
   read_symbol_loop(self, decoder, 1, 0, 0)
 }
 
@@ -256,7 +256,7 @@ fn read_block_symbols(
   decoder : InflateDecoder,
   litlen_decoder : HuffmanDecoder,
   dist_decoder : HuffmanDecoder,
-) -> Unit {
+) -> Unit raise {
   while true {
     let sym = decoder.read_symbol(litlen_decoder)
     if sym < litlen_end_of_block_sym {
@@ -268,7 +268,7 @@ fn read_block_symbols(
     } else if sym > litlen_decoder.max_sym() ||
       sym > litlen_sym_max ||
       litlen_decoder.max_sym() == -1 {
-      abort("Corrupted deflate stream: invalid literal/length symbol")
+      fail("Corrupted deflate stream: invalid literal/length symbol")
     } else {
       // Length symbol - read the length
       let len_value = length_value_of_length_sym(sym)
@@ -279,7 +279,7 @@ fn read_block_symbols(
       // Read the distance
       let dist_sym = decoder.read_symbol(dist_decoder)
       if dist_sym > dist_decoder.max_sym() || dist_sym > dist_sym_max {
-        abort("Corrupted deflate stream: invalid distance symbol")
+        fail("Corrupted deflate stream: invalid distance symbol")
       }
       let dist_value = dist_value_of_sym[dist_sym]
       let dist_base = dist_value_base(dist_value)
@@ -288,7 +288,7 @@ fn read_block_symbols(
 
       // Copy from earlier in the output
       if dist > decoder.dst.length() {
-        abort("Corrupted deflate stream: distance too large")
+        fail("Corrupted deflate stream: distance too large")
       }
       decoder.dst.recopy(decoder.dst.length() - dist, length)
     }
@@ -297,14 +297,14 @@ fn read_block_symbols(
 
 ///|
 /// Read an uncompressed (stored) block
-fn read_uncompressed_block(decoder : InflateDecoder) -> Unit {
+fn read_uncompressed_block(decoder : InflateDecoder) -> Unit raise {
   // Skip to byte boundary
   decoder.src_bits = 0
   decoder.src_bits_len = 0
 
   // Need at least 4 bytes for length fields
   if decoder.src_max - decoder.src_pos + 1 < 4 {
-    abort("Corrupted deflate stream: truncated uncompressed block")
+    fail("Corrupted deflate stream: truncated uncompressed block")
   }
 
   // Read length and inverted length
@@ -316,12 +316,12 @@ fn read_uncompressed_block(decoder : InflateDecoder) -> Unit {
 
   // Verify they are complements
   if length != (inv_length ^ 0xFFFF) {
-    abort("Corrupted deflate stream: invalid uncompressed block length")
+    fail("Corrupted deflate stream: invalid uncompressed block length")
   }
 
   // Check we have enough data
   if decoder.src_max - decoder.src_pos + 1 < length {
-    abort("Corrupted deflate stream: truncated uncompressed block data")
+    fail("Corrupted deflate stream: truncated uncompressed block data")
   }
 
   // Copy bytes directly
@@ -331,7 +331,7 @@ fn read_uncompressed_block(decoder : InflateDecoder) -> Unit {
 
 ///|
 /// Read a block compressed with fixed Huffman codes
-fn read_fixed_block(decoder : InflateDecoder) -> Unit {
+fn read_fixed_block(decoder : InflateDecoder) -> Unit raise {
   read_block_symbols(
     decoder, @huffman.fixed_litlen_decoder, @huffman.fixed_dist_decoder,
   )
@@ -339,13 +339,13 @@ fn read_fixed_block(decoder : InflateDecoder) -> Unit {
 
 ///|
 /// Read a block compressed with dynamic Huffman codes
-fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
+fn read_dynamic_block(decoder : InflateDecoder) -> Unit raise {
   // Read number of literal/length codes (257-286)
   let hlit = decoder.read_int(257, 5)
   // Read number of distance codes (1-32)
   let hdist = decoder.read_int(1, 5)
   if hlit > 286 || hdist > max_dist_sym_count {
-    abort("Corrupted deflate stream: invalid dynamic block header")
+    fail("Corrupted deflate stream: invalid dynamic block header")
   }
 
   // Read number of code length codes (4-19)
@@ -362,7 +362,7 @@ fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
     codelen_lengths, 0, max_codelen_sym_count,
   )
   if decoder.dyn_litlen.max_sym() == -1 {
-    abort("Corrupted deflate stream: empty code length code")
+    fail("Corrupted deflate stream: empty code length code")
   }
 
   // Decode the literal/length and distance code lengths
@@ -372,13 +372,13 @@ fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
   while num < total {
     let sym = decoder.read_symbol(decoder.dyn_litlen)
     if sym > decoder.dyn_litlen.max_sym() {
-      abort("Corrupted deflate stream: invalid code length symbol")
+      fail("Corrupted deflate stream: invalid code length symbol")
     }
     let (repeat, value) = match sym {
       16 => {
         // Repeat previous code length 3-6 times
         if num == 0 {
-          abort("Corrupted deflate stream: repeat with no previous code")
+          fail("Corrupted deflate stream: repeat with no previous code")
         }
         (decoder.read_int(3, 2), lengths[num - 1])
       }
@@ -391,7 +391,7 @@ fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
       _ => (1, sym)
     }
     if repeat > total - num {
-      abort("Corrupted deflate stream: code length repeat too long")
+      fail("Corrupted deflate stream: code length repeat too long")
     }
     for i = 0; i < repeat; i = i + 1 {
       lengths[num] = value
@@ -401,7 +401,7 @@ fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
 
   // Check that end-of-block symbol has non-zero length
   if lengths[256] == 0 {
-    abort("Corrupted deflate stream: missing end-of-block code")
+    fail("Corrupted deflate stream: missing end-of-block code")
   }
 
   // Initialize the literal/length and distance decoders
@@ -414,7 +414,7 @@ fn read_dynamic_block(decoder : InflateDecoder) -> Unit {
 
 ///|
 /// Main inflate loop - decompress all blocks
-fn inflate_loop(decoder : InflateDecoder) -> Bytes {
+fn inflate_loop(decoder : InflateDecoder) -> Bytes raise {
   while true {
     // Read block header
     let is_final = decoder.read_bits(1) == 1
@@ -425,7 +425,7 @@ fn inflate_loop(decoder : InflateDecoder) -> Bytes {
       0 => read_uncompressed_block(decoder) // No compression
       1 => read_fixed_block(decoder) // Fixed Huffman
       2 => read_dynamic_block(decoder) // Dynamic Huffman
-      _ => abort("Corrupted deflate stream: invalid block type")
+      _ => fail("Corrupted deflate stream: invalid block type")
     }
     if is_final {
       return decoder.dst.contents()
@@ -442,7 +442,7 @@ pub fn inflate(
   start : Int,
   len : Int,
   decompressed_size : Int?,
-) -> Bytes {
+) -> Bytes raise {
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   inflate_loop(decoder)
 }
@@ -454,7 +454,7 @@ pub fn inflate_and_crc32(
   start : Int,
   len : Int,
   decompressed_size : Int?,
-) -> (Bytes, UInt) {
+) -> (Bytes, UInt) raise {
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   let result = inflate_loop(decoder)
   // Compute CRC-32 of the decompressed data
@@ -469,7 +469,7 @@ pub fn inflate_and_adler32(
   start : Int,
   len : Int,
   decompressed_size : Int?,
-) -> (Bytes, UInt) {
+) -> (Bytes, UInt) raise {
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   let result = inflate_loop(decoder)
   // Compute Adler-32 of the decompressed data
@@ -483,7 +483,7 @@ pub fn inflate_and_adler32(
 
 ///|
 /// Create stored (uncompressed) deflate blocks (RFC 1951)
-pub fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes {
+pub fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes raise {
   let max_block_size = 65535
   if len <= max_block_size {
     // Single block
@@ -508,7 +508,7 @@ pub fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes {
     }
     Bytes::from_fixedarray(FixedArray::from_iter(result[0:].iter()))
   } else {
-    abort("Deflate compression for data > 65535 bytes not yet implemented")
+    fail("Deflate compression for data > 65535 bytes not yet implemented")
   }
 }
 
@@ -1241,11 +1241,11 @@ pub fn deflate(
   start : Int,
   len : Int,
   level? : DeflateLevel,
-) -> Result[Bytes, String] {
+) -> Bytes raise {
   let (good_match, max_chain, use_dynamic) = match level {
     Some(DeflateLevel::None) =>
       // No compression, use stored blocks
-      return Ok(deflate_stored(bytes, start, len))
+      return deflate_stored(bytes, start, len)
     Some(DeflateLevel::Fast) => (4, 128, false) // Fast: fixed Huffman only
     Some(DeflateLevel::Default) | None => (8, 1024, true) // Default: dynamic Huffman
     Some(DeflateLevel::Best) => (32, 4096, true) // Best: dynamic Huffman with max effort
@@ -1257,7 +1257,7 @@ pub fn deflate(
   } else {
     deflate_fixed(bytes, start, len, true, good_match, max_chain)
   }
-  Ok(compressed)
+  compressed
 }
 
 ///|
@@ -1268,14 +1268,11 @@ pub fn crc32_and_deflate(
   start : Int,
   len : Int,
   level? : DeflateLevel,
-) -> Result[(UInt, Bytes), String] {
+) -> (UInt, Bytes) raise {
   let crc = @crc32.bytes_crc32(bytes, start, len)
   // Convert Option to explicit match for labeled optional parameter
   let result = deflate(bytes, start, len, level?)
-  match result {
-    Ok(compressed) => Ok((crc, compressed))
-    Err(msg) => Err(msg)
-  }
+  (crc, result)
 }
 
 ///|
@@ -1286,14 +1283,10 @@ pub fn adler32_and_deflate(
   start : Int,
   len : Int,
   level? : DeflateLevel,
-) -> Result[(UInt, Bytes), String] {
+) -> (UInt, Bytes) raise {
   let adler = @adler32.bytes_adler32(bytes, start, len)
-  // Convert Option to explicit match for labeled optional parameter
-  let result = deflate(bytes, start, len, level?)
-  match result {
-    Ok(compressed) => Ok((adler, compressed))
-    Err(msg) => Err(msg)
-  }
+  let compressed = deflate(bytes, start, len, level?)
+  (adler, compressed)
 }
 
 // ============================================================================
@@ -1365,9 +1358,9 @@ pub fn zlib_decompress(
   bytes : Bytes,
   start : Int,
   len : Int,
-) -> Result[(Bytes, UInt), String] {
+) -> (Bytes, UInt) raise {
   if len < 6 {
-    return Err("zlib data too short (minimum 6 bytes)")
+    fail("zlib data too short (minimum 6 bytes)")
   }
 
   // Read and validate CMF
@@ -1375,10 +1368,10 @@ pub fn zlib_decompress(
   let cm = cmf & 0x0F // Compression method
   let cinfo = (cmf >> 4) & 0x0F // Window size
   if cm != 8 {
-    return Err("Invalid compression method (expected 8 for deflate)")
+    fail("Invalid compression method (expected 8 for deflate)")
   }
   if cinfo > 7 {
-    return Err("Invalid window size")
+    fail("Invalid window size")
   }
 
   // Read and validate FLG
@@ -1389,10 +1382,10 @@ pub fn zlib_decompress(
   // Validate check bits
   let header = (cmf << 8) | flg
   if header.mod(31) != 0 {
-    return Err("Invalid zlib header checksum")
+    fail("Invalid zlib header checksum")
   }
   if fdict != 0 {
-    return Err("Preset dictionary not supported")
+    fail("Preset dictionary not supported")
   }
 
   // Decompress deflate data (skip 2-byte header, 4-byte trailer)
@@ -1416,7 +1409,7 @@ pub fn zlib_decompress(
 
   // Validate checksum
   if computed_adler.reinterpret_as_int() != stored_adler {
-    return Err("Adler-32 checksum mismatch")
+    fail("Adler-32 checksum mismatch")
   }
-  Ok((decompressed, computed_adler))
+  (decompressed, computed_adler)
 }

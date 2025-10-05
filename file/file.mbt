@@ -338,9 +338,9 @@ pub fn File::can_extract(self : File) -> Bool {
 
 ///|
 /// Decompress file data without CRC check
-pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) {
+pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
   if self.is_encrypted() {
-    abort("Encrypted files are not supported")
+    fail("Encrypted files are not supported")
   }
   match self.compression {
     Stored => {
@@ -362,17 +362,17 @@ pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) {
         self.compressed_size,
         Some(self.decompressed_size),
       )
-    _ => abort("Compression format \{self.compression} not supported")
+    _ => fail("Compression format \{self.compression} not supported")
   }
 }
 
 ///|
 /// Decompress file data with CRC check
-pub fn File::to_bytes(self : File) -> Bytes {
+pub fn File::to_bytes(self : File) -> Bytes raise {
   let (result, found_crc) = self.to_bytes_no_crc_check()
   let expected_crc = self.decompressed_crc32
   if found_crc != expected_crc {
-    abort(
+    fail(
       "CRC-32 mismatch: expected \{expected_crc.to_hex_string()}, found \{found_crc.to_hex_string()}",
     )
   }

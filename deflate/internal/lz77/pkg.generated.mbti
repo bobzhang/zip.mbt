@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zip/lz77"
+package "bobzhang/zip/deflate/internal/lz77"
 
 // Values
 fn backref_dist(Int) -> Int
