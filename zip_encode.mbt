@@ -7,6 +7,24 @@ fn @buffer.Buffer::write_uint16_le(self : Self, value : UInt16) -> Unit {
 }
 
 ///|
+/// Convert Int to UInt for writing to buffer
+/// This handles the common pattern of converting sizes/offsets to unsigned integers
+fn int_to_uint(value : Int) -> UInt {
+  value.to_int64().to_int().reinterpret_as_uint()
+}
+
+// ZIP file format constants for header sizes
+
+///|
+let local_header_fixed_size : Int = 30 // Local file header fixed part
+
+///|
+let central_dir_header_fixed_size : Int = 46 // Central directory header fixed part
+
+///|
+let eocd_size : Int = 22 // End of central directory record size
+
+///|
 /// Write local file header for a member to buffer
 /// 
 /// Local file header structure (30 bytes fixed + variable):
@@ -52,12 +70,8 @@ fn Member::write_local_header(self : Member, buf : @buffer.Buffer) -> Int {
       buf.write_uint16_le(dos_time)
       buf.write_uint16_le(dos_date)
       buf.write_uint_le(f.decompressed_crc32)
-      buf.write_uint_le(
-        f.compressed_size.to_int64().to_int().reinterpret_as_uint(),
-      )
-      buf.write_uint_le(
-        f.decompressed_size.to_int64().to_int().reinterpret_as_uint(),
-      )
+      buf.write_uint_le(int_to_uint(f.compressed_size))
+      buf.write_uint_le(int_to_uint(f.decompressed_size))
       buf.write_uint16_le(path_bytes.length().to_uint16())
       buf.write_uint16_le(0) // extra field length
       buf.write_bytes(path_bytes)
@@ -118,12 +132,8 @@ fn Member::write_central_directory_header(
       buf.write_uint16_le(0) // file comment length
       buf.write_uint16_le(0) // disk number start
       buf.write_uint16_le(0) // internal file attributes
-      buf.write_uint_le(
-        (self.mode().to_int() << 16).to_int64().to_int().reinterpret_as_uint(),
-      ) // external file attributes
-      buf.write_uint_le(
-        local_header_offset.to_int64().to_int().reinterpret_as_uint(),
-      )
+      buf.write_uint_le(int_to_uint(self.mode().to_int() << 16)) // external file attributes
+      buf.write_uint_le(int_to_uint(local_header_offset))
       buf.write_bytes(path_bytes)
     }
     File(f) => {
@@ -134,23 +144,15 @@ fn Member::write_central_directory_header(
       buf.write_uint16_le(dos_time)
       buf.write_uint16_le(dos_date)
       buf.write_uint_le(f.decompressed_crc32)
-      buf.write_uint_le(
-        f.compressed_size.to_int64().to_int().reinterpret_as_uint(),
-      )
-      buf.write_uint_le(
-        f.decompressed_size.to_int64().to_int().reinterpret_as_uint(),
-      )
+      buf.write_uint_le(int_to_uint(f.compressed_size))
+      buf.write_uint_le(int_to_uint(f.decompressed_size))
       buf.write_uint16_le(path_bytes.length().to_uint16())
       buf.write_uint16_le(0) // extra field length
       buf.write_uint16_le(0) // file comment length
       buf.write_uint16_le(0) // disk number start
       buf.write_uint16_le(0) // internal file attributes
-      buf.write_uint_le(
-        (self.mode().to_int() << 16).to_int64().to_int().reinterpret_as_uint(),
-      ) // external file attributes
-      buf.write_uint_le(
-        local_header_offset.to_int64().to_int().reinterpret_as_uint(),
-      )
+      buf.write_uint_le(int_to_uint(self.mode().to_int() << 16)) // external file attributes
+      buf.write_uint_le(int_to_uint(local_header_offset))
       buf.write_bytes(path_bytes)
     }
   }
@@ -162,15 +164,18 @@ pub fn Archive::encoding_size(self : Archive) -> Int {
   let mut size = 0
   for _, m in self.members {
     let path_bytes = m.path().to_string().utf8().length()
-    // Local file header (30) + path + central directory header (46) + path
-    size += 30 + path_bytes + 46 + path_bytes
+    // Local file header + path + central directory header + path
+    size += local_header_fixed_size +
+      path_bytes +
+      central_dir_header_fixed_size +
+      path_bytes
     match m.kind() {
       Dir => ()
       File(f) => size += f.compressed_size
     }
   }
-  // End of central directory record (22)
-  size += 22
+  // End of central directory record
+  size += eocd_size
   size
 }
 
@@ -235,8 +240,8 @@ pub fn Archive::to_bytes(self : Archive, first? : Fpath) -> Bytes raise {
   buf.write_uint16_le(0) // disk with central directory
   buf.write_uint16_le(count.to_uint16()) // entries on this disk
   buf.write_uint16_le(count.to_uint16()) // total entries
-  buf.write_uint_le(central_dir_size.to_int64().to_int().reinterpret_as_uint())
-  buf.write_uint_le(central_dir_start.to_int64().to_int().reinterpret_as_uint())
+  buf.write_uint_le(int_to_uint(central_dir_size))
+  buf.write_uint_le(int_to_uint(central_dir_start))
   buf.write_uint16_le(0) // comment length
   buf.to_bytes()
 }

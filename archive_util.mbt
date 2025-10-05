@@ -13,9 +13,7 @@ pub fn Archive::is_empty(self : Archive) -> Bool {
 ///|
 /// Get the number of members in the archive
 pub fn Archive::member_count(self : Archive) -> Int {
-  let mut count = 0
-  self.members.each(fn(_path, _m) { count = count + 1 })
-  count
+  self.members.length()
 }
 
 ///|

@@ -295,6 +295,6 @@ test "coverage_archive_first" {
   let m1 = @member.make("a.txt", File(f1), None, None)
   let m2 = @member.make("z.txt", File(f2), None, None)
   let a = a.add(m1).add(m2)
-  let enc = a.to_bytes(first?=Some(@fpath.Fpath("z.txt")))
+  let enc = a.to_bytes(first=@fpath.Fpath("z.txt"))
   @json.inspect(enc.length() > 0, content=true)
 }

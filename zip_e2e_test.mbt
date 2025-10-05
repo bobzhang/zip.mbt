@@ -203,7 +203,7 @@ test "e2e_multiple_files_with_compression_levels" {
 
   // Encode to ZIP
   let zip_bytes = archive.to_bytes(
-    first?=Some(@fpath.Fpath("Multi-file test archive")),
+    first=@fpath.Fpath("Multi-file test archive"),
   )
 
   // Decode from ZIP
@@ -315,7 +315,7 @@ test "e2e_directory_structure_with_files" {
   @json.inspect(archive.member_count(), content=5)
 
   // Encode to ZIP
-  let zip_bytes = archive.to_bytes(first?=Some(@fpath.Fpath("Project archive")))
+  let zip_bytes = archive.to_bytes(first=@fpath.Fpath("Project archive"))
 
   // Decode from ZIP
   let decoded = Archive::of_bytes(zip_bytes)

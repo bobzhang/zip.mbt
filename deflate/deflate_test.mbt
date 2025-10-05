@@ -16,19 +16,14 @@ test "inflate_uncompressed_block" {
 
 ///|
 test "inflate_with_crc32" {
-  let compressed = Bytes::from_fixedarray([
-    0b00000001, 3, 0, 252, 255, 0x41, 0x42, 0x43,
-  ])
+  let compressed : Bytes = [0b00000001, 3, 0, 252, 255, 0x41, 0x42, 0x43]
   let (result, crc) = inflate_and_crc32(
     compressed,
     0,
     compressed.length(),
     None,
   )
-  @json.inspect(
-    (result[0].to_int(), result[1].to_int(), result[2].to_int(), crc > 0),
-    content=[65, 66, 67, true],
-  )
+  @json.inspect((result[:3], crc > 0), content=["ABC", true])
 }
 
 ///|
