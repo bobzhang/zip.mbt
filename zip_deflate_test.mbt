@@ -63,7 +63,7 @@ test "file_deflate_empty_data" {
 test "archive_roundtrip_deflate" {
   let data = b"Test deflate compression in ZIP"
   let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
-  let m = @member.make("compressed.txt", File(file), None, None)
+  let m = @member.make("compressed.txt", File(file))
   let original = Archive::empty().add(m)
 
   // Encode
@@ -419,9 +419,9 @@ test "complete_zip_workflow_with_compression" {
   let file3 = @file.File::deflate_of_bytes(text3, 0, text3.length(), None)
 
   // 3. Create members
-  let m1 = @member.make("doc.txt", File(file1), None, None)
-  let m2 = @member.make("repeated.txt", File(file2), None, None)
-  let m3 = @member.make("random.txt", File(file3), None, None)
+  let m1 = @member.make("doc.txt", File(file1))
+  let m2 = @member.make("repeated.txt", File(file2))
+  let m3 = @member.make("random.txt", File(file3))
 
   // 4. Build archive
   let archive = Archive::empty().add(m1).add(m2).add(m3)

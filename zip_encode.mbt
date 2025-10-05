@@ -6,13 +6,6 @@ fn @buffer.Buffer::write_uint16_le(self : Self, value : UInt16) -> Unit {
   self.write_byte(((value >> 8) & 0xFF).to_byte())
 }
 
-///|
-/// Convert Int to UInt for writing to buffer
-/// This handles the common pattern of converting sizes/offsets to unsigned integers
-fn int_to_uint(value : Int) -> UInt {
-  value.to_int64().to_int().reinterpret_as_uint()
-}
-
 // ZIP file format constants for header sizes
 
 ///|
@@ -70,8 +63,8 @@ fn Member::write_local_header(self : Member, buf : @buffer.Buffer) -> Int {
       buf.write_uint16_le(dos_time)
       buf.write_uint16_le(dos_date)
       buf.write_uint_le(f.decompressed_crc32)
-      buf.write_uint_le(int_to_uint(f.compressed_size))
-      buf.write_uint_le(int_to_uint(f.decompressed_size))
+      buf.write_int_le(f.compressed_size)
+      buf.write_int_le(f.decompressed_size)
       buf.write_uint16_le(path_bytes.length().to_uint16())
       buf.write_uint16_le(0) // extra field length
       buf.write_bytes(path_bytes)
@@ -132,8 +125,8 @@ fn Member::write_central_directory_header(
       buf.write_uint16_le(0) // file comment length
       buf.write_uint16_le(0) // disk number start
       buf.write_uint16_le(0) // internal file attributes
-      buf.write_uint_le(int_to_uint(self.mode().to_int() << 16)) // external file attributes
-      buf.write_uint_le(int_to_uint(local_header_offset))
+      buf.write_int_le(self.mode().to_int() << 16) // external file attributes
+      buf.write_int_le(local_header_offset)
       buf.write_bytes(path_bytes)
     }
     File(f) => {
@@ -144,15 +137,15 @@ fn Member::write_central_directory_header(
       buf.write_uint16_le(dos_time)
       buf.write_uint16_le(dos_date)
       buf.write_uint_le(f.decompressed_crc32)
-      buf.write_uint_le(int_to_uint(f.compressed_size))
-      buf.write_uint_le(int_to_uint(f.decompressed_size))
+      buf.write_int_le(f.compressed_size)
+      buf.write_int_le(f.decompressed_size)
       buf.write_uint16_le(path_bytes.length().to_uint16())
       buf.write_uint16_le(0) // extra field length
       buf.write_uint16_le(0) // file comment length
       buf.write_uint16_le(0) // disk number start
       buf.write_uint16_le(0) // internal file attributes
-      buf.write_uint_le(int_to_uint(self.mode().to_int() << 16)) // external file attributes
-      buf.write_uint_le(int_to_uint(local_header_offset))
+      buf.write_int_le(self.mode().to_int() << 16) // external file attributes
+      buf.write_int_le(local_header_offset)
       buf.write_bytes(path_bytes)
     }
   }
@@ -240,8 +233,8 @@ pub fn Archive::to_bytes(self : Archive, first? : Fpath) -> Bytes raise {
   buf.write_uint16_le(0) // disk with central directory
   buf.write_uint16_le(count.to_uint16()) // entries on this disk
   buf.write_uint16_le(count.to_uint16()) // total entries
-  buf.write_uint_le(int_to_uint(central_dir_size))
-  buf.write_uint_le(int_to_uint(central_dir_start))
+  buf.write_int_le(central_dir_size)
+  buf.write_int_le(central_dir_start)
   buf.write_uint16_le(0) // comment length
   buf.to_bytes()
 }

@@ -58,8 +58,8 @@ pub struct Member {
 pub fn Member::make(
   path : Fpath,
   kind : MemberKind,
-  mode : FileMode?,
-  mtime : Ptime?,
+  mode? : FileMode,
+  mtime? : Ptime,
 ) -> Member raise {
   // Ensure Unix-style path
   let normalized_path = fpath_ensure_unix(path)

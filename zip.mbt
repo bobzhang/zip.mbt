@@ -461,7 +461,7 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
       }
       // Convert DOS time to POSIX time
       let mtime = @types.ptime_of_dos_date_time(dos_date, dos_time)
-      let m = @member.make(path, kind, Some(file_mode), Some(mtime))
+      let m = @member.make(path, kind, mode=file_mode, mtime~)
       let next_pos = pos + 46 + filename_len + extra_len + comment_len
       (m, next_pos)
     }

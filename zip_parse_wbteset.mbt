@@ -37,7 +37,7 @@ test "archive_to_bytes_empty" {
 test "archive_to_bytes_single_file" {
   let data = b"Hello ZIP!"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
-  let m = @member.make(@fpath.Fpath("hello.txt"), File(file), None, None)
+  let m = @member.make(@fpath.Fpath("hello.txt"), File(file))
   let archive = Archive::empty().add(m)
   let bytes = archive.to_bytes()
   @json.inspect((bytes.length() > 0, bytes_has_zip_magic(bytes)), content=[
@@ -47,7 +47,7 @@ test "archive_to_bytes_single_file" {
 
 ///|
 test "archive_to_bytes_directory" {
-  let m = @member.make(@fpath.Fpath("mydir/"), Dir, None, None)
+  let m = @member.make(@fpath.Fpath("mydir/"), Dir)
   let archive = Archive::empty().add(m)
   let bytes = archive.to_bytes()
   @json.inspect(bytes_has_zip_magic(bytes), content=true)
@@ -59,8 +59,8 @@ test "archive_to_bytes_multiple_files" {
   let data2 = b"file 2"
   let file1 = @file.File::stored_of_bytes(data1, 0, data1.length())
   let file2 = @file.File::stored_of_bytes(data2, 0, data2.length())
-  let m1 = @member.make(@fpath.Fpath("a.txt"), File(file1), None, None)
-  let m2 = @member.make(@fpath.Fpath("b.txt"), File(file2), None, None)
+  let m1 = @member.make(@fpath.Fpath("a.txt"), File(file1))
+  let m2 = @member.make(@fpath.Fpath("b.txt"), File(file2))
   let archive = Archive::empty().add(m1).add(m2)
   let bytes = archive.to_bytes()
   @json.inspect(

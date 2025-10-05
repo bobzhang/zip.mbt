@@ -29,8 +29,8 @@ fn test_simple_zip() -> Unit {
     let mem = @member.make(
       @fpath.Fpath("hello.txt"),
       File(f),
-      Some(@types.FileMode(0o644)),
-      Some(@types.dos_epoch),
+      mode=@types.FileMode(0o644),
+      mtime=@types.dos_epoch,
     )
     let archive = @lib.Archive::empty().add(mem)
     let zip_bytes = archive.to_bytes()
@@ -55,9 +55,9 @@ fn test_multi_file_zip() -> Unit {
     let file1 = @file.File::stored_of_bytes(b"Content of file 1", 0, 17)
     let file2 = @file.File::stored_of_bytes(b"Content of file 2", 0, 17)
     let file3 = @file.File::stored_of_bytes(b"Content of file 3", 0, 17)
-    let m1 = @member.make(@fpath.Fpath("file1.txt"), File(file1), None, None)
-    let m2 = @member.make(@fpath.Fpath("file2.txt"), File(file2), None, None)
-    let m3 = @member.make(@fpath.Fpath("file3.txt"), File(file3), None, None)
+    let m1 = @member.make(@fpath.Fpath("file1.txt"), File(file1))
+    let m2 = @member.make(@fpath.Fpath("file2.txt"), File(file2))
+    let m3 = @member.make(@fpath.Fpath("file3.txt"), File(file3))
     println("  Original members:")
     println("    - \{m1.path()}")
     println("    - \{m2.path()}")
@@ -95,16 +95,14 @@ fn test_directory_zip() -> Unit {
     let dir = @member.make(
       @fpath.Fpath("docs/"),
       Dir,
-      Some(@types.FileMode(0o755)),
-      None,
+      mode=@types.FileMode(0o755),
     )
     let data = b"# README\nThis is documentation.\n"
     let file = @file.File::stored_of_bytes(data, 0, data.length())
     let readme = @member.make(
       @fpath.Fpath("docs/README.md"),
       File(file),
-      Some(@types.FileMode(0o644)),
-      None,
+      mode=@types.FileMode(0o644),
     )
     let archive = @lib.Archive::empty().add(dir).add(readme)
     let zip_bytes = archive.to_bytes()

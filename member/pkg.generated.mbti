@@ -37,7 +37,7 @@ fn Member::is_dir(Self) -> Bool
 fn Member::is_file(Self) -> Bool
 fn Member::kind(Self) -> MemberKind
 #as_free_fn
-fn Member::make(@fpath.Fpath, MemberKind, @types.FileMode?, @types.Ptime?) -> Self raise
+fn Member::make(@fpath.Fpath, MemberKind, mode? : @types.FileMode, mtime? : @types.Ptime) -> Self raise
 fn Member::mode(Self) -> @types.FileMode
 fn Member::mtime(Self) -> @types.Ptime
 fn Member::path(Self) -> @fpath.Fpath
