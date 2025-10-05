@@ -83,40 +83,30 @@ test "e2e_single_file_roundtrip" {
 
   // Step 3: Create archive and add member
   let archive = Archive::empty().add(m)
-  @json.inspect(archive.member_count(), content=1)
+  @json.inspect(archive, content={
+    "length": 1,
+    "members": [["test.txt", "File"]],
+  })
 
   // Step 4: Encode to ZIP bytes
   let zip_bytes = archive.to_bytes()
-  @json.inspect(zip_bytes.length() > 0, content=true)
 
   // Step 5: Decode from ZIP bytes
   let decoded_archive = Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded_archive.member_count(), content=1)
+  @json.inspect(decoded_archive, content={
+    "length": 1,
+    "members": [["test.txt", "File"]],
+  })
 
-  // Step 6: Extract member
-  match decoded_archive.find("test.txt") {
-    Some(extracted_member) =>
-      // Step 7: Get file data and decompress
-      match extracted_member.kind() {
-        File(file) => {
-          let decompressed = file.to_bytes()
-
-          // Verify: decompressed data matches original
-          @json.inspect(decompressed.length() == orig_len, content=true)
-
-          // Verify content byte-by-byte
-          let mut matches = true
-          for i = 0; i < orig_len; i = i + 1 {
-            if decompressed[i] != original_data[i] {
-              matches = false
-            }
-          }
-          @json.inspect(matches, content=true)
-        }
-        Dir => @json.inspect("unexpected directory", content="file")
-      }
-    None => @json.inspect("member not found", content="member not found")
+  // Step 6: Extract member and verify
+  guard decoded_archive.find("test.txt") is Some(extracted_member) else {
+    fail("Member not found")
   }
+  guard extracted_member.kind() is File(file) else {
+    fail("Expected file kind")
+  }
+  let decompressed = file.to_bytes()
+  assert_eq(decompressed, original_data)
 }
 
 ///|
@@ -170,7 +160,14 @@ test "e2e_multiple_files_with_compression_levels" {
 
   // Build archive
   let archive = Archive::empty().add(m1).add(m2).add(m3)
-  @json.inspect(archive.member_count(), content=3)
+  @json.inspect(archive, content={
+    "length": 3,
+    "members": [
+      ["text.txt", "File"],
+      ["mixed.dat", "File"],
+      ["repetitive.bin", "File"],
+    ],
+  })
 
   // Encode to ZIP
   let zip_bytes = archive.to_bytes(
@@ -179,45 +176,29 @@ test "e2e_multiple_files_with_compression_levels" {
 
   // Decode from ZIP
   let decoded = Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded.member_count(), content=3)
+  @json.inspect(decoded, content={
+    "length": 3,
+    "members": [
+      ["text.txt", "File"],
+      ["mixed.dat", "File"],
+      ["repetitive.bin", "File"],
+    ],
+  })
 
-  // Verify each file
-  let text_len = text_data.length()
-  let rep_len = repetitive_data.length()
-  let mix_len = mixed_data.length()
-  match decoded.find("text.txt") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data.length() == text_len, content=true)
-        }
-        _ => ()
-      }
-    None => ()
+  // Verify each file can be decompressed to original size
+  guard decoded.find("text.txt") is Some(m1) else { fail("text.txt not found") }
+  guard m1.kind() is File(f1) else { fail("Expected file") }
+  assert_eq(f1.to_bytes().length(), text_data.length())
+  guard decoded.find("repetitive.bin") is Some(m2) else {
+    fail("repetitive.bin not found")
   }
-  match decoded.find("repetitive.bin") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data.length() == rep_len, content=true)
-        }
-        _ => ()
-      }
-    None => ()
+  guard m2.kind() is File(f2) else { fail("Expected file") }
+  assert_eq(f2.to_bytes().length(), repetitive_data.length())
+  guard decoded.find("mixed.dat") is Some(m3) else {
+    fail("mixed.dat not found")
   }
-  match decoded.find("mixed.dat") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data.length() == mix_len, content=true)
-        }
-        _ => ()
-      }
-    None => ()
-  }
+  guard m3.kind() is File(f3) else { fail("Expected file") }
+  assert_eq(f3.to_bytes().length(), mixed_data.length())
 }
 
 ///|
@@ -270,42 +251,44 @@ test "e2e_directory_structure_with_files" {
     .add(readme_m)
     .add(config_m)
     .add(code_m)
-  @json.inspect(archive.member_count(), content=5)
+  @json.inspect(archive, content={
+    "length": 5,
+    "members": [
+      ["project/", "Dir"],
+      ["project/src/", "Dir"],
+      ["project/README.md", "File"],
+      ["project/config.json", "File"],
+      ["project/src/main.mbt", "File"],
+    ],
+  })
 
   // Encode to ZIP
   let zip_bytes = archive.to_bytes(first=@fpath.Fpath("Project archive"))
 
   // Decode from ZIP
   let decoded = Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded.member_count(), content=5)
+  @json.inspect(decoded, content={
+    "length": 5,
+    "members": [
+      ["project/", "Dir"],
+      ["project/src/", "Dir"],
+      ["project/README.md", "File"],
+      ["project/config.json", "File"],
+      ["project/src/main.mbt", "File"],
+    ],
+  })
 
-  // Verify directory exists
-  @json.inspect(decoded.mem("project/"), content=true)
-  @json.inspect(decoded.mem("project/src/"), content=true)
-
-  // Verify files exist and can be decompressed
-  match decoded.find("project/README.md") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data.length() == readme_len, content=true)
-        }
-        _ => ()
-      }
-    None => ()
+  // Verify files can be decompressed to original size
+  guard decoded.find("project/README.md") is Some(m1) else {
+    fail("README not found")
   }
-  match decoded.find("project/src/main.mbt") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data.length() == code_len, content=true)
-        }
-        _ => ()
-      }
-    None => ()
+  guard m1.kind() is File(f1) else { fail("Expected file") }
+  assert_eq(f1.to_bytes().length(), readme_len)
+  guard decoded.find("project/src/main.mbt") is Some(m2) else {
+    fail("main.mbt not found")
   }
+  guard m2.kind() is File(f2) else { fail("Expected file") }
+  assert_eq(f2.to_bytes().length(), code_len)
 }
 
 ///|
@@ -358,33 +341,18 @@ test "e2e_large_file_compression" {
   let decoded = Archive::of_bytes(zip_bytes)
 
   // Extract and verify
-  match decoded.find("large_file.txt") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let decompressed = f.to_bytes()
+  guard decoded.find("large_file.txt") is Some(m) else {
+    fail("Member not found")
+  }
+  guard m.kind() is File(f) else { fail("Expected file") }
+  let decompressed = f.to_bytes()
+  assert_eq(decompressed.length(), original_size)
 
-          // Verify size matches
-          @json.inspect(decompressed.length() == original_size, content=true)
-
-          // Spot check: verify first and last 100 bytes
-          let mut first_100_match = true
-          let mut last_100_match = true
-          for i = 0; i < 100; i = i + 1 {
-            if decompressed[i] != large_data[i] {
-              first_100_match = false
-            }
-            let pos = original_size - 100 + i
-            if decompressed[pos] != large_data[pos] {
-              last_100_match = false
-            }
-          }
-          @json.inspect(first_100_match, content=true)
-          @json.inspect(last_100_match, content=true)
-        }
-        _ => ()
-      }
-    None => ()
+  // Spot check: verify first and last 100 bytes
+  for i = 0; i < 100; i = i + 1 {
+    assert_eq(decompressed[i], large_data[i])
+    let pos = original_size - 100 + i
+    assert_eq(decompressed[pos], large_data[pos])
   }
 }
 
@@ -403,7 +371,6 @@ test "e2e_stored_vs_deflate_comparison" {
 
   // Test data that compresses well
   let data = repeat_bytes(b"AAAAAAAAAA", 100)
-  let data_len = data.length()
 
   // Create stored (uncompressed) file
   let stored_file = @file.File::stored_of_bytes(data, 0, data.length())
@@ -429,35 +396,21 @@ test "e2e_stored_vs_deflate_comparison" {
   let decoded = Archive::of_bytes(zip_bytes)
 
   // Both should decompress to the same data
-  let stored_data = match decoded.find("stored.bin") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => f.to_bytes()
-        _ => b""
-      }
-    None => b""
+  guard decoded.find("stored.bin") is Some(m1) else {
+    fail("stored.bin not found")
   }
-  let deflated_data = match decoded.find("deflated.bin") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => f.to_bytes()
-        _ => b""
-      }
-    None => b""
+  guard m1.kind() is File(f1) else { fail("Expected file") }
+  let stored_data = f1.to_bytes()
+  guard decoded.find("deflated.bin") is Some(m2) else {
+    fail("deflated.bin not found")
   }
+  guard m2.kind() is File(f2) else { fail("Expected file") }
+  let deflated_data = f2.to_bytes()
 
-  // Both should match original
-  @json.inspect(stored_data.length() == data_len, content=true)
-  @json.inspect(deflated_data.length() == data_len, content=true)
-
-  // Verify they're identical
-  let mut all_match = true
-  for i = 0; i < data_len; i = i + 1 {
-    if stored_data[i] != deflated_data[i] || stored_data[i] != data[i] {
-      all_match = false
-    }
-  }
-  @json.inspect(all_match, content=true)
+  // Verify all three match
+  assert_eq(stored_data, data)
+  assert_eq(deflated_data, data)
+  assert_eq(stored_data, deflated_data)
 }
 
 ///|
@@ -477,17 +430,10 @@ test "e2e_empty_file_handling" {
   let decoded = Archive::of_bytes(zip_bytes)
 
   // Verify empty file is preserved
-  match decoded.find("empty.txt") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data.length(), content=0)
-        }
-        _ => ()
-      }
-    None => ()
-  }
+  guard decoded.find("empty.txt") is Some(m) else { fail("Member not found") }
+  guard m.kind() is File(f) else { fail("Expected file") }
+  let data = f.to_bytes()
+  assert_eq(data.length(), 0)
 }
 
 ///|
@@ -507,7 +453,6 @@ test "e2e_binary_data_roundtrip" {
     }
   }
   let binary_data = Bytes::from_array(binary_array)
-  let bin_len = binary_data.length()
 
   // Compress
   let compressed_file = @file.File::deflate_of_bytes(
@@ -528,24 +473,10 @@ test "e2e_binary_data_roundtrip" {
   let decoded = Archive::of_bytes(zip_bytes)
 
   // Verify all bytes match
-  match decoded.find("binary.bin") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let decompressed = f.to_bytes()
-          @json.inspect(decompressed.length() == bin_len, content=true)
-          let mut all_bytes_match = true
-          for i = 0; i < bin_len; i = i + 1 {
-            if decompressed[i] != binary_data[i] {
-              all_bytes_match = false
-            }
-          }
-          @json.inspect(all_bytes_match, content=true)
-        }
-        _ => ()
-      }
-    None => ()
-  }
+  guard decoded.find("binary.bin") is Some(m) else { fail("Member not found") }
+  guard m.kind() is File(f) else { fail("Expected file") }
+  let decompressed = f.to_bytes()
+  assert_eq(decompressed, binary_data)
 }
 
 ///|
@@ -568,14 +499,15 @@ test "e2e_archive_iteration" {
   let zip_bytes = archive.to_bytes()
   let decoded = Archive::of_bytes(zip_bytes)
 
-  // Iterate through all members
-  let count = decoded.fold(fn(_m, acc) { acc + 1 }, 0)
-  @json.inspect(count, content=3)
-
-  // Verify we can access all files
-  @json.inspect(decoded.mem("file1.txt"), content=true)
-  @json.inspect(decoded.mem("file2.txt"), content=true)
-  @json.inspect(decoded.mem("file3.txt"), content=true)
+  // Verify structure
+  @json.inspect(decoded, content={
+    "length": 3,
+    "members": [
+      ["file1.txt", "File"],
+      ["file2.txt", "File"],
+      ["file3.txt", "File"],
+    ],
+  })
 }
 
 ///|
@@ -596,18 +528,12 @@ test "e2e_unicode_filename_support" {
   let decoded = Archive::of_bytes(zip_bytes)
 
   // Verify file can be found with Unicode name
-  @json.inspect(decoded.mem("test_文件.txt"), content=true)
-  match decoded.find("test_文件.txt") {
-    Some(m) =>
-      match m.kind() {
-        File(f) => {
-          let decompressed = f.to_bytes()
-          @json.inspect(decompressed.length() == data_len, content=true)
-        }
-        _ => ()
-      }
-    None => ()
+  guard decoded.find("test_文件.txt") is Some(m) else {
+    fail("Unicode member not found")
   }
+  guard m.kind() is File(f) else { fail("Expected file") }
+  let decompressed = f.to_bytes()
+  assert_eq(decompressed.length(), data_len)
 }
 
 // Additional e2e tests from zip_test.mbt
@@ -630,27 +556,20 @@ test "e2e_simple_stored_zip" {
   let archive = Archive::empty().add(m)
   let zip_bytes = archive.to_bytes()
 
-  // Verify it has ZIP magic
-  // @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
-
   // Verify we can read it back
   let decoded = Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded.member_count(), content=1)
+  @json.inspect(decoded, content={
+    "length": 1,
+    "members": [["hello.txt", "File"]],
+  })
 
   // Verify content matches
-  match decoded.find("hello.txt") {
-    Some(found) =>
-      match found.kind() {
-        File(f) => {
-          let extracted = f.to_bytes()
-          @json.inspect((extracted.length(), extracted == content), content=[
-            13, true,
-          ])
-        }
-        _ => @json.inspect(false, content=true)
-      }
-    None => @json.inspect(false, content=false)
+  guard decoded.find("hello.txt") is Some(found) else {
+    fail("Member not found")
   }
+  guard found.kind() is File(f) else { fail("Expected file") }
+  let extracted = f.to_bytes()
+  assert_eq(extracted, content)
 }
 
 ///|
@@ -707,20 +626,16 @@ test "e2e_multi_file_deterministic" {
 
   // Verify roundtrip
   let decoded = Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded.member_count(), content=3)
+  @json.inspect(decoded, content={
+    "length": 3,
+    "members": [["a.txt", "File"], ["b.txt", "File"], ["c.txt", "File"]],
+  })
 
   // Verify all files are present and correct
-  match decoded.find("a.txt") {
-    Some(found) =>
-      match found.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data == b"File 1", content=true)
-        }
-        _ => @json.inspect(false, content=true)
-      }
-    None => @json.inspect(false, content=false)
-  }
+  guard decoded.find("a.txt") is Some(found) else { fail("a.txt not found") }
+  guard found.kind() is File(f) else { fail("Expected file") }
+  let data = f.to_bytes()
+  assert_eq(data, b"File 1")
 }
 
 ///|
@@ -743,17 +658,12 @@ test "e2e_deflate_compatibility" {
 
   // Read back and verify
   let decoded = Archive::of_bytes(zip_bytes)
-  match decoded.find("data.bin") {
-    Some(found) =>
-      match found.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data == original, content=true)
-        }
-        _ => @json.inspect(false, content=true)
-      }
-    None => @json.inspect(false, content=false)
+  guard decoded.find("data.bin") is Some(found) else {
+    fail("Member not found")
   }
+  guard found.kind() is File(f) else { fail("Expected file") }
+  let data = f.to_bytes()
+  assert_eq(data, original)
 }
 
 ///|
@@ -797,13 +707,14 @@ test "e2e_directory_in_zip" {
 
   // Verify structure
   let decoded = Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded.member_count(), content=2)
+  @json.inspect(decoded, content={
+    "length": 2,
+    "members": [["docs/", "Dir"], ["docs/README.md", "File"]],
+  })
 
   // Verify directory
-  match decoded.find("docs/") {
-    Some(d) => @json.inspect(d.is_dir(), content=true)
-    None => @json.inspect(false, content=false)
-  }
+  guard decoded.find("docs/") is Some(d) else { fail("Directory not found") }
+  assert_true(d.is_dir())
 
   // Verify file
   match decoded.find("docs/README.md") {
