@@ -902,26 +902,26 @@ fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
 
 ///|
 /// Deflate with fixed Huffman (literals only, no LZ77)
-fn deflate_fixed_literals_only(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  is_final : Bool,
-) -> Bytes {
-  let output = @buffer.ByteBuf::new(len * 2, false)
-  let writer = @bitstream.BitWriter::new(output)
-  let header = if is_final { 0b011 } else { 0b010 }
-  writer.write_bits(header, 3)
-  for i = 0; i < len; i = i + 1 {
-    let byte = bytes[start + i].to_int()
-    write_literal_symbol(writer, @huffman.fixed_litlen_encoder, byte)
-  }
-  write_literal_symbol(
-    writer, @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
-  )
-  writer.flush()
-  output.contents()
-}
+// fn deflate_fixed_literals_only(
+//   bytes : Bytes,
+//   start : Int,
+//   len : Int,
+//   is_final : Bool,
+// ) -> Bytes {
+//   let output = @buffer.ByteBuf::new(len * 2, false)
+//   let writer = @bitstream.BitWriter::new(output)
+//   let header = if is_final { 0b011 } else { 0b010 }
+//   writer.write_bits(header, 3)
+//   for i = 0; i < len; i = i + 1 {
+//     let byte = bytes[start + i].to_int()
+//     write_literal_symbol(writer, @huffman.fixed_litlen_encoder, byte)
+//   }
+//   write_literal_symbol(
+//     writer, @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
+//   )
+//   writer.flush()
+//   output.contents()
+// }
 
 ///|
 /// Deflate with LZ77 + Fixed Huffman
