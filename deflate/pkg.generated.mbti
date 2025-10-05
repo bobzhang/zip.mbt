@@ -2,11 +2,11 @@
 package "bobzhang/zip/deflate"
 
 // Values
-fn adler32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(UInt, Bytes), String]
+fn adler32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> Result[(UInt, Bytes), String]
 
 fn build_optimal_code_lengths(Array[Int], Int, Int) -> Array[Int]
 
-fn crc32_and_deflate(Bytes, Int, Int, DeflateLevel?) -> Result[(UInt, Bytes), String]
+fn crc32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> Result[(UInt, Bytes), String]
 
 fn deflate(Bytes, Int, Int, level? : DeflateLevel) -> Result[Bytes, String]
 

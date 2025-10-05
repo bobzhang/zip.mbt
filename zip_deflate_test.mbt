@@ -71,19 +71,14 @@ test "archive_roundtrip_deflate" {
 
   // Decode and decompress
   let decoded = Archive::of_bytes(bytes)
-  match decoded.find("compressed.txt") {
-    Some(found) =>
-      match found.kind() {
-        File(f) => {
-          let extracted = f.to_bytes()
-          @json.inspect((extracted.length(), extracted[0] == data[0]), content=[
-            31, true,
-          ])
-        }
-        _ => @json.inspect("wrong kind", content="file")
-      }
-    None => @json.inspect("not found", content="not found")
+  guard decoded.find("compressed.txt") is Some(found) else {
+    fail("should find compressed.txt")
   }
+  guard found.kind() is File(f) else { fail("compressed.txt should be a file") }
+  let extracted = f.to_bytes()
+  @json.inspect((extracted.length(), extracted[0] == data[0]), content=[
+    31, true,
+  ])
 }
 
 ///|
@@ -433,46 +428,31 @@ test "complete_zip_workflow_with_compression" {
   let decoded = Archive::of_bytes(zip_bytes)
 
   // 7. Extract and verify each file
-  match decoded.find("doc.txt") {
-    Some(entry) =>
-      match entry.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect((data.length(), data[0].to_int()), content=[89, 84]) // 'T'
-        }
-        _ => ()
-      }
-    None => ()
+  guard decoded.find("doc.txt") is Some(entry) else {
+    fail("should find doc.txt")
   }
-  match decoded.find("repeated.txt") {
-    Some(entry) =>
-      match entry.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          // Verify it decompressed correctly
-          @json.inspect((data.length(), data[0].to_int(), data[39].to_int()), content=[
-            40, 97, 97,
-          ])
+  guard entry.kind() is File(f) else { fail("doc.txt should be a file") }
+  let data = f.to_bytes()
+  @json.inspect((data.length(), data[0].to_int()), content=[89, 84]) // 'T'
+  guard decoded.find("repeated.txt") is Some(entry) else {
+    fail("should find repeated.txt")
+  }
+  guard entry.kind() is File(f) else { fail("repeated.txt should be a file") }
+  let data = f.to_bytes()
+  // Verify it decompressed correctly
+  @json.inspect((data.length(), data[0].to_int(), data[39].to_int()), content=[
+    40, 97, 97,
+  ])
 
-          // Verify actual compression happened
-          let ratio = f.compressed_size() < 15 // Should be < 40% of original
-          @json.inspect(ratio, content=true)
-        }
-        _ => ()
-      }
-    None => ()
+  // Verify actual compression happened
+  let ratio = f.compressed_size() < 15 // Should be < 40% of original
+  @json.inspect(ratio, content=true)
+  guard decoded.find("random.txt") is Some(entry) else {
+    fail("should find random.txt")
   }
-  match decoded.find("random.txt") {
-    Some(entry) =>
-      match entry.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data.length(), content=22)
-        }
-        _ => ()
-      }
-    None => ()
-  }
+  guard entry.kind() is File(f) else { fail("random.txt should be a file") }
+  let data = f.to_bytes()
+  @json.inspect(data.length(), content=22)
 
   // 8. Verify archive has all members
   let count = decoded.fold(fn(_m, acc) { acc + 1 }, 0)
@@ -693,22 +673,20 @@ test "compression_with_lz77_matches" {
 ///|
 test "deflate_api_basic" {
   let data = b"Hello, DEFLATE API!"
-  match @deflate.deflate(data, 0, data.length()) {
-    Ok(compressed) => {
-      // Should compress successfully
-      @json.inspect(compressed.length() > 0, content=true)
-
-      // Should decompress back to original
-      let decompressed = @deflate.inflate(
-        compressed,
-        0,
-        compressed.length(),
-        Some(data.length()),
-      )
-      @json.inspect(decompressed.length(), content=19)
-    }
-    Err(_) => @json.inspect("should not fail", content="success")
+  guard @deflate.deflate(data, 0, data.length()) is Ok(compressed) else {
+    fail("deflate should not fail")
   }
+  // Should compress successfully
+  @json.inspect(compressed.length() > 0, content=true)
+
+  // Should decompress back to original
+  let decompressed = @deflate.inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(decompressed.length(), content=19)
 }
 
 ///|

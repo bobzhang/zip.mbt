@@ -680,17 +680,12 @@ test "e2e_directory_in_zip" {
   assert_true(d.is_dir())
 
   // Verify file
-  match decoded.find("docs/README.md") {
-    Some(found) =>
-      match found.kind() {
-        File(f) => {
-          let data = f.to_bytes()
-          @json.inspect(data == file_data, content=true)
-        }
-        _ => @json.inspect(false, content=true)
-      }
-    None => @json.inspect(false, content=false)
+  guard decoded.find("docs/README.md") is Some(found) else {
+    fail("should find docs/README.md")
   }
+  guard found.kind() is File(f) else { fail("docs/README.md should be a file") }
+  let data = f.to_bytes()
+  @json.inspect(data == file_data, content=true)
 }
 
 ///|
@@ -709,15 +704,14 @@ test "e2e_metadata_preservation" {
   let archive = Archive::empty().add(m)
   let zip_bytes = archive.to_bytes()
   let decoded = Archive::of_bytes(zip_bytes)
-  match decoded.find("executable.sh") {
-    Some(found) =>
-      // Mode and mtime should be preserved
-      @json.inspect((found.mode(), found.mtime()), content=[
-        ["FileMode", 493],
-        ["Ptime", 315619200],
-      ])
-    None => @json.inspect(false, content=false)
+  guard decoded.find("executable.sh") is Some(found) else {
+    fail("should find executable.sh")
   }
+  // Mode and mtime should be preserved
+  @json.inspect((found.mode(), found.mtime()), content=[
+    ["FileMode", 493],
+    ["Ptime", 315619200],
+  ])
 }
 
 ///|
@@ -872,30 +866,20 @@ test "e2e_read_real_zip_file" {
   @json.inspect(archive.member_count(), content=2)
 
   // Verify first file
-  match archive.find("ziptest/a.txt") {
-    Some(m) =>
-      match m.kind() {
-        File(file) => {
-          let content = file.to_bytes()
-          @json.inspect(content == b"this is a.txt", content=true)
-        }
-        _ => @json.inspect(false, content=true)
-      }
-    None => @json.inspect(false, content=false)
+  guard archive.find("ziptest/a.txt") is Some(m) else {
+    fail("should find ziptest/a.txt")
   }
+  guard m.kind() is File(file) else { fail("ziptest/a.txt should be a file") }
+  let content = file.to_bytes()
+  @json.inspect(content == b"this is a.txt", content=true)
 
   // Verify second file
-  match archive.find("ziptest/b.txt") {
-    Some(m) =>
-      match m.kind() {
-        File(file) => {
-          let content = file.to_bytes()
-          @json.inspect(content == b"this is b.txt", content=true)
-        }
-        _ => @json.inspect(false, content=true)
-      }
-    None => @json.inspect(false, content=false)
+  guard archive.find("ziptest/b.txt") is Some(m) else {
+    fail("should find ziptest/b.txt")
   }
+  guard m.kind() is File(file) else { fail("ziptest/b.txt should be a file") }
+  let content = file.to_bytes()
+  @json.inspect(content == b"this is b.txt", content=true)
 }
 
 ///|
@@ -916,28 +900,18 @@ test "e2e_create_and_read_ziptest_equivalent" {
   @json.inspect(decoded.member_count(), content=2)
 
   // Verify both files exist and have correct content
-  match decoded.find("ziptest/a.txt") {
-    Some(m) =>
-      match m.kind() {
-        File(file) => {
-          let content = file.to_bytes()
-          @json.inspect(content == b"this is a.txt", content=true)
-        }
-        _ => @json.inspect(false, content=true)
-      }
-    None => @json.inspect(false, content=false)
+  guard decoded.find("ziptest/a.txt") is Some(m) else {
+    fail("should find ziptest/a.txt")
   }
-  match decoded.find("ziptest/b.txt") {
-    Some(m) =>
-      match m.kind() {
-        File(file) => {
-          let content = file.to_bytes()
-          @json.inspect(content == b"this is b.txt", content=true)
-        }
-        _ => @json.inspect(false, content=true)
-      }
-    None => @json.inspect(false, content=false)
+  guard m.kind() is File(file) else { fail("ziptest/a.txt should be a file") }
+  let content = file.to_bytes()
+  @json.inspect(content == b"this is a.txt", content=true)
+  guard decoded.find("ziptest/b.txt") is Some(m) else {
+    fail("should find ziptest/b.txt")
   }
+  guard m.kind() is File(file) else { fail("ziptest/b.txt should be a file") }
+  let content = file.to_bytes()
+  @json.inspect(content == b"this is b.txt", content=true)
 }
 
 ///|

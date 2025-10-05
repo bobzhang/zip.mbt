@@ -62,10 +62,10 @@ test "crc32_check_success" {
 ///|
 test "crc32_check_failure" {
   let result = @crc32.check_crc32(0x12345678, 0x87654321)
-  match result {
-    Ok(_) => @json.inspect("should not succeed", content="\"mismatch\"")
-    Err(msg) => @json.inspect(msg.contains("mismatch"), content=true)
+  guard result is Err(msg) else {
+    fail("check_crc32 should fail with mismatched values")
   }
+  @json.inspect(msg.contains("mismatch"), content=true)
 }
 
 ///|
@@ -125,45 +125,43 @@ test "e2e_adler32_known_value" {
 ///|
 test "@deflate.crc32_and_deflate_api" {
   let data = b"test data"
-  match @deflate.crc32_and_deflate(data, 0, data.length(), None) {
-    Ok((crc, compressed)) => {
-      // CRC should match direct calculation
-      let expected_crc = @crc32.bytes_crc32(data, 0, data.length())
-      @json.inspect(crc == expected_crc, content=true)
-
-      // Compressed data should be valid
-      let decompressed = @deflate.inflate(
-        compressed,
-        0,
-        compressed.length(),
-        Some(data.length()),
-      )
-      @json.inspect(decompressed.length(), content=9)
-    }
-    Err(_) => @json.inspect("should not fail", content="success")
+  guard @deflate.crc32_and_deflate(data, 0, data.length())
+    is Ok((crc, compressed)) else {
+    fail("crc32_and_deflate should not fail")
   }
+  // CRC should match direct calculation
+  let expected_crc = @crc32.bytes_crc32(data, 0, data.length())
+  @json.inspect(crc == expected_crc, content=true)
+
+  // Compressed data should be valid
+  let decompressed = @deflate.inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(decompressed.length(), content=9)
 }
 
 ///|
 test "@deflate.adler32_and_deflate_api" {
   let data = b"test data"
-  match @deflate.adler32_and_deflate(data, 0, data.length(), None) {
-    Ok((adler, compressed)) => {
-      // Adler-32 should match direct calculation
-      let expected_adler = @adler32.bytes_adler32(data, 0, data.length())
-      @json.inspect(adler == expected_adler, content=true)
-
-      // Compressed data should be valid
-      let decompressed = @deflate.inflate(
-        compressed,
-        0,
-        compressed.length(),
-        Some(data.length()),
-      )
-      @json.inspect(decompressed.length(), content=9)
-    }
-    Err(_) => @json.inspect("should not fail", content="success")
+  guard @deflate.adler32_and_deflate(data, 0, data.length())
+    is Ok((adler, compressed)) else {
+    fail("adler32_and_deflate should not fail")
   }
+  // Adler-32 should match direct calculation
+  let expected_adler = @adler32.bytes_adler32(data, 0, data.length())
+  @json.inspect(adler == expected_adler, content=true)
+
+  // Compressed data should be valid
+  let decompressed = @deflate.inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(decompressed.length(), content=9)
 }
 
 // ============================================================================

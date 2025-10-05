@@ -1267,14 +1267,11 @@ pub fn crc32_and_deflate(
   bytes : Bytes,
   start : Int,
   len : Int,
-  level : DeflateLevel?,
+  level? : DeflateLevel,
 ) -> Result[(UInt, Bytes), String] {
   let crc = @crc32.bytes_crc32(bytes, start, len)
   // Convert Option to explicit match for labeled optional parameter
-  let result = match level {
-    Some(lvl) => deflate(bytes, start, len, level=lvl)
-    None => deflate(bytes, start, len)
-  }
+  let result = deflate(bytes, start, len, level?)
   match result {
     Ok(compressed) => Ok((crc, compressed))
     Err(msg) => Err(msg)
@@ -1288,14 +1285,11 @@ pub fn adler32_and_deflate(
   bytes : Bytes,
   start : Int,
   len : Int,
-  level : DeflateLevel?,
+  level? : DeflateLevel,
 ) -> Result[(UInt, Bytes), String] {
   let adler = @adler32.bytes_adler32(bytes, start, len)
   // Convert Option to explicit match for labeled optional parameter
-  let result = match level {
-    Some(lvl) => deflate(bytes, start, len, level=lvl)
-    None => deflate(bytes, start, len)
-  }
+  let result = deflate(bytes, start, len, level?)
   match result {
     Ok(compressed) => Ok((adler, compressed))
     Err(msg) => Err(msg)
