@@ -3,8 +3,8 @@
   "import": [
     "bobzhang/zip/buffer",
     "bobzhang/zip/bitstream",
-    "bobzhang/zip/huffman",
-    "bobzhang/zip/lz77",
+    "bobzhang/zip/deflate/internal/huffman",
+    "bobzhang/zip/deflate/internal/lz77",
     "bobzhang/zip/checksum/crc32",
     "bobzhang/zip/checksum/adler32"
   ]
