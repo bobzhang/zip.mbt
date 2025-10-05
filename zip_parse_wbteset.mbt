@@ -28,7 +28,7 @@ test "zip_magic_too_short" {
 ///|
 test "archive_to_bytes_empty" {
   let archive = Archive::empty()
-  let bytes = archive.to_bytes(None)
+  let bytes = archive.to_bytes()
   // Empty archive: just EOCD (22 bytes)
   @json.inspect((bytes.length(), bytes_has_zip_magic(bytes)), content=[22, true])
 }
@@ -39,7 +39,7 @@ test "archive_to_bytes_single_file" {
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make(@fpath.Fpath("hello.txt"), File(file), None, None)
   let archive = Archive::empty().add(m)
-  let bytes = archive.to_bytes(None)
+  let bytes = archive.to_bytes()
   @json.inspect((bytes.length() > 0, bytes_has_zip_magic(bytes)), content=[
     true, true,
   ])
@@ -49,7 +49,7 @@ test "archive_to_bytes_single_file" {
 test "archive_to_bytes_directory" {
   let m = @member.make(@fpath.Fpath("mydir/"), Dir, None, None)
   let archive = Archive::empty().add(m)
-  let bytes = archive.to_bytes(None)
+  let bytes = archive.to_bytes()
   @json.inspect(bytes_has_zip_magic(bytes), content=true)
 }
 
@@ -62,7 +62,7 @@ test "archive_to_bytes_multiple_files" {
   let m1 = @member.make(@fpath.Fpath("a.txt"), File(file1), None, None)
   let m2 = @member.make(@fpath.Fpath("b.txt"), File(file2), None, None)
   let archive = Archive::empty().add(m1).add(m2)
-  let bytes = archive.to_bytes(None)
+  let bytes = archive.to_bytes()
   @json.inspect(
     (
       bytes.length() > 100,

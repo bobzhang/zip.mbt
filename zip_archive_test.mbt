@@ -108,7 +108,7 @@ test "archive_encoding_size" {
 /// ZIP decoding tests
 test "archive_of_bytes_empty" {
   let archive = Archive::empty()
-  let bytes = archive.to_bytes(None)
+  let bytes = archive.to_bytes()
   let decoded = Archive::of_bytes(bytes)
   @json.inspect((decoded.is_empty(), decoded.member_count()), content=[true, 0])
 }
@@ -121,7 +121,7 @@ test "archive_roundtrip_single_file" {
   let original = Archive::empty().add(m)
 
   // Encode
-  let bytes = original.to_bytes(None)
+  let bytes = original.to_bytes()
 
   // Decode
   let decoded = Archive::of_bytes(bytes)
@@ -160,7 +160,7 @@ test "archive_roundtrip_multiple_files" {
   let original = Archive::empty().add(m1).add(m2).add(m3)
 
   // Encode
-  let bytes = original.to_bytes(None)
+  let bytes = original.to_bytes()
 
   // Decode
   let decoded = Archive::of_bytes(bytes)
@@ -184,7 +184,7 @@ test "archive_roundtrip_with_directory" {
   let original = Archive::empty().add(dir).add(f)
 
   // Encode
-  let bytes = original.to_bytes(None)
+  let bytes = original.to_bytes()
 
   // Decode
   let decoded = Archive::of_bytes(bytes)
@@ -295,6 +295,6 @@ test "coverage_archive_first" {
   let m1 = @member.make("a.txt", File(f1), None, None)
   let m2 = @member.make("z.txt", File(f2), None, None)
   let a = a.add(m1).add(m2)
-  let enc = a.to_bytes(Some("z.txt"))
+  let enc = a.to_bytes(first?=Some(@fpath.Fpath("z.txt")))
   @json.inspect(enc.length() > 0, content=true)
 }

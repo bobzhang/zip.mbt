@@ -67,7 +67,7 @@ test "archive_roundtrip_deflate" {
   let original = Archive::empty().add(m)
 
   // Encode
-  let bytes = original.to_bytes(None)
+  let bytes = original.to_bytes()
 
   // Decode and decompress
   let decoded = Archive::of_bytes(bytes)
@@ -427,7 +427,7 @@ test "complete_zip_workflow_with_compression" {
   let archive = Archive::empty().add(m1).add(m2).add(m3)
 
   // 5. Serialize to ZIP format
-  let zip_bytes = archive.to_bytes(None)
+  let zip_bytes = archive.to_bytes()
 
   // 6. Verify it's a valid ZIP (deserialize)
   let decoded = Archive::of_bytes(zip_bytes)

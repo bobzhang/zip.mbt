@@ -25,9 +25,8 @@ fn Archive::of_bytes(Bytes) -> Self raise
 fn Archive::of_map(@sorted_map.SortedMap[@fpath.Fpath, @member.Member]) -> Self
 fn Archive::remove(Self, @fpath.Fpath) -> Self
 fn Archive::to_array(Self) -> Array[@member.Member]
-fn Archive::to_bytes(Self, @fpath.Fpath?) -> Bytes raise
+fn Archive::to_bytes(Self, first? : @fpath.Fpath) -> Bytes raise
 fn Archive::to_map(Self) -> @sorted_map.SortedMap[@fpath.Fpath, @member.Member]
-fn Archive::write_bytes(Self, Bytes, Int, @fpath.Fpath?) -> Int raise
 
 // Type aliases
 pub typealias @member.MemberKind as MemberKind

@@ -33,7 +33,7 @@ fn test_simple_zip() -> Unit {
       Some(@types.dos_epoch),
     )
     let archive = @lib.Archive::empty().add(mem)
-    let zip_bytes = archive.to_bytes(None)
+    let zip_bytes = archive.to_bytes()
     println("  ✓ Created ZIP: \{zip_bytes.length()} bytes")
 
     // Verify roundtrip
@@ -64,7 +64,7 @@ fn test_multi_file_zip() -> Unit {
     println("    - \{m3.path()}")
     let archive = @lib.Archive::empty().add(m1).add(m2).add(m3)
     println("  Archive member count: \{archive.member_count()}")
-    let zip_bytes = archive.to_bytes(None)
+    let zip_bytes = archive.to_bytes()
     println("  ✓ Created ZIP: \{zip_bytes.length()} bytes")
 
     // Verify all members
@@ -107,7 +107,7 @@ fn test_directory_zip() -> Unit {
       None,
     )
     let archive = @lib.Archive::empty().add(dir).add(readme)
-    let zip_bytes = archive.to_bytes(None)
+    let zip_bytes = archive.to_bytes()
     println("  ✓ Created ZIP: \{zip_bytes.length()} bytes")
     try {
       let decoded = @lib.Archive::of_bytes(zip_bytes)

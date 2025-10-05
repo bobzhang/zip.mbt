@@ -176,7 +176,7 @@ pub fn Archive::encoding_size(self : Archive) -> Int {
 
 ///|
 /// Encode archive to bytes
-pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
+pub fn Archive::to_bytes(self : Archive, first? : Fpath) -> Bytes raise {
   // Check member count limit
   let count = self.member_count()
   if count > @member.max_member_count {
@@ -239,23 +239,4 @@ pub fn Archive::to_bytes(self : Archive, first : Fpath?) -> Bytes raise {
   buf.write_uint_le(central_dir_start.to_int64().to_int().reinterpret_as_uint())
   buf.write_uint16_le(0) // comment length
   buf.to_bytes()
-}
-
-///|
-/// Write archive bytes to a pre-allocated buffer at given offset
-/// Returns the number of bytes written or error if buffer is too small
-/// Note: Currently not implemented due to Bytes immutability - use to_bytes() instead
-pub fn Archive::write_bytes(
-  self : Archive,
-  _buffer : Bytes,
-  offset : Int,
-  first : Fpath?,
-) -> Int raise {
-  let encoded = self.to_bytes(first)
-  let size = encoded.length()
-  // Note: In MoonBit, Bytes is immutable so we can't write to it
-  // This function exists for API compatibility but recommends using to_bytes()
-  fail(
-    "write_bytes not supported (Bytes is immutable): use to_bytes() instead. Would write \{size} bytes at offset \{offset}",
-  )
 }
