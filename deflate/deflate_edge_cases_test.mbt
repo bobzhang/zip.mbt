@@ -261,29 +261,6 @@ test "deflate_stored_max_block" {
 }
 
 ///|
-/// Test distance_to_symbol for all distance ranges
-test "distance_to_symbol_all_ranges" {
-  // Distance 1-4: symbols 0-3
-  @json.inspect(@deflate.distance_to_symbol(1), content=0)
-  @json.inspect(@deflate.distance_to_symbol(4), content=3)
-  // Distance 1025-2048: symbol 20-21
-  @json.inspect(@deflate.distance_to_symbol(1025), content=20)
-  @json.inspect(@deflate.distance_to_symbol(2048), content=21)
-  // Distance 2049-4096: symbol 22-23
-  @json.inspect(@deflate.distance_to_symbol(2049), content=22)
-  @json.inspect(@deflate.distance_to_symbol(4096), content=23)
-  // Distance 4097-8192: symbol 24-25
-  @json.inspect(@deflate.distance_to_symbol(4097), content=24)
-  @json.inspect(@deflate.distance_to_symbol(8192), content=25)
-  // Distance 8193-16384: symbol 26-27
-  @json.inspect(@deflate.distance_to_symbol(8193), content=26)
-  @json.inspect(@deflate.distance_to_symbol(16384), content=27)
-  // Distance 16385-32768: symbol 28-29
-  @json.inspect(@deflate.distance_to_symbol(16385), content=28)
-  @json.inspect(@deflate.distance_to_symbol(32768), content=29)
-}
-
-///|
 /// Test zlib_compress with DeflateLevel::None
 test "zlib_compress_level_none" {
   let data = b"zlib with no compression"

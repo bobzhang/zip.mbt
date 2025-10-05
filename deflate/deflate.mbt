@@ -514,7 +514,7 @@ pub fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes {
 
 ///|
 /// Build optimal Huffman code lengths from frequency counts
-pub fn build_optimal_code_lengths(
+fn build_optimal_code_lengths(
   freqs : Array[Int],
   max_sym : Int,
   max_code_len : Int,
@@ -759,7 +759,7 @@ fn write_dynamic_header(
 
 ///|
 /// Convert a match length to symbol
-pub fn length_to_symbol(length : Int) -> Int {
+fn length_to_symbol(length : Int) -> Int {
   if length <= 10 {
     257 + (length - 3)
   } else if length <= 18 {
@@ -779,7 +779,7 @@ pub fn length_to_symbol(length : Int) -> Int {
 
 ///|
 /// Convert a distance to symbol
-pub fn distance_to_symbol(dist : Int) -> Int {
+fn distance_to_symbol(dist : Int) -> Int {
   if dist <= 4 {
     dist - 1
   } else if dist <= 8 {
@@ -902,7 +902,7 @@ fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
 
 ///|
 /// Deflate with fixed Huffman (literals only, no LZ77)
-pub fn deflate_fixed_literals_only(
+fn deflate_fixed_literals_only(
   bytes : Bytes,
   start : Int,
   len : Int,
