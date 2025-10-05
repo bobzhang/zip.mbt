@@ -31,10 +31,10 @@ test "archive_find_member" {
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("test.txt", File(file))
   let archive = Archive::empty().add(m)
-  match archive.find("test.txt") {
-    Some(found) => @json.inspect(found.path(), content="test.txt")
-    None => @json.inspect("not found", content="not found")
+  guard archive.find("test.txt") is Some(found) else {
+    fail("Member not found")
   }
+  assert_eq(found.path().to_string(), "test.txt")
 }
 
 ///|
@@ -59,16 +59,14 @@ test "archive_replace_member" {
   let m1 = @member.make("test.txt", File(file1))
   let m2 = @member.make("test.txt", File(file2))
   let archive = Archive::empty().add(m1).add(m2)
+
   // Should have only one member (replaced)
   @json.inspect(archive.member_count(), content=1)
-  match archive.find("test.txt") {
-    Some(found) =>
-      match found.kind() {
-        File(f) => @json.inspect(f.decompressed_size, content=8)
-        _ => @json.inspect("wrong kind", content="file")
-      }
-    None => @json.inspect("not found", content="not found")
+  guard archive.find("test.txt") is Some(found) else {
+    fail("Member not found")
   }
+  guard found.kind() is File(f) else { fail("Expected file kind") }
+  assert_eq(f.decompressed_size, 8)
 }
 
 ///|
@@ -125,25 +123,16 @@ test "archive_roundtrip_single_file" {
 
   // Decode
   let decoded = Archive::of_bytes(bytes)
-  @json.inspect(decoded.member_count(), content=1)
-  match decoded.find("hello.txt") {
-    Some(found) =>
-      match found.kind() {
-        File(f) => {
-          let extracted = f.to_bytes()
-          @json.inspect(
-            (
-              extracted.length(),
-              extracted[0] == data[0],
-              extracted[data.length() - 1] == data[data.length() - 1],
-            ),
-            content=[17, true, true],
-          )
-        }
-        _ => @json.inspect("wrong kind", content="file")
-      }
-    None => @json.inspect("not found", content="not found")
+  @json.inspect(decoded, content={
+    "length": 1,
+    "members": [["hello.txt", "File"]],
+  })
+  guard decoded.find("hello.txt") is Some(found) else {
+    fail("Member not found")
   }
+  guard found.kind() is File(f) else { fail("Expected file kind") }
+  let extracted = f.to_bytes()
+  assert_eq(extracted, data)
 }
 
 ///|
@@ -164,15 +153,14 @@ test "archive_roundtrip_multiple_files" {
 
   // Decode
   let decoded = Archive::of_bytes(bytes)
-  @json.inspect(
-    (
-      decoded.member_count(),
-      decoded.mem("docs/file1.txt"),
-      decoded.mem("docs/file2.txt"),
-      decoded.mem("readme.txt"),
-    ),
-    content=[3, true, true, true],
-  )
+  @json.inspect(decoded, content={
+    "length": 3,
+    "members": [
+      ["readme.txt", "File"],
+      ["docs/file1.txt", "File"],
+      ["docs/file2.txt", "File"],
+    ],
+  })
 }
 
 ///|
@@ -188,11 +176,12 @@ test "archive_roundtrip_with_directory" {
 
   // Decode
   let decoded = Archive::of_bytes(bytes)
-  @json.inspect(decoded.member_count(), content=2)
-  match decoded.find("mydir/") {
-    Some(d) => @json.inspect(d.is_dir(), content=true)
-    None => @json.inspect("dir not found", content="dir not found")
-  }
+  @json.inspect(decoded, content={
+    "length": 2,
+    "members": [["mydir/", "Dir"], ["mydir/file.txt", "File"]],
+  })
+  guard decoded.find("mydir/") is Some(d) else { fail("Directory not found") }
+  assert_true(d.is_dir())
 }
 
 ///|
