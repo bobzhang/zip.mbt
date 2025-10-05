@@ -27,6 +27,7 @@ fn Archive::remove(Self, @fpath.Fpath) -> Self
 fn Archive::to_array(Self) -> Array[@member.Member]
 fn Archive::to_bytes(Self, first? : @fpath.Fpath) -> Bytes raise
 fn Archive::to_map(Self) -> @sorted_map.SortedMap[@fpath.Fpath, @member.Member]
+impl ToJson for Archive
 
 // Type aliases
 pub typealias @member.MemberKind as MemberKind

@@ -8,9 +8,10 @@ test "e2e_debug_member_lookup" {
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("simple.txt", File(file))
   let archive = Archive::empty().add(m)
-  @json.inspect(archive.member_count(), content=1)
-  @json.inspect(archive.mem("simple.txt"), content=true)
-  assert_true(archive.find("simple.txt") is Some(_))
+  @json.inspect(archive, content={
+    "length": 1,
+    "members": [["simple.txt", "File"]],
+  })
 }
 
 ///|
@@ -35,40 +36,28 @@ test "e2e_simple_stored_file" {
 
   // Step 3: Create archive with single member
   let archive = Archive::empty().add(m)
-  @json.inspect(archive.member_count(), content=1)
+  @json.inspect(archive, content={
+    "length": 1,
+    "members": [["test.txt", "File"]],
+  })
 
   // Step 4: Encode to ZIP bytes
   let zip_bytes = archive.to_bytes()
-  @json.inspect(zip_bytes.length() > 0, content=true)
 
   // Step 5: Decode from ZIP bytes
   let decoded_archive = Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded_archive.member_count(), content=1)
-
-  // Step 6: Check if member exists
-  @json.inspect(decoded_archive.mem("test.txt"), content=true)
+  @json.inspect(decoded_archive, content={
+    "length": 1,
+    "members": [["test.txt", "File"]],
+  })
 
   // Step 7: Extract and decompress
-  match decoded_archive.find("test.txt") {
-    Some(extracted_m) =>
-      match extracted_m.kind() {
-        File(file) => {
-          let decompressed = file.to_bytes()
-          @json.inspect(decompressed.length() == orig_len, content=true)
-
-          // Verify content matches
-          let mut all_match = true
-          for i = 0; i < orig_len; i = i + 1 {
-            if decompressed[i] != original_data[i] {
-              all_match = false
-            }
-          }
-          @json.inspect(all_match, content=true)
-        }
-        Dir => @json.inspect("wrong type", content="file")
-      }
-    None => @json.inspect("not found", content="not found")
+  guard decoded_archive.find("test.txt") is Some(extracted_m) else {
+    fail("Member not found")
   }
+  guard extracted_m.kind() is File(file) else { fail("Expected file kind") }
+  let decompressed = file.to_bytes()
+  assert_eq(decompressed, original_data)
 }
 
 ///|
