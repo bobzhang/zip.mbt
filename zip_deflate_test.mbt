@@ -22,7 +22,7 @@ test "inflate_uncompressed_block" {
 /// Deflate compression tests
 test "file_deflate_of_bytes_basic" {
   let data = b"Hello, World!"
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   @json.inspect(file.compression is Deflate, content=true)
   @json.inspect(file.decompressed_size, content=13)
   // With LZ77+Huffman, compressed size will be smaller than stored format
@@ -35,7 +35,7 @@ test "file_deflate_of_bytes_basic" {
 test "file_deflate_roundtrip" {
   // Test that deflate compression creates data that can be decompressed
   let original = b"Test data for deflate roundtrip!"
-  let file = @file.File::deflate_of_bytes(original, 0, original.length(), None)
+  let file = @file.File::deflate_of_bytes(original, 0, original.length())
   // Decompress and verify
   let decompressed = file.to_bytes()
   @json.inspect(
@@ -51,7 +51,7 @@ test "file_deflate_roundtrip" {
 ///|
 test "file_deflate_empty_data" {
   let data = b""
-  let file = @file.File::deflate_of_bytes(data, 0, 0, None)
+  let file = @file.File::deflate_of_bytes(data, 0, 0)
   @json.inspect(file.decompressed_size, content=0)
   // Empty deflate with LZ77+Huffman: block header + EOB symbol
   // Should be very small (< 5 bytes)
@@ -62,7 +62,7 @@ test "file_deflate_empty_data" {
 ///|
 test "archive_roundtrip_deflate" {
   let data = b"Test deflate compression in ZIP"
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make("compressed.txt", File(file))
   let original = Archive::empty().add(m)
 
@@ -414,9 +414,9 @@ test "complete_zip_workflow_with_compression" {
   let text3 = b"Random data: x7f3k9m2p"
 
   // 2. Compress files
-  let file1 = @file.File::deflate_of_bytes(text1, 0, text1.length(), None)
-  let file2 = @file.File::deflate_of_bytes(text2, 0, text2.length(), None)
-  let file3 = @file.File::deflate_of_bytes(text3, 0, text3.length(), None)
+  let file1 = @file.File::deflate_of_bytes(text1, 0, text1.length())
+  let file2 = @file.File::deflate_of_bytes(text2, 0, text2.length())
+  let file3 = @file.File::deflate_of_bytes(text3, 0, text3.length())
 
   // 3. Create members
   let m1 = @member.make("doc.txt", File(file1))
@@ -624,7 +624,7 @@ test "dynamic_vs_fixed" {
 test "compression_level_fast_integration" {
   // Fast level should compress and decompress correctly
   let data = b"AAAABBBBCCCCDDDDEEEEFFFFGGGG" // 28 bytes
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   // Decompress and verify
   let decompressed = @deflate.inflate(
     file.compressed_bytes,
@@ -651,7 +651,7 @@ test "compression_level_large_data_integration" {
   let data_bytes = Bytes::from_fixedarray(
     FixedArray::from_iter(data[0:].iter()),
   )
-  let file = @file.File::deflate_of_bytes(data_bytes, 0, 300, None)
+  let file = @file.File::deflate_of_bytes(data_bytes, 0, 300)
   // Decompress and verify  
   let decompressed = @deflate.inflate(
     file.compressed_bytes,
@@ -674,7 +674,7 @@ test "compression_level_large_data_integration" {
 test "compression_with_lz77_matches" {
   // Repetitive data should compress well with LZ77 + Huffman
   let data = b"The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   // Should achieve good compression ratio
   @json.inspect(file.compressed_size < data.length(), content=true)
   // Verify decompression
@@ -715,7 +715,7 @@ test "deflate_api_basic" {
 /// Test file to_bytes_no_crc_check
 test "coverage_no_crc_check" {
   let data = b"No CRC check"
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let (dec, crc) = file.to_bytes_no_crc_check()
   @json.inspect((dec == data, crc == file.decompressed_crc32()), content=[
     true, true,
@@ -730,7 +730,7 @@ test "coverage_large_data_dynamic" {
     buf[i] = (65 + i.mod(26)).to_byte()
   }
   let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let dec = file.to_bytes()
   @json.inspect((dec.length(), dec == data), content=[300, true])
 }

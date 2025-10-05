@@ -207,7 +207,7 @@ test "file_compressed_bytes_to_bytes" {
 /// Test file accessor methods
 test "coverage_file_accessors" {
   let data = b"Accessor test"
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let _c = file.compressed_bytes()
   let _crc = file.decompressed_crc32()
   let _v = file.version_needed_to_extract()
@@ -219,7 +219,7 @@ test "coverage_file_accessors" {
 test "coverage_member_early_mtime" {
   let early = @types.dos_epoch.0 - 86400 // One day before DOS epoch
   let data = b"X"
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make(
     "test.txt",
     File(file),
@@ -233,7 +233,7 @@ test "coverage_member_early_mtime" {
 /// Test member format_long with empty file
 test "coverage_member_empty_format" {
   let data = b""
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make("empty.txt", File(file))
   @json.inspect(m.format_long().contains("0%"), content=true)
 }

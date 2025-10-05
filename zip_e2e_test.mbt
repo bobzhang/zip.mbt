@@ -67,12 +67,7 @@ test "e2e_single_file_roundtrip" {
   let orig_len = original_data.length()
 
   // Step 1: Compress with DEFLATE
-  let compressed_file = @file.File::deflate_of_bytes(
-    original_data,
-    0,
-    orig_len,
-    None,
-  )
+  let compressed_file = @file.File::deflate_of_bytes(original_data, 0, orig_len)
 
   // Step 2: Create a member
   let m = @member.make(
@@ -111,43 +106,23 @@ test "e2e_single_file_roundtrip" {
 
 ///|
 test "e2e_multiple_files_with_compression_levels" {
-  // Helper function to repeat bytes
-  fn repeat_bytes(data : Bytes, times : Int) -> Bytes {
-    let arr : Array[Byte] = []
-    for j = 0; j < times; j = j + 1 {
-      for i = 0; i < data.length(); i = i + 1 {
-        arr.push(data[i])
-      }
-    }
-    Bytes::from_array(arr)
-  }
 
   // Test data with different characteristics
-  let text_data = repeat_bytes(
-    b"The quick brown fox jumps over the lazy dog. ", 10,
-  )
-  let repetitive_data = repeat_bytes(b"AAAAAAAAAA", 100)
-  let mixed_data = repeat_bytes(b"Test123!@#$%^&*()_+-=[]{}|;:',.<>?/~`", 20)
+  let text_data = "The quick brown fox jumps over the lazy dog. ".repeat(10)
+    |> @encoding/utf8.encode
+  // FIXME(upstream): add Bytes::repeat
+  let repetitive_data = "AAAAAAAAAA".repeat(100) |> @encoding/utf8.encode
+  let mixed_data = "Test123!@#$%^&*()_+-=[]{}|;:',.<>?/~`".repeat(20)
+    |> @encoding/utf8.encode
 
   // Create files with different compression levels  
-  let file1 = @file.File::deflate_of_bytes(
-    text_data,
-    0,
-    text_data.length(),
-    None, // Use default level
-  )
+  let file1 = @file.File::deflate_of_bytes(text_data, 0, text_data.length())
   let file2 = @file.File::deflate_of_bytes(
     repetitive_data,
     0,
     repetitive_data.length(),
-    None,
   )
-  let file3 = @file.File::deflate_of_bytes(
-    mixed_data,
-    0,
-    mixed_data.length(),
-    None,
-  )
+  let file3 = @file.File::deflate_of_bytes(mixed_data, 0, mixed_data.length())
 
   // Create members
   let m1 = @member.make("text.txt", File(file1), mode=@types.FileMode(0o644))
@@ -211,19 +186,9 @@ test "e2e_directory_structure_with_files" {
   let code_len = code.length()
 
   // Compress files
-  let readme_file = @file.File::deflate_of_bytes(
-    readme,
-    0,
-    readme.length(),
-    None,
-  )
-  let config_file = @file.File::deflate_of_bytes(
-    config,
-    0,
-    config.length(),
-    None,
-  )
-  let code_file = @file.File::deflate_of_bytes(code, 0, code.length(), None)
+  let readme_file = @file.File::deflate_of_bytes(readme, 0, readme.length())
+  let config_file = @file.File::deflate_of_bytes(config, 0, config.length())
+  let code_file = @file.File::deflate_of_bytes(code, 0, code.length())
 
   // Create directory and file members
   let root_dir = @member.make("project/", Dir, mode=@types.FileMode(0o755))
@@ -320,7 +285,6 @@ test "e2e_large_file_compression" {
     large_data,
     0,
     large_data.length(),
-    None,
   )
 
   // Verify compression ratio
@@ -381,7 +345,7 @@ test "e2e_stored_vs_deflate_comparison" {
   )
 
   // Create deflated file
-  let deflated_file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let deflated_file = @file.File::deflate_of_bytes(data, 0, data.length())
   let deflated_m = @member.make(
     "deflated.bin",
     File(deflated_file),
@@ -417,7 +381,7 @@ test "e2e_stored_vs_deflate_comparison" {
 test "e2e_empty_file_handling" {
   // Test with an empty file
   let empty_data = b""
-  let empty_file = @file.File::deflate_of_bytes(empty_data, 0, 0, None)
+  let empty_file = @file.File::deflate_of_bytes(empty_data, 0, 0)
   let m = @member.make(
     "empty.txt",
     File(empty_file),
@@ -459,7 +423,6 @@ test "e2e_binary_data_roundtrip" {
     binary_data,
     0,
     binary_data.length(),
-    None,
   )
   let m = @member.make(
     "binary.bin",
@@ -490,7 +453,7 @@ test "e2e_archive_iteration" {
   let mut archive = Archive::empty()
   for entry in files {
     let (name, data) = entry
-    let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+    let file = @file.File::deflate_of_bytes(data, 0, data.length())
     let m = @member.make(name, File(file), mode=@types.FileMode(0o644))
     archive = archive.add(m)
   }
@@ -515,7 +478,7 @@ test "e2e_unicode_filename_support" {
   // Test with UTF-8 filenames (if supported)
   let data = b"Unicode filename test"
   let data_len = data.length()
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make(
     "test_文件.txt", // Chinese characters
     File(file),
@@ -642,7 +605,7 @@ test "e2e_multi_file_deterministic" {
 test "e2e_deflate_compatibility" {
   // Test deflate compression creates valid streams
   let original = b"AAAAAAAAAA" // Highly compressible (RLE pattern)
-  let file = @file.File::deflate_of_bytes(original, 0, original.length(), None)
+  let file = @file.File::deflate_of_bytes(original, 0, original.length())
 
   // Verify it's marked as deflate
   @json.inspect(file.compression() is Deflate, content=true)

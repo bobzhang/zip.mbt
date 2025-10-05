@@ -204,7 +204,7 @@ pub fn File::deflate_of_bytes(
   bytes : Bytes,
   start : Int,
   len : Int,
-  level : @deflate.DeflateLevel?,
+  level? : @deflate.DeflateLevel,
 ) -> File raise {
   // Determine compression parameters based on level
   let (good_match, max_chain, use_dynamic) = match level {

@@ -267,7 +267,7 @@ test "coverage_archive_to_array" {
   let d = @member.make("dir/", Dir)
   let a = a.add(d)
   let data = b"F"
-  let file = @file.File::deflate_of_bytes(data, 0, data.length(), None)
+  let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let f = @member.make("dir/f.txt", File(file))
   let a = a.add(f)
   @json.inspect(a.to_array().length(), content=2)
@@ -279,8 +279,8 @@ test "coverage_archive_first" {
   let a = Archive::empty()
   let d1 = b"A"
   let d2 = b"B"
-  let f1 = @file.File::deflate_of_bytes(d1, 0, d1.length(), None)
-  let f2 = @file.File::deflate_of_bytes(d2, 0, d2.length(), None)
+  let f1 = @file.File::deflate_of_bytes(d1, 0, d1.length())
+  let f2 = @file.File::deflate_of_bytes(d2, 0, d2.length())
   let m1 = @member.make("a.txt", File(f1))
   let m2 = @member.make("z.txt", File(f2))
   let a = a.add(m1).add(m2)
