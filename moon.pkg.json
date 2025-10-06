@@ -8,7 +8,6 @@
   ],
   "test-import": [
     "bobzhang/zip/deflate",
-    "bobzhang/zip/buffer",
      "bobzhang/zip/hexdump",
      "bobzhang/zip/checksum/crc32",
      "bobzhang/zip/checksum/adler32"
