@@ -181,7 +181,7 @@ test "deflate_fixed_longer_text" {
 ///|
 test "deflate_fixed_all_same" {
   // Highly compressible: all same byte
-  let buf = @buffer.ByteBuf::new(size_hint=100)
+  let buf = @buffer.new(size_hint=100)
   for i = 0; i < 100; i = i + 1 {
     buf.write_byte(b'a')
   }

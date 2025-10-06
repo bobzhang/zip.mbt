@@ -57,8 +57,8 @@ Where:
 test {
   let data = b"Hello, World!\x00\x01\x02"
 
-   // Dump entire buffer
-   let output = @hexdump.hex_dump(data)
+  // Dump entire buffer
+  let output = @hexdump.hex_dump(data)
   @json.inspect(output.contains("48 65 6c 6c 6f"), content=true)
   @json.inspect(output.contains("Hello, World!"), content=true)
 }

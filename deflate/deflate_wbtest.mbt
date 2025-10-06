@@ -77,7 +77,7 @@ test "deflate_fixed_with_repetition" {
 
 ///|
 test "deflate_fixed_all_same" {
-  let buf = @buffer.ByteBuf::new(size_hint=100)
+  let buf = @buffer.new(size_hint=100)
   for i = 0; i < 100; i = i + 1 {
     buf.write_byte(b'a')
   }
@@ -131,7 +131,7 @@ test "deflate_dynamic_with_repetition" {
 
 ///|
 test "deflate_dynamic_highly_compressible" {
-  let buf = @buffer.ByteBuf::new(size_hint=200)
+  let buf = @buffer.new(size_hint=200)
   for i = 0; i < 200; i = i + 1 {
     buf.write_byte(b'a') // 'a'
   }
