@@ -79,6 +79,18 @@ pub fn ByteBuf::write_bytes(
 }
 
 ///|
+pub fn ByteBuf::write_bytesview(self : ByteBuf, src : BytesView) -> Unit {
+  let new_len = self.length + src.length()
+  if new_len > self.buffer.length() {
+    self.grow(new_len)
+  }
+  for i = 0; i < src.length(); i = i + 1 {
+    self.buffer[self.length + i] = src[i]
+  }
+  self.length = new_len
+}
+
+///|
 /// Copy bytes from earlier in the buffer (for LZ77 back-references)
 /// This handles overlapping copies correctly (needed for RLE patterns)
 pub fn ByteBuf::recopy(self : ByteBuf, start : Int, len : Int) -> Unit {

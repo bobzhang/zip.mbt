@@ -15,6 +15,7 @@ fn ByteBuf::new(size_hint~ : Int, fixed? : Bool) -> Self
 fn ByteBuf::recopy(Self, Int, Int) -> Unit
 fn ByteBuf::write_byte(Self, Byte) -> Unit
 fn ByteBuf::write_bytes(Self, Bytes, Int, Int) -> Unit
+fn ByteBuf::write_bytesview(Self, BytesView) -> Unit
 
 // Type aliases
 

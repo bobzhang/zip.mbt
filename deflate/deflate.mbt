@@ -324,8 +324,10 @@ fn read_uncompressed_block(decoder : InflateDecoder) -> Unit raise {
     fail("Corrupted deflate stream: truncated uncompressed block data")
   }
 
-  // Copy bytes directly
-  decoder.dst.write_bytes(decoder.src, decoder.src_pos, length)
+  // Copy bytes directly (use bytes view to avoid per-byte loop in our wrapper)
+  decoder.dst.write_bytesview(
+    decoder.src[decoder.src_pos:decoder.src_pos + length],
+  )
   decoder.src_pos = decoder.src_pos + length
 }
 

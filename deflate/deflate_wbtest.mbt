@@ -133,7 +133,7 @@ test "deflate_dynamic_with_repetition" {
 test "deflate_dynamic_highly_compressible" {
   let buf = @buffer.new(size_hint=200)
   for i = 0; i < 200; i = i + 1 {
-    buf.write_byte(b'a') // 'a'
+    buf.write_byte(b'a')
   }
   let data = buf.contents()
   let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 1024)

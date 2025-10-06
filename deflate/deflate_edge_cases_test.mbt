@@ -322,7 +322,7 @@ test "deflate_fixed_boundary_conditions" {
 test "deflate_dynamic_high_repetition" {
   let buf = @buffer.new(size_hint=1000)
   for i = 0; i < 250; i = i + 1 {
-    buf.write_bytes(b"test", 0, 4)
+    buf.write_bytesview(b"test"[0:4])
   }
   let data = buf.contents()
   let compressed = @deflate.deflate_dynamic(
@@ -405,13 +405,13 @@ test "rfc1951_example_hello" {
 test "deflate_long_distance_backref" {
   let buf = @buffer.new(size_hint=3000)
   // Add a pattern at the start
-  buf.write_bytes(b"pattern", 0, 7)
+  buf.write_bytesview(b"pattern"[0:7])
   // Add 2000 bytes of different data
   for i = 0; i < 2000; i = i + 1 {
     buf.write_byte((i % 26 + 65).to_byte()) // A-Z
   }
   // Repeat the pattern (distance > 2000)
-  buf.write_bytes(b"pattern", 0, 7)
+  buf.write_bytesview(b"pattern"[0:7])
   let data = buf.contents()
   let compressed = @deflate.deflate_dynamic(
     data,
