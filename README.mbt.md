@@ -213,7 +213,7 @@ test "error_handling_example" {
 ///|
 test "direct_deflate_usage" {
   // Create data to compress
-  let buf = @buffer.ByteBuf::new(320)
+  let buf = @buffer.ByteBuf::new(size_hint=320)
   for i = 0; i < 20; i = i + 1 {
     buf.write_bytes(b"Hello, DEFLATE! ", 0, 16)
   }

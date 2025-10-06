@@ -166,8 +166,8 @@ fn InflateDecoder::new(
 ) -> InflateDecoder {
   let src_max = start + len - 1
   let dst = match decompressed_size {
-    Some(size) => @buffer.ByteBuf::new(size, fixed=true)
-    None => @buffer.ByteBuf::new(len * 3)
+    Some(size) => @buffer.ByteBuf::new(size_hint=size, fixed=true)
+    None => @buffer.ByteBuf::new(size_hint=len * 3)
   }
   {
     src,
@@ -934,7 +934,7 @@ pub fn deflate_fixed(
   max_chain : Int,
 ) -> Bytes {
   if len == 0 {
-    let output = @buffer.ByteBuf::new(10)
+    let output = @buffer.ByteBuf::new(size_hint=10)
     let writer = @bitstream.BitWriter::new(output)
     let header = if is_final { 0b011 } else { 0b010 }
     writer.write_bits(header, 3)
@@ -946,7 +946,7 @@ pub fn deflate_fixed(
   }
   let hash_head = Array::make(@lz77.hash_size, @lz77.no_pos)
   let hash_prev = Array::make(@lz77.window_size, 0)
-  let output = @buffer.ByteBuf::new(len * 2)
+  let output = @buffer.ByteBuf::new(size_hint=len * 2)
   let writer = @bitstream.BitWriter::new(output)
   let header = if is_final { 0b011 } else { 0b010 }
   writer.write_bits(header, 3)
@@ -1048,7 +1048,7 @@ pub fn deflate_dynamic(
   max_chain : Int,
 ) -> Bytes {
   if len == 0 {
-    let output = @buffer.ByteBuf::new(10)
+    let output = @buffer.ByteBuf::new(size_hint=10)
     let writer = @bitstream.BitWriter::new(output)
     let header = if is_final { 0b011 } else { 0b010 }
     writer.write_bits(header, 3)
@@ -1191,7 +1191,7 @@ pub fn deflate_dynamic(
   let codelen_encoder = build_canonical_huffman(codelen_lengths, 18)
 
   // Step 5: Write dynamic block
-  let output = @buffer.ByteBuf::new(len * 2)
+  let output = @buffer.ByteBuf::new(size_hint=len * 2)
   let writer = @bitstream.BitWriter::new(output)
   let header = if is_final { 0b101 } else { 0b100 }
   writer.write_bits(header, 3)
@@ -1314,7 +1314,7 @@ pub fn zlib_compress(
     Some(DeflateLevel::Default) | None => (8, 1024, 2)
     Some(DeflateLevel::Best) => (32, 4096, 3)
   }
-  let output = ByteBuf::new(len + 100)
+  let output = @buffer.ByteBuf::new(size_hint=len + 100)
 
   // Write CMF (Compression Method and Flags)
   // Bits 0-3: CM (compression method) = 8 for deflate
