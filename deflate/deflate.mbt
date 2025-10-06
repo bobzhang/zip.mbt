@@ -261,7 +261,7 @@ fn read_block_symbols(
     let sym = decoder.read_symbol(litlen_decoder)
     if sym < litlen_end_of_block_sym {
       // Literal byte
-      decoder.dst.add_byte(sym)
+      decoder.dst.write_byte(sym.to_byte())
     } else if sym == litlen_end_of_block_sym {
       // End of block
       return
@@ -325,7 +325,7 @@ fn read_uncompressed_block(decoder : InflateDecoder) -> Unit raise {
   }
 
   // Copy bytes directly
-  decoder.dst.add_bytes(decoder.src, decoder.src_pos, length)
+  decoder.dst.write_bytes(decoder.src, decoder.src_pos, length)
   decoder.src_pos = decoder.src_pos + length
 }
 
@@ -1320,7 +1320,7 @@ pub fn zlib_compress(
   // Bits 0-3: CM (compression method) = 8 for deflate
   // Bits 4-7: CINFO (window size) = 7 for 32KB window
   let cmf = (7 << 4) | 8 // 0x78 = 120
-  output.add_byte(cmf)
+  output.write_byte(cmf.to_byte())
 
   // Write FLG (Flags)
   // Bits 0-4: FCHECK (check bits to make (CMF*256 + FLG) % 31 == 0)
@@ -1330,12 +1330,12 @@ pub fn zlib_compress(
   let header = (cmf << 8) | flg_base
   let fcheck = (31 - header.mod(31)).mod(31)
   let flg = flg_base | fcheck
-  output.add_byte(flg)
+  output.write_byte(flg.to_byte())
 
   // Write deflate compressed data
   let compressed = deflate_fixed(bytes, start, len, true, good_match, max_chain)
   for i = 0; i < compressed.length(); i = i + 1 {
-    output.add_byte(compressed[i].to_int())
+    output.write_byte(compressed[i])
   }
 
   // Compute Adler-32 checksum of uncompressed data
@@ -1343,10 +1343,10 @@ pub fn zlib_compress(
 
   // Write Adler-32 checksum (big-endian, 4 bytes)
   let a32 = adler.reinterpret_as_int()
-  output.add_byte((a32 >> 24) & 0xFF)
-  output.add_byte((a32 >> 16) & 0xFF)
-  output.add_byte((a32 >> 8) & 0xFF)
-  output.add_byte(a32 & 0xFF)
+  output.write_byte(((a32 >> 24) & 0xFF).to_byte())
+  output.write_byte(((a32 >> 16) & 0xFF).to_byte())
+  output.write_byte(((a32 >> 8) & 0xFF).to_byte())
+  output.write_byte((a32 & 0xFF).to_byte())
   (adler, output.contents())
 }
 

@@ -25,7 +25,7 @@ pub fn BitWriter::write_bits(
   self.bits_len = self.bits_len + count
   // Flush complete bytes
   while self.bits_len >= 8 {
-    self.dst.add_byte(self.bits & 0xFF)
+    self.dst.write_byte((self.bits & 0xFF).to_byte())
     self.bits = self.bits >> 8
     self.bits_len = self.bits_len - 8
   }
@@ -35,7 +35,7 @@ pub fn BitWriter::write_bits(
 /// Flush any remaining bits to output (pad with zeros)
 pub fn BitWriter::flush(self : BitWriter) -> Unit {
   if self.bits_len > 0 {
-    self.dst.add_byte(self.bits & 0xFF)
+    self.dst.write_byte((self.bits & 0xFF).to_byte())
     self.bits = 0
     self.bits_len = 0
   }
@@ -56,7 +56,7 @@ pub fn BitWriter::write_byte(self : BitWriter, byte : Int) -> Unit {
   if self.bits_len != 0 {
     abort("BitWriter::write_byte called when not byte-aligned")
   }
-  self.dst.add_byte(byte)
+  self.dst.write_byte(byte.to_byte())
 }
 
 ///|
@@ -65,6 +65,6 @@ pub fn BitWriter::write_uint16_le(self : BitWriter, value : Int) -> Unit {
   if self.bits_len != 0 {
     abort("BitWriter::write_uint16_le called when not byte-aligned")
   }
-  self.dst.add_byte(value & 0xFF)
-  self.dst.add_byte((value >> 8) & 0xFF)
+  self.dst.write_byte((value & 0xFF).to_byte())
+  self.dst.write_byte(((value >> 8) & 0xFF).to_byte())
 }

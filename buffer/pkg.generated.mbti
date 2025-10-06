@@ -7,12 +7,12 @@ package "bobzhang/zip/buffer"
 
 // Types and methods
 type ByteBuf
-fn ByteBuf::add_byte(Self, Int) -> Unit
-fn ByteBuf::add_bytes(Self, Bytes, Int, Int) -> Unit
 fn ByteBuf::contents(Self) -> Bytes
 fn ByteBuf::length(Self) -> Int
 fn ByteBuf::new(Int, Bool) -> Self
 fn ByteBuf::recopy(Self, Int, Int) -> Unit
+fn ByteBuf::write_byte(Self, Byte) -> Unit
+fn ByteBuf::write_bytes(Self, Bytes, Int, Int) -> Unit
 
 // Type aliases
 

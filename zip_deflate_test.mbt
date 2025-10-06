@@ -183,7 +183,7 @@ test "deflate_fixed_all_same" {
   // Highly compressible: all same byte
   let buf = @buffer.ByteBuf::new(100, false)
   for i = 0; i < 100; i = i + 1 {
-    buf.add_byte(0x61) // 'a'
+    buf.write_byte(b'a')
   }
   let data = buf.contents()
   let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 4096)

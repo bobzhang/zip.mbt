@@ -250,7 +250,7 @@ test "deflate_stored_small" {
 test "deflate_stored_max_block" {
   let buf = @buffer.ByteBuf::new(65535, false)
   for i = 0; i < 65535; i = i + 1 {
-    buf.add_byte(i % 256)
+    buf.write_byte((i % 256).to_byte())
   }
   let data = buf.contents()
   let compressed = @deflate.deflate_stored(data, 0, 65535)
@@ -322,7 +322,7 @@ test "deflate_fixed_boundary_conditions" {
 test "deflate_dynamic_high_repetition" {
   let buf = @buffer.ByteBuf::new(1000, false)
   for i = 0; i < 250; i = i + 1 {
-    buf.add_bytes(b"test", 0, 4)
+    buf.write_bytes(b"test", 0, 4)
   }
   let data = buf.contents()
   let compressed = @deflate.deflate_dynamic(
@@ -405,13 +405,13 @@ test "rfc1951_example_hello" {
 test "deflate_long_distance_backref" {
   let buf = @buffer.ByteBuf::new(3000, false)
   // Add a pattern at the start
-  buf.add_bytes(b"pattern", 0, 7)
+  buf.write_bytes(b"pattern", 0, 7)
   // Add 2000 bytes of different data
   for i = 0; i < 2000; i = i + 1 {
-    buf.add_byte(i % 26 + 65) // A-Z
+    buf.write_byte((i % 26 + 65).to_byte()) // A-Z
   }
   // Repeat the pattern (distance > 2000)
-  buf.add_bytes(b"pattern", 0, 7)
+  buf.write_bytes(b"pattern", 0, 7)
   let data = buf.contents()
   let compressed = @deflate.deflate_dynamic(
     data,
@@ -435,7 +435,7 @@ test "deflate_long_distance_backref" {
 test "deflate_all_byte_values" {
   let buf = @buffer.ByteBuf::new(256, false)
   for i = 0; i < 256; i = i + 1 {
-    buf.add_byte(i)
+    buf.write_byte(i.to_byte())
   }
   let data = buf.contents()
   let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 128)
@@ -462,7 +462,7 @@ test "deflate_max_match_length" {
   let buf = @buffer.ByteBuf::new(600, false)
   // Create a repeating pattern longer than max match
   for i = 0; i < 300; i = i + 1 {
-    buf.add_byte(65) // 'A'
+    buf.write_byte(b'A')
   }
   let data = buf.contents()
   let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 128)

@@ -48,18 +48,18 @@ fn ByteBuf::grow(self : ByteBuf, ensure : Int) -> Unit {
 
 ///|
 /// Add a single byte to the buffer
-pub fn ByteBuf::add_byte(self : ByteBuf, byte : Int) -> Unit {
+pub fn ByteBuf::write_byte(self : ByteBuf, byte : Byte) -> Unit {
   let new_len = self.length + 1
   if new_len > self.buffer.length() {
     self.grow(new_len)
   }
-  self.buffer[self.length] = byte.to_byte()
+  self.buffer[self.length] = byte
   self.length = new_len
 }
 
 ///|
 /// Add bytes from a Bytes object
-pub fn ByteBuf::add_bytes(
+pub fn ByteBuf::write_bytes(
   self : ByteBuf,
   src : Bytes,
   start : Int,
