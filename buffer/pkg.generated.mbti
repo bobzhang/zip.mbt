@@ -10,8 +10,7 @@ type ByteBuf
 fn ByteBuf::contents(Self) -> Bytes
 fn ByteBuf::length(Self) -> Int
 #as_free_fn
-#callsite(migration(fixed, allow_positional=true))
-fn ByteBuf::new(Int, fixed~ : Bool) -> Self
+fn ByteBuf::new(Int, fixed? : Bool) -> Self
 fn ByteBuf::recopy(Self, Int, Int) -> Unit
 fn ByteBuf::write_byte(Self, Byte) -> Unit
 fn ByteBuf::write_bytes(Self, Bytes, Int, Int) -> Unit

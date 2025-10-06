@@ -56,7 +56,7 @@ Get the buffer contents as immutable `Bytes`.
 ```moonbit
 ///|
 test {
-  let buf = ByteBuf::new(100, fixed=false) // Initial capacity 100, growable
+  let buf = ByteBuf::new(100) // Initial capacity 100, growable
   buf.write_byte(0x50)
   buf.write_byte(0x4B)
   let data = b"test data!"

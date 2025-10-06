@@ -10,9 +10,8 @@ struct ByteBuf {
 
 ///|
 /// Create a new byte buffer
-#callsite(migration(fixed, allow_positional=true))
 #as_free_fn
-pub fn ByteBuf::new(size : Int, fixed~ : Bool) -> ByteBuf {
+pub fn ByteBuf::new(size : Int, fixed? : Bool = false) -> ByteBuf {
   let actual_size = if size == 0 && not(fixed) { 1024 } else { size }
   { buffer: Array::make(actual_size, b'\x00'), length: 0, fixed }
 }
