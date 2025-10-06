@@ -142,7 +142,7 @@ test {
   let data = b"Hello, DEFLATE compression!"
 
   // Compress with default settings
-  let compressed = deflate_dynamic(
+  let compressed = @deflate.deflate_dynamic(
     data,
     0,
     data.length(),
@@ -152,7 +152,7 @@ test {
   )
 
   // Decompress
-  let decompressed = inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
   @json.inspect(decompressed.length(), content=27)
 }
 ```

@@ -59,7 +59,7 @@ test "create_zip_with_deflate" {
   let m2 = @member.make("config.json", File(config_file))
 
   // Build archive
-  let archive = Archive::empty().add(m1).add(m2)
+  let archive = @zip.Archive::empty().add(m1).add(m2)
 
   // Encode to bytes
   let zip_bytes = archive.to_bytes()
@@ -85,13 +85,13 @@ test "zip_roundtrip_with_compression" {
     level=@deflate.DeflateLevel::Best,
   )
   let m = @member.make("document.txt", File(file))
-  let archive = Archive::empty().add(m)
+  let archive = @zip.Archive::empty().add(m)
 
   // Encode to ZIP bytes
   let zip_bytes = archive.to_bytes()
 
   // Decode from ZIP bytes
-  let decoded = Archive::of_bytes(zip_bytes)
+  let decoded = @zip.Archive::of_bytes(zip_bytes)
 
   // Extract and verify
   guard decoded.find("document.txt") is Some(found) else {
@@ -124,14 +124,14 @@ test "zip_with_multiple_files" {
   let file3 = @file.File::deflate_of_bytes(readme_md, 0, readme_md.length())
 
   // Build archive with all files
-  let archive = Archive::empty()
+  let archive = @zip.Archive::empty()
     .add(@member.make("src/main.mbt", File(file1)))
     .add(@member.make("src/utils.mbt", File(file2)))
     .add(@member.make("README.md", File(file3)))
 
   // Encode and decode
   let zip_bytes = archive.to_bytes()
-  let decoded = Archive::of_bytes(zip_bytes)
+  let decoded = @zip.Archive::of_bytes(zip_bytes)
 
   // Verify all files present
   @json.inspect(decoded.find("src/main.mbt").is_empty(), content=false)
@@ -191,11 +191,11 @@ test "error_handling_example" {
   let data = b"test data"
   let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make("test.txt", File(file))
-  let archive = Archive::empty().add(m)
+  let archive = @zip.Archive::empty().add(m)
   let zip_bytes = archive.to_bytes()
 
   // Decode and extract
-  let decoded = Archive::of_bytes(zip_bytes)
+  let decoded = @zip.Archive::of_bytes(zip_bytes)
   guard decoded.find("test.txt") is Some(found) else {
     fail("File should exist")
   }

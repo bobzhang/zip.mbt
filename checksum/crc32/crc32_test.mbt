@@ -24,21 +24,21 @@ test "crc32_incremental" {
     .update_bytes(data, 0, 5) // "hello"
     .update_bytes(data, 5, 6) // " world"
     .finish()
-  let crc2 = bytes_crc32(data, 0, data.length())
+  let crc2 = @crc32.bytes_crc32(data, 0, data.length())
   @json.inspect((crc1 == crc2, crc1), content=[true, 222957957])
 }
 
 ///|
 /// Test CRC-32 check function with matching values
 test "crc32_check_success" {
-  let result = check_crc32(0x12345678, 0x12345678)
+  let result = @crc32.check_crc32(0x12345678, 0x12345678)
   @json.inspect(result, content={ "Ok": null })
 }
 
 ///|
 /// Test CRC-32 check function with mismatched values
 test "crc32_check_failure" {
-  let result = check_crc32(0x12345678, 0x87654321)
+  let result = @crc32.check_crc32(0x12345678, 0x87654321)
   match result {
     Ok(_) => @json.inspect("should not succeed", content="\"mismatch\"")
     Err(msg) => @json.inspect(msg.contains("mismatch"), content=true)
