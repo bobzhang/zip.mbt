@@ -3,7 +3,7 @@
 ///|
 /// Test CRC-32 of empty data
 test "crc32_empty" {
-  let crc = bytes_crc32(b"", 0, 0)
+  let crc = @crc32.bytes_crc32(b"", 0, 0)
   @json.inspect((crc, crc == 0), content=[0, true])
 }
 
@@ -11,7 +11,7 @@ test "crc32_empty" {
 /// Test CRC-32 of simple string
 test "crc32_simple" {
   let data = b"hello world"
-  let crc = bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data, 0, data.length())
   // CRC-32 of "hello world" should be 0x0d4a1185 (222957317 in decimal)
   @json.inspect(crc, content=222957957)
 }
@@ -20,7 +20,7 @@ test "crc32_simple" {
 /// Test incremental CRC-32 computation
 test "crc32_incremental" {
   let data = b"hello world"
-  let crc1 = Crc32::init()
+  let crc1 = @crc32.Crc32::init()
     .update_bytes(data, 0, 5) // "hello"
     .update_bytes(data, 5, 6) // " world"
     .finish()
@@ -48,7 +48,7 @@ test "crc32_check_failure" {
 ///|
 /// Test CRC-32 update_byte method
 test "crc32_update_byte" {
-  let mut crc = Crc32::init()
+  let mut crc = @crc32.Crc32::init()
   crc = crc.update_byte('h'.to_int())
   crc = crc.update_byte('i'.to_int())
   let result = crc.finish()
@@ -60,8 +60,8 @@ test "crc32_update_byte" {
 /// Test CRC-32 with partial data
 test "crc32_partial" {
   let data = b"hello world"
-  let crc_hello = bytes_crc32(data, 0, 5) // Just "hello"
-  let crc_world = bytes_crc32(data, 6, 5) // Just "world"
+  let crc_hello = @crc32.bytes_crc32(data, 0, 5) // Just "hello"
+  let crc_world = @crc32.bytes_crc32(data, 6, 5) // Just "world"
   // These should be different
   @json.inspect(crc_hello != crc_world, content=true)
 }

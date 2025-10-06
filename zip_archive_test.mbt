@@ -3,7 +3,7 @@
 ///|
 /// Archive tests
 test "archive_empty" {
-  let archive = Archive::empty()
+  let archive = @zip.Archive::empty()
   @json.inspect((archive.is_empty(), archive.member_count()), content=[true, 0])
 }
 
@@ -13,7 +13,7 @@ test "archive_add_and_find" {
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m1 = @member.make("file1.txt", File(file))
   let m2 = @member.make("file2.txt", File(file))
-  let archive = Archive::empty().add(m1).add(m2)
+  let archive = @zip.Archive::empty().add(m1).add(m2)
   @json.inspect(
     (
       archive.is_empty(),
@@ -30,7 +30,7 @@ test "archive_find_member" {
   let data = b"hello"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("test.txt", File(file))
-  let archive = Archive::empty().add(m)
+  let archive = @zip.Archive::empty().add(m)
   guard archive.find("test.txt") is Some(found) else {
     fail("Member not found")
   }
@@ -43,7 +43,7 @@ test "archive_remove" {
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m1 = @member.make("file1.txt", File(file))
   let m2 = @member.make("file2.txt", File(file))
-  let archive = Archive::empty().add(m1).add(m2).remove("file1.txt")
+  let archive = @zip.Archive::empty().add(m1).add(m2).remove("file1.txt")
   @json.inspect(
     (archive.member_count(), archive.mem("file1.txt"), archive.mem("file2.txt")),
     content=[1, false, true],
@@ -58,7 +58,7 @@ test "archive_replace_member" {
   let file2 = @file.File::stored_of_bytes(data2, 0, data2.length())
   let m1 = @member.make("test.txt", File(file1))
   let m2 = @member.make("test.txt", File(file2))
-  let archive = Archive::empty().add(m1).add(m2)
+  let archive = @zip.Archive::empty().add(m1).add(m2)
 
   // Should have only one member (replaced)
   @json.inspect(archive.member_count(), content=1)
@@ -76,7 +76,7 @@ test "archive_fold" {
   let m1 = @member.make("b.txt", File(file))
   let m2 = @member.make("a.txt", File(file))
   let m3 = @member.make("c.txt", File(file))
-  let archive = Archive::empty().add(m1).add(m2).add(m3)
+  let archive = @zip.Archive::empty().add(m1).add(m2).add(m3)
   // Fold should process in lexicographic order
   let paths = archive.fold(
     fn(m, acc) {
@@ -96,7 +96,7 @@ test "archive_encoding_size" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("test.txt", File(file))
-  let archive = Archive::empty().add(m)
+  let archive = @zip.Archive::empty().add(m)
   let size = archive.encoding_size()
   // Local header (30) + path (8) + data (4) + central dir (46) + path (8) + EOCD (22) = 118
   @json.inspect(size, content=118)
@@ -105,9 +105,9 @@ test "archive_encoding_size" {
 ///|
 /// ZIP decoding tests
 test "archive_of_bytes_empty" {
-  let archive = Archive::empty()
+  let archive = @zip.Archive::empty()
   let bytes = archive.to_bytes()
-  let decoded = Archive::of_bytes(bytes)
+  let decoded = @zip.Archive::of_bytes(bytes)
   @json.inspect((decoded.is_empty(), decoded.member_count()), content=[true, 0])
 }
 
@@ -116,13 +116,13 @@ test "archive_roundtrip_single_file" {
   let data = b"Hello, ZIP world!"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("hello.txt", File(file))
-  let original = Archive::empty().add(m)
+  let original = @zip.Archive::empty().add(m)
 
   // Encode
   let bytes = original.to_bytes()
 
   // Decode
-  let decoded = Archive::of_bytes(bytes)
+  let decoded = @zip.Archive::of_bytes(bytes)
   @json.inspect(decoded, content={
     "length": 1,
     "members": [["hello.txt", "File"]],
@@ -146,13 +146,13 @@ test "archive_roundtrip_multiple_files" {
   let m1 = @member.make("docs/file1.txt", File(file1))
   let m2 = @member.make("docs/file2.txt", File(file2))
   let m3 = @member.make("readme.txt", File(file3))
-  let original = Archive::empty().add(m1).add(m2).add(m3)
+  let original = @zip.Archive::empty().add(m1).add(m2).add(m3)
 
   // Encode
   let bytes = original.to_bytes()
 
   // Decode
-  let decoded = Archive::of_bytes(bytes)
+  let decoded = @zip.Archive::of_bytes(bytes)
   @json.inspect(decoded, content={
     "length": 3,
     "members": [
@@ -169,13 +169,13 @@ test "archive_roundtrip_with_directory" {
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let dir = @member.make("mydir/", Dir)
   let f = @member.make("mydir/file.txt", File(file))
-  let original = Archive::empty().add(dir).add(f)
+  let original = @zip.Archive::empty().add(dir).add(f)
 
   // Encode
   let bytes = original.to_bytes()
 
   // Decode
-  let decoded = Archive::of_bytes(bytes)
+  let decoded = @zip.Archive::of_bytes(bytes)
   @json.inspect(decoded, content={
     "length": 2,
     "members": [["mydir/", "Dir"], ["mydir/file.txt", "File"]],
@@ -188,7 +188,7 @@ test "archive_roundtrip_with_directory" {
 test "archive_of_bytes_invalid" {
   let invalid = b"This is not a ZIP file"
   try {
-    let _ = Archive::of_bytes(invalid)
+    let _ = @zip.Archive::of_bytes(invalid)
     @json.inspect("should have failed", content="error")
   } catch {
     msg => {
@@ -205,7 +205,7 @@ test "archive_to_map" {
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m1 = @member.make("a.txt", File(file))
   let m2 = @member.make("b.txt", File(file))
-  let archive = Archive::empty().add(m1).add(m2)
+  let archive = @zip.Archive::empty().add(m1).add(m2)
   let map = archive.to_map()
   @json.inspect(
     (map.contains("a.txt"), map.contains("b.txt"), map.contains("c.txt")),
@@ -218,9 +218,9 @@ test "archive_of_map_roundtrip" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("test.txt", File(file))
-  let original = Archive::empty().add(m)
+  let original = @zip.Archive::empty().add(m)
   let map = original.to_map()
-  let restored = Archive::of_map(map)
+  let restored = @zip.Archive::of_map(map)
   @json.inspect((restored.member_count(), restored.mem("test.txt")), content=[
     1, true,
   ])
@@ -231,7 +231,7 @@ test "archive_of_map_roundtrip" {
 test "coverage_archive_no_magic" {
   let data = b"Not a ZIP file"
   try {
-    let _ = Archive::of_bytes(data)
+    let _ = @zip.Archive::of_bytes(data)
     @json.inspect("should fail", content="error")
   } catch {
     msg => {
@@ -246,7 +246,7 @@ test "coverage_archive_no_magic" {
 test "coverage_archive_too_short" {
   let data = b"PK\x03\x04short"
   try {
-    let _ = Archive::of_bytes(data)
+    let _ = @zip.Archive::of_bytes(data)
     @json.inspect("should fail", content="error")
   } catch {
     msg => {
@@ -263,7 +263,7 @@ test "coverage_archive_too_short" {
 ///|
 /// Test archive to_array
 test "coverage_archive_to_array" {
-  let a = Archive::empty()
+  let a = @zip.Archive::empty()
   let d = @member.make("dir/", Dir)
   let a = a.add(d)
   let data = b"F"
@@ -276,7 +276,7 @@ test "coverage_archive_to_array" {
 ///|
 /// Test archive to_bytes with first parameter
 test "coverage_archive_first" {
-  let a = Archive::empty()
+  let a = @zip.Archive::empty()
   let d1 = b"A"
   let d2 = b"B"
   let f1 = @file.File::deflate_of_bytes(d1, 0, d1.length())

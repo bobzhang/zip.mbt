@@ -64,7 +64,7 @@ The lookup table is precomputed using the IEEE 802.3 polynomial: `0xEDB88320`
 ///|
 test {
   let data = b"Hello, World!"
-  let crc = bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data, 0, data.length())
   println("CRC-32: 0x\{crc.reinterpret_as_int().to_string(radix=16)}")
   @json.inspect(crc, content=3964322768)
 }

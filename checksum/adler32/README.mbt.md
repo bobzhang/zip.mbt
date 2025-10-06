@@ -66,7 +66,7 @@ result = (s2 << 16) | s1
 ///|
 test {
   let data = b"Hello, World!"
-  let adler = bytes_adler32(data, 0, data.length())
+  let adler = @adler32.bytes_adler32(data, 0, data.length())
   println("Adler-32: 0x\{adler.reinterpret_as_int().to_string(radix=16)}")
   @json.inspect(adler, content=530449514)
 }

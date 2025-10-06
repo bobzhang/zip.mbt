@@ -273,14 +273,14 @@ fn find_all_matches(data : Bytes) -> Array[(Int, Int)] {
     if pos + 4 > data.length() {
       break
     }
-    let hash_val = hash4(data, pos)
-    let backref = find_backref(
+    let hash_val = @lz77.hash4(data, pos)
+    let backref = @lz77.find_backref(
       data, hash_head, hash_prev, pos, hash_val, 0, 258, 4, 4096,
     )
     if backref > 0 {
       matches = matches + [(backref, pos)]
     }
-    insert_hash(hash_head, hash_prev, hash_val, pos)
+    @lz77.insert_hash(hash_head, hash_prev, hash_val, pos)
   }
   matches
 }

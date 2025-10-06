@@ -58,7 +58,7 @@ If there are partial bits (< 8), pads with zeros to reach a byte boundary.
 ///|
 test {
   let output = @buffer.ByteBuf::new(100)
-  let writer = BitWriter::new(output)
+  let writer = @bitstream.BitWriter::new(output)
 
   // Write a 3-bit value
   writer.write_bits(0b101, 3) // Writes: 101

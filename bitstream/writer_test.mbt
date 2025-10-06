@@ -2,7 +2,7 @@
 /// BitWriter tests
 test "bitwriter_basic" {
   let buf = @buffer.ByteBuf::new(16)
-  let writer = BitWriter::new(buf)
+  let writer = @bitstream.BitWriter::new(buf)
   // Write 3 bits: 0b101 (5)
   writer.write_bits(0b101, 3)
   // Write 5 bits: 0b11010 (26)
@@ -16,7 +16,7 @@ test "bitwriter_basic" {
 ///|
 test "bitwriter_multi_byte" {
   let buf = @buffer.ByteBuf::new(16)
-  let writer = BitWriter::new(buf)
+  let writer = @bitstream.BitWriter::new(buf)
   // Write 0xFF (8 bits)
   writer.write_bits(0xFF, 8)
   // Write 0xAB (8 bits)
@@ -39,7 +39,7 @@ test "bitwriter_multi_byte" {
 ///|
 test "bitwriter_flush_partial" {
   let buf = @buffer.ByteBuf::new(16)
-  let writer = BitWriter::new(buf)
+  let writer = @bitstream.BitWriter::new(buf)
   // Write 5 bits (incomplete byte)
   writer.write_bits(0b10101, 5)
   writer.flush()
@@ -51,7 +51,7 @@ test "bitwriter_flush_partial" {
 ///|
 test "bitwriter_align_to_byte" {
   let buf = @buffer.ByteBuf::new(16)
-  let writer = BitWriter::new(buf)
+  let writer = @bitstream.BitWriter::new(buf)
   writer.write_bits(0xFF, 8)
   writer.write_bits(0b101, 3) // 3 bits pending
   writer.align_to_byte() // Discard the 3 bits
@@ -67,7 +67,7 @@ test "bitwriter_align_to_byte" {
 ///|
 test "bitwriter_write_byte_aligned" {
   let buf = @buffer.ByteBuf::new(16)
-  let writer = BitWriter::new(buf)
+  let writer = @bitstream.BitWriter::new(buf)
   writer.write_bits(0xFF, 8)
   writer.write_byte(0x42) // Should work when aligned
   writer.write_uint16_le(0x1234)

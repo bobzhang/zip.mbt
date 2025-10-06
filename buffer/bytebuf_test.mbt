@@ -1,13 +1,13 @@
 ///|
 /// ByteBuf tests
 test "bytebuf_creation" {
-  let buf = ByteBuf::new(10)
+  let buf = @buffer.ByteBuf::new(10)
   @json.inspect(buf.length(), content=0)
 }
 
 ///|
 test "bytebuf_add_byte" {
-  let buf = ByteBuf::new(10)
+  let buf = @buffer.ByteBuf::new(10)
   buf.write_byte(0x41) // 'A'
   buf.write_byte(0x42) // 'B'
   let result = buf.contents()
@@ -18,7 +18,7 @@ test "bytebuf_add_byte" {
 
 ///|
 test "bytebuf_grow" {
-  let buf = ByteBuf::new(2)
+  let buf = @buffer.ByteBuf::new(2)
   buf.write_byte(0x41)
   buf.write_byte(0x42)
   buf.write_byte(0x43) // Should trigger grow
@@ -28,7 +28,7 @@ test "bytebuf_grow" {
 
 ///|
 test "bytebuf_recopy" {
-  let buf = ByteBuf::new(10)
+  let buf = @buffer.ByteBuf::new(10)
   buf.write_byte(0x41) // 'A'
   buf.write_byte(0x42) // 'B'
   buf.write_byte(0x43) // 'C'
@@ -51,7 +51,7 @@ test "bytebuf_recopy" {
 ///|
 /// ByteBuf recopy overlapping (RLE pattern)
 test "bytebuf_recopy_overlapping" {
-  let buf = ByteBuf::new(10)
+  let buf = @buffer.ByteBuf::new(10)
   buf.write_byte(0x41) // 'A'
   // Copy 1 byte from position 0, repeated 5 times (overlapping)
   buf.recopy(0, 5)

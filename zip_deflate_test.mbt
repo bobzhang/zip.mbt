@@ -64,13 +64,13 @@ test "archive_roundtrip_deflate" {
   let data = b"Test deflate compression in ZIP"
   let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make("compressed.txt", File(file))
-  let original = Archive::empty().add(m)
+  let original = @zip.Archive::empty().add(m)
 
   // Encode
   let bytes = original.to_bytes()
 
   // Decode and decompress
-  let decoded = Archive::of_bytes(bytes)
+  let decoded = @zip.Archive::of_bytes(bytes)
   guard decoded.find("compressed.txt") is Some(found) else {
     fail("should find compressed.txt")
   }
@@ -289,13 +289,13 @@ test "complete_zip_workflow_with_compression" {
   let m3 = @member.make("random.txt", File(file3))
 
   // 4. Build archive
-  let archive = Archive::empty().add(m1).add(m2).add(m3)
+  let archive = @zip.Archive::empty().add(m1).add(m2).add(m3)
 
   // 5. Serialize to ZIP format
   let zip_bytes = archive.to_bytes()
 
   // 6. Verify it's a valid ZIP (deserialize)
-  let decoded = Archive::of_bytes(zip_bytes)
+  let decoded = @zip.Archive::of_bytes(zip_bytes)
 
   // 7. Extract and verify each file
   guard decoded.find("doc.txt") is Some(entry) else {

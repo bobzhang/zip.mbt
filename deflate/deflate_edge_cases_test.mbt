@@ -200,7 +200,7 @@ test "deflate_level_none" {
     data,
     0,
     data.length(),
-    level=DeflateLevel::None,
+    level=@deflate.DeflateLevel::None,
   )
   let decompressed = @deflate.inflate(
     compressed,
@@ -219,7 +219,7 @@ test "deflate_level_best" {
     data,
     0,
     data.length(),
-    level=DeflateLevel::Best,
+    level=@deflate.DeflateLevel::Best,
   )
   let decompressed = @deflate.inflate(
     compressed,
@@ -272,7 +272,7 @@ test "zlib_compress_level_none" {
     data,
     0,
     data.length(),
-    level=DeflateLevel::None,
+    level=@deflate.DeflateLevel::None,
   )
   @json.inspect(adler != 0U, content=true)
   let (decompressed, _) = @deflate.zlib_decompress(
@@ -291,7 +291,7 @@ test "zlib_compress_level_best" {
     data,
     0,
     data.length(),
-    level=DeflateLevel::Best,
+    level=@deflate.DeflateLevel::Best,
   )
   @json.inspect(adler != 0U, content=true)
   let (decompressed, _) = @deflate.zlib_decompress(
