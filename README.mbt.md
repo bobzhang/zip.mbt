@@ -215,7 +215,7 @@ test "direct_deflate_usage" {
   // Create data to compress
   let buf = @buffer.new(size_hint=320)
   for i = 0; i < 20; i = i + 1 {
-  buf.write_bytesview(b"Hello, DEFLATE! "[0:16])
+    buf.write_bytesview(b"Hello, DEFLATE! "[0:16])
   }
   let original = buf.contents()
 

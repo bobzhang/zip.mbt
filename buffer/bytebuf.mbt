@@ -62,18 +62,13 @@ pub fn ByteBuf::write_byte(self : ByteBuf, byte : Byte) -> Unit {
 
 ///|
 /// Add bytes from a Bytes object
-pub fn ByteBuf::write_bytes(
-  self : ByteBuf,
-  src : Bytes,
-  start : Int,
-  len : Int,
-) -> Unit {
-  let new_len = self.length + len
+pub fn ByteBuf::write_bytes(self : ByteBuf, src : Bytes) -> Unit {
+  let new_len = self.length + src.length()
   if new_len > self.buffer.length() {
     self.grow(new_len)
   }
-  for i = 0; i < len; i = i + 1 {
-    self.buffer[self.length + i] = src[start + i]
+  for i = 0; i < src.length(); i = i + 1 {
+    self.buffer[self.length + i] = src[i]
   }
   self.length = new_len
 }

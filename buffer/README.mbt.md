@@ -60,7 +60,7 @@ test {
   buf.write_byte(0x50)
   buf.write_byte(0x4B)
   let data = b"test data!"
-  buf.write_bytes(data, 0, 10)
+  buf.write_bytesview(data[0:10])
   buf.recopy(0, 2) // Copy first 2 bytes to end
   let result = buf.contents()
   @json.inspect(result.length(), content=14)
