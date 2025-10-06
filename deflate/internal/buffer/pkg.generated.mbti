@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zip/buffer"
+package "bobzhang/zip/deflate/internal/buffer"
 
 // Values
 
