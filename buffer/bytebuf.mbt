@@ -1,6 +1,7 @@
 ///|
 /// Extensible byte buffer for decompression output
 /// Similar to OCaml's Buffer but with self-blit support for LZ77 back-references
+/// FIXME(upstream): rename to Buffer does not work global wise
 struct ByteBuf {
   mut buffer : Array[Byte]
   mut length : Int
@@ -9,7 +10,9 @@ struct ByteBuf {
 
 ///|
 /// Create a new byte buffer
-pub fn ByteBuf::new(size : Int, fixed : Bool) -> ByteBuf {
+#callsite(migration(fixed, allow_positional=true))
+#as_free_fn
+pub fn ByteBuf::new(size : Int, fixed~ : Bool) -> ByteBuf {
   let actual_size = if size == 0 && not(fixed) { 1024 } else { size }
   { buffer: Array::make(actual_size, b'\x00'), length: 0, fixed }
 }

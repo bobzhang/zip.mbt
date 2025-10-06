@@ -86,7 +86,7 @@ test "match_fwd_partial" {
 ///|
 test "match_fwd_max_limit" {
   // Create data with long repeated sequence
-  let buf = @buffer.ByteBuf::new(100, false)
+  let buf = @buffer.ByteBuf::new(100, fixed=false)
   for i = 0; i < 100; i = i + 1 {
     buf.write_byte(b'a')
   }
