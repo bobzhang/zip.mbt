@@ -1,5 +1,9 @@
 {
   "is-main": false,
+  "test-import": [
+    "bobzhang/zip/gzip",
+    "bobzhang/zip/deflate"
+  ],
   "pre-build": [
     { "input": "test1_simple.tar", "output": "embedded_test1_simple_embedded_test.mbt", "command": "node tar/tar_embed.js --input $input --name test1_simple_tar --output $output" },
     { "input": "test2_multiple.tar", "output": "embedded_test2_multiple_embedded_test.mbt", "command": "node tar/tar_embed.js --input $input --name test2_multiple_tar --output $output" },
