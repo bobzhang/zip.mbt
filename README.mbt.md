@@ -260,6 +260,28 @@ test "direct_deflate_usage" {
 
 ## Test Coverage
 
+### Cascade Example (Optional Style)
+
+You can use the cascade operator for a fluent style without relying on return values. Avoid assigning the cascade expression directly (to prevent future deprecation warnings). Wrap it in a block if you want the resulting archive value:
+
+```text
+// Build with cascades inside a block (illustrative only; not executed in docs):
+// let archive = {
+//   let a = Archive::empty()
+//   let f1 = File::stored_of_bytes(b"A", 0, 1)
+//   let f2 = File::stored_of_bytes(b"B", 0, 1)
+//   a..add(member.make("a.txt", File(f1)))
+//   a..add(member.make("b.txt", File(f2)))
+//   a
+// }
+// Side‑effect style (preferred for clarity):
+// let a2 = Archive::empty()
+// let f3 = File::stored_of_bytes(b"C", 0, 1)
+// a2..add(member.make("c.txt", File(f3)))
+```
+
+The project defaults to simple imperative style (`archive.add(m)`) for clarity and zero warnings.
+
 **168 tests** covering:
 - ZIP format encoding/decoding
 - DEFLATE compression/decompression

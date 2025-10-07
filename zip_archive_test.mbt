@@ -85,10 +85,10 @@ test "archive_fold" {
   let m2 = @member.make("a.txt", File(file))
   let m3 = @member.make("c.txt", File(file))
   let archive = @zip.Archive::empty()
-  archive.add(m1)
+  archive.add(m1) // insertion order preserved
   archive.add(m2)
   archive.add(m3)
-  // Fold should process in lexicographic order
+  // Fold now reflects insertion order (not sorted)
   let paths = archive.fold(
     fn(m, acc) {
       match acc {
@@ -98,7 +98,7 @@ test "archive_fold" {
     },
     "",
   )
-  @json.inspect(paths, content="a.txt,b.txt,c.txt")
+  @json.inspect(paths, content="b.txt,a.txt,c.txt")
 }
 
 ///|
@@ -172,9 +172,9 @@ test "archive_roundtrip_multiple_files" {
   @json.inspect(decoded, content={
     "length": 3,
     "members": [
-      ["readme.txt", "File"],
       ["docs/file1.txt", "File"],
       ["docs/file2.txt", "File"],
+      ["readme.txt", "File"],
     ],
   })
 }

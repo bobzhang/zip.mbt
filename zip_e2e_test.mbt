@@ -145,8 +145,8 @@ test "e2e_multiple_files_with_compression_levels" {
     "length": 3,
     "members": [
       ["text.txt", "File"],
+      ["repetitive.bin", "File"], // insertion order
       ["mixed.dat", "File"],
-      ["repetitive.bin", "File"],
     ],
   })
 
@@ -161,8 +161,8 @@ test "e2e_multiple_files_with_compression_levels" {
     "length": 3,
     "members": [
       ["text.txt", "File"],
-      ["mixed.dat", "File"],
       ["repetitive.bin", "File"],
+      ["mixed.dat", "File"],
     ],
   })
 

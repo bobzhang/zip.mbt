@@ -41,50 +41,21 @@ pub fn Archive::remove(self : Archive, path : Fpath) -> Unit {
 }
 
 ///|
-/// Fold over all members in lexicographic path order
+/// Fold over members in insertion order (map iteration order)
 pub fn[T] Archive::fold(self : Archive, f : (Member, T) -> T, init : T) -> T {
-  // Collect keys and sort lexicographically to preserve previous semantics
-  let keys : Array[Fpath] = []
-  for k, _ in self.members {
-    keys.push(k)
-  }
-  // Simple insertion sort (archives are usually small)
-  for i = 1; i < keys.length(); i = i + 1 {
-    let key = keys[i]
-    let mut j = i - 1
-    while j >= 0 && keys[j].to_string() > key.to_string() {
-      keys[j + 1] = keys[j]
-      j = j - 1
-    }
-    keys[j + 1] = key
-  }
   let mut acc = init
-  for k in keys {
-    acc = f(self.members[k], acc)
+  for _k, v in self.members { // rely on insertion order of Map
+    acc = f(v, acc)
   }
   acc
 }
 
 ///|
-/// Convert archive to an array of members (sorted by path)
+/// Convert archive to an array of members (in insertion order)
 pub fn Archive::to_array(self : Archive) -> Array[Member] {
   let result : Array[Member] = []
-  // Reuse sorted iteration
-  let keys : Array[Fpath] = []
-  for k, _ in self.members {
-    keys.push(k)
-  }
-  for i = 1; i < keys.length(); i = i + 1 {
-    let key = keys[i]
-    let mut j = i - 1
-    while j >= 0 && keys[j].to_string() > key.to_string() {
-      keys[j + 1] = keys[j]
-      j = j - 1
-    }
-    keys[j + 1] = key
-  }
-  for k in keys {
-    result.push(self.members[k])
+  for _k, v in self.members {
+    result.push(v)
   }
   result
 }
