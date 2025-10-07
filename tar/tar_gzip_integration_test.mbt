@@ -19,8 +19,10 @@ test "tar_gzip_round_trip_programmatic" {
   assert_eq(parsed.length(), 2)
   assert_eq(parsed.entries[0].name, "a.txt")
   assert_eq(parsed.entries[1].name, "dir/b.txt")
-  assert_eq(parsed.entries[0].data.to_string(), "AAA")
-  assert_eq(parsed.entries[1].data.to_string(), "BBB")
+  let a_txt = @encoding/utf8.decode(parsed.entries[0].data) catch { _ => "" }
+  let b_txt = @encoding/utf8.decode(parsed.entries[1].data) catch { _ => "" }
+  assert_eq(a_txt, "AAA")
+  assert_eq(b_txt, "BBB")
 }
 
 ///|
