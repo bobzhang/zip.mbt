@@ -1,0 +1,44 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zip/tar"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct TarArchive {
+  entries : Array[TarEntry]
+}
+fn TarArchive::add(Self, TarEntry) -> Unit
+fn TarArchive::empty() -> Self
+fn TarArchive::find(Self, String) -> TarEntry?
+fn TarArchive::length(Self) -> Int
+fn TarArchive::of_bytes(Bytes) -> Self
+fn TarArchive::to_bytes(Self) -> Bytes
+impl Show for TarArchive
+
+pub struct TarEntry {
+  name : String
+  size : Int
+  data : Bytes
+  typeflag : TarType
+  mode : Int
+  uid : Int
+  gid : Int
+  mtime : Int
+}
+fn TarEntry::directory(String) -> Self
+fn TarEntry::file(String, Bytes) -> Self
+impl Show for TarEntry
+
+pub enum TarType {
+  RegularFile
+  Directory
+}
+impl Eq for TarType
+impl Show for TarType
+
+// Type aliases
+
+// Traits
+
