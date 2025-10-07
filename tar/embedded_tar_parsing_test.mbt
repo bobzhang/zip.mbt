@@ -10,7 +10,7 @@ test "embedded_tar_parse_test1_simple" {
   assert_eq(e.name, "test.txt")
   assert_eq(e.size, 16)
   assert_eq(e.data.length(), 16)
-  @json.inspect((e.name, e.size), content=1)
+  @json.inspect((e.name, e.size), content=["test.txt", 16])
 }
 
 ///|
@@ -28,7 +28,10 @@ test "embedded_tar_parse_test2_multiple" {
   assert_eq(sizes[0], 16)
   assert_eq(sizes[1], 0)
   assert_eq(sizes[2], 27)
-  @json.inspect((names, sizes), content=2)
+  @json.inspect((names, sizes), content=[
+    ["readme.txt", "docs/", "docs/guide.md"],
+    [16, 0, 27],
+  ])
 }
 
 ///|
@@ -39,14 +42,14 @@ test "embedded_tar_parse_test3_binary" {
   assert_eq(entry.name, "binary.dat")
   assert_eq(entry.size, 18)
   assert_eq(entry.data.length(), 18)
-  @json.inspect((entry.name, entry.size), content=1)
+  @json.inspect((entry.name, entry.size), content=["binary.dat", 18])
 }
 
 ///|
 test "embedded_tar_parse_test4_empty" {
   let archive = @tar.TarArchive::of_bytes(test4_empty_tar)
   assert_eq(archive.length(), 0)
-  @json.inspect(archive.length(), content=1)
+  @json.inspect(archive.length(), content=0)
 }
 
 ///|
