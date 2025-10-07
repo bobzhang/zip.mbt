@@ -74,7 +74,8 @@ The MoonBit port of OCaml zipc now has **complete deflate compression** function
 let file = File::deflate_of_bytes(data, 0, data.length(), None)?
 
 // Add to archive
-let archive = Archive::empty().add(member)
+let archive = Archive::empty()
+archive.add(member)
 
 // Create ZIP bytes
 let zip_bytes = archive.to_bytes(None)?
@@ -226,7 +227,8 @@ let file = File::deflate_of_bytes(data, 0, data.length(), None)?
 let member = Member::make("file.txt", MemberKind::File(file), None, None)?
 
 // Build archive
-let archive = Archive::empty().add(member)
+let archive = Archive::empty()
+archive.add(member)
 
 // Generate ZIP bytes
 let zip_bytes = archive.to_bytes(None)?

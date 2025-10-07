@@ -30,16 +30,14 @@ pub fn Archive::find(self : Archive, path : Fpath) -> Member? {
 
 ///|
 /// Add a member to the archive (replaces if path already exists)
-pub fn Archive::add(self : Archive, m : Member) -> Archive {
+pub fn Archive::add(self : Archive, m : Member) -> Unit {
   self.members[m.path()] = m
-  self
 }
 
 ///|
 /// Remove a member from the archive by path
-pub fn Archive::remove(self : Archive, path : Fpath) -> Archive {
+pub fn Archive::remove(self : Archive, path : Fpath) -> Unit {
   self.members.remove(path)
-  self
 }
 
 ///|

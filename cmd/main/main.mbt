@@ -32,7 +32,8 @@ fn test_simple_zip() -> Unit {
       mode=@types.FileMode(0o644),
       mtime=@types.dos_epoch,
     )
-    let archive = @lib.Archive::empty().add(mem)
+    let archive = @lib.Archive::empty()
+    archive.add(mem)
     let zip_bytes = archive.to_bytes()
     println("  ✓ Created ZIP: \{zip_bytes.length()} bytes")
 
@@ -62,7 +63,10 @@ fn test_multi_file_zip() -> Unit {
     println("    - \{m1.path()}")
     println("    - \{m2.path()}")
     println("    - \{m3.path()}")
-    let archive = @lib.Archive::empty().add(m1).add(m2).add(m3)
+    let archive = @lib.Archive::empty()
+    archive.add(m1)
+    archive.add(m2)
+    archive.add(m3)
     println("  Archive member count: \{archive.member_count()}")
     let zip_bytes = archive.to_bytes()
     println("  ✓ Created ZIP: \{zip_bytes.length()} bytes")
@@ -104,7 +108,9 @@ fn test_directory_zip() -> Unit {
       File(file),
       mode=@types.FileMode(0o644),
     )
-    let archive = @lib.Archive::empty().add(dir).add(readme)
+    let archive = @lib.Archive::empty()
+    archive.add(dir)
+    archive.add(readme)
     let zip_bytes = archive.to_bytes()
     println("  ✓ Created ZIP: \{zip_bytes.length()} bytes")
     try {

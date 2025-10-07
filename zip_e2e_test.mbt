@@ -7,7 +7,8 @@ test "e2e_debug_member_lookup" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("simple.txt", File(file))
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   @json.inspect(archive, content={
     "length": 1,
     "members": [["simple.txt", "File"]],
@@ -35,7 +36,8 @@ test "e2e_simple_stored_file" {
   )
 
   // Step 3: Create archive with single member
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   @json.inspect(archive, content={
     "length": 1,
     "members": [["test.txt", "File"]],
@@ -77,7 +79,8 @@ test "e2e_single_file_roundtrip" {
   )
 
   // Step 3: Create archive and add member
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   @json.inspect(archive, content={
     "length": 1,
     "members": [["test.txt", "File"]],
@@ -134,7 +137,10 @@ test "e2e_multiple_files_with_compression_levels" {
   let m3 = @member.make("mixed.dat", File(file3), mode=@types.FileMode(0o644))
 
   // Build archive
-  let archive = @zip.Archive::empty().add(m1).add(m2).add(m3)
+  let archive = @zip.Archive::empty()
+  archive.add(m1)
+  archive.add(m2)
+  archive.add(m3)
   @json.inspect(archive, content={
     "length": 3,
     "members": [
@@ -211,11 +217,11 @@ test "e2e_directory_structure_with_files" {
 
   // Build archive with directory structure
   let archive = @zip.Archive::empty()
-    .add(root_dir)
-    .add(src_dir)
-    .add(readme_m)
-    .add(config_m)
-    .add(code_m)
+  archive.add(root_dir)
+  archive.add(src_dir)
+  archive.add(readme_m)
+  archive.add(config_m)
+  archive.add(code_m)
   @json.inspect(archive, content={
     "length": 5,
     "members": [
@@ -298,7 +304,8 @@ test "e2e_large_file_compression" {
     File(compressed_file),
     mode=@types.FileMode(0o644),
   )
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
 
   // Full roundtrip
   let zip_bytes = archive.to_bytes()
@@ -353,7 +360,9 @@ test "e2e_stored_vs_deflate_comparison" {
   )
 
   // Create archive with both
-  let archive = @zip.Archive::empty().add(stored_m).add(deflated_m)
+  let archive = @zip.Archive::empty()
+  archive.add(stored_m)
+  archive.add(deflated_m)
 
   // Encode and decode
   let zip_bytes = archive.to_bytes()
@@ -387,7 +396,8 @@ test "e2e_empty_file_handling" {
     File(empty_file),
     mode=@types.FileMode(0o644),
   )
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
 
   // Full roundtrip
   let zip_bytes = archive.to_bytes()
@@ -431,7 +441,8 @@ test "e2e_binary_data_roundtrip" {
   )
 
   // Archive and roundtrip
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   let zip_bytes = archive.to_bytes()
   let decoded = @zip.Archive::of_bytes(zip_bytes)
 
@@ -450,12 +461,12 @@ test "e2e_archive_iteration" {
     ("file2.txt", b"Content 2"),
     ("file3.txt", b"Content 3"),
   ]
-  let mut archive = @zip.Archive::empty()
+  let archive = @zip.Archive::empty()
   for entry in files {
     let (name, data) = entry
     let file = @file.File::deflate_of_bytes(data, 0, data.length())
     let m = @member.make(name, File(file), mode=@types.FileMode(0o644))
-    archive = archive.add(m)
+    archive.add(m)
   }
 
   // Encode and decode
@@ -484,7 +495,8 @@ test "e2e_unicode_filename_support" {
     File(file),
     mode=@types.FileMode(0o644),
   )
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
 
   // Full roundtrip
   let zip_bytes = archive.to_bytes()
@@ -516,7 +528,8 @@ test "e2e_simple_stored_zip" {
     mode=@types.FileMode(0o644),
     mtime=fixed_time,
   )
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   let zip_bytes = archive.to_bytes()
 
   // Verify we can read it back
@@ -541,7 +554,8 @@ test "e2e_zip_structure_verification" {
   let content = b"test"
   let file = @file.File::stored_of_bytes(content, 0, content.length())
   let m = @member.make("test.txt", File(file))
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   let zip_bytes = archive.to_bytes()
 
   // Verify local file header signature (0x04034b50 = "PK\x03\x04")
@@ -584,7 +598,10 @@ test "e2e_multi_file_deterministic" {
     mode=@types.FileMode(0o644),
     mtime=@types.dos_epoch,
   )
-  let archive = @zip.Archive::empty().add(m1).add(m2).add(m3)
+  let archive = @zip.Archive::empty()
+  archive.add(m1)
+  archive.add(m2)
+  archive.add(m3)
   let zip_bytes = archive.to_bytes()
 
   // Verify roundtrip
@@ -616,7 +633,8 @@ test "e2e_deflate_compatibility" {
 
   // Verify in a ZIP archive
   let m = @member.make("data.bin", File(file))
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   let zip_bytes = archive.to_bytes()
 
   // Read back and verify
@@ -665,7 +683,9 @@ test "e2e_directory_in_zip" {
     mode=@types.FileMode(0o644),
     mtime=@types.dos_epoch,
   )
-  let archive = @zip.Archive::empty().add(dir).add(f)
+  let archive = @zip.Archive::empty()
+  archive.add(dir)
+  archive.add(f)
   let zip_bytes = archive.to_bytes()
 
   // Verify structure
@@ -701,7 +721,8 @@ test "e2e_metadata_preservation" {
     mode=custom_mode,
     mtime=custom_time,
   )
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   let zip_bytes = archive.to_bytes()
   let decoded = @zip.Archive::of_bytes(zip_bytes)
   guard decoded.find("executable.sh") is Some(found) else {
@@ -889,7 +910,9 @@ test "e2e_create_and_read_ziptest_equivalent" {
   let file2 = @file.File::stored_of_bytes(b"this is b.txt", 0, 13)
   let member1 = @member.make("ziptest/a.txt", File(file1))
   let member2 = @member.make("ziptest/b.txt", File(file2))
-  let archive = @zip.Archive::empty().add(member1).add(member2)
+  let archive = @zip.Archive::empty()
+  archive.add(member1)
+  archive.add(member2)
   let zip_bytes = archive.to_bytes()
 
   // Verify it has ZIP magic
@@ -921,7 +944,9 @@ test "e2e_ziptest_roundtrip_compatibility" {
   let file2 = @file.File::stored_of_bytes(b"this is b.txt", 0, 13)
   let member1 = @member.make("ziptest/a.txt", File(file1))
   let member2 = @member.make("ziptest/b.txt", File(file2))
-  let archive = @zip.Archive::empty().add(member1).add(member2)
+  let archive = @zip.Archive::empty()
+  archive.add(member1)
+  archive.add(member2)
   let zip_bytes = archive.to_bytes()
   // FIXME:(upstream) use mulitple line instead
   @json.inspect(@hexdump.hex_dump(zip_bytes).split("\n").to_array(), content=[

@@ -59,7 +59,9 @@ test "create_zip_with_deflate" {
   let m2 = @member.make("config.json", File(config_file))
 
   // Build archive
-  let archive = @zip.Archive::empty().add(m1).add(m2)
+  let archive = @zip.Archive::empty()
+  archive.add(m1)
+  archive.add(m2)
 
   // Encode to bytes
   let zip_bytes = archive.to_bytes()
@@ -85,7 +87,8 @@ test "zip_roundtrip_with_compression" {
     level=@deflate.DeflateLevel::Best,
   )
   let m = @member.make("document.txt", File(file))
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
 
   // Encode to ZIP bytes
   let zip_bytes = archive.to_bytes()
@@ -125,9 +128,9 @@ test "zip_with_multiple_files" {
 
   // Build archive with all files
   let archive = @zip.Archive::empty()
-    .add(@member.make("src/main.mbt", File(file1)))
-    .add(@member.make("src/utils.mbt", File(file2)))
-    .add(@member.make("README.md", File(file3)))
+  archive.add(@member.make("src/main.mbt", File(file1)))
+  archive.add(@member.make("src/utils.mbt", File(file2)))
+  archive.add(@member.make("README.md", File(file3)))
 
   // Encode and decode
   let zip_bytes = archive.to_bytes()
@@ -191,7 +194,8 @@ test "error_handling_example" {
   let data = b"test data"
   let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make("test.txt", File(file))
-  let archive = @zip.Archive::empty().add(m)
+  let archive = @zip.Archive::empty()
+  archive.add(m)
   let zip_bytes = archive.to_bytes()
 
   // Decode and extract
@@ -248,7 +252,7 @@ test "direct_deflate_usage" {
 
 1. **Create file data**: `File::deflate_of_bytes(bytes, start, len, level?)`
 2. **Create member**: `Member::make(name, kind, mod_time?, comment?)`
-3. **Build archive**: `Archive::empty().add(member1).add(member2)...`
+3. **Build archive**: `Archive::empty(); archive.add(member1); archive.add(member2); ...` (cascade style `Archive::empty()..add(member1)..add(member2)` also works if you don't assign the expression directly)
 4. **Encode**: `archive.to_bytes(comment?)`
 5. **Decode**: `Archive::of_bytes(bytes)`
 6. **Extract**: `archive.find(name)` or iterate with `members_iter()`

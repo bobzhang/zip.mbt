@@ -461,12 +461,12 @@ pub fn Archive::of_bytes(data : Bytes) -> Archive raise {
   let (cd_offset, _cd_size, entry_count) = find_and_parse_eocd(data)
 
   // Parse central directory entries
-  let mut archive = Archive::empty()
+  let archive = Archive::empty()
   // let mut pos = cd_offset
   for i = 0, pos = cd_offset; i < entry_count; {
     let (m, next_pos) = parse_central_dir_entry(data, pos)
     // Add member (last one wins if duplicate paths)
-    archive = archive.add(m)
+    archive.add(m)
     continue i + 1, next_pos
   }
   archive

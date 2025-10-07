@@ -64,7 +64,8 @@ test "archive_roundtrip_deflate" {
   let data = b"Test deflate compression in ZIP"
   let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make("compressed.txt", File(file))
-  let original = @zip.Archive::empty().add(m)
+  let original = @zip.Archive::empty()
+  original.add(m)
 
   // Encode
   let bytes = original.to_bytes()
@@ -289,7 +290,10 @@ test "complete_zip_workflow_with_compression" {
   let m3 = @member.make("random.txt", File(file3))
 
   // 4. Build archive
-  let archive = @zip.Archive::empty().add(m1).add(m2).add(m3)
+  let archive = @zip.Archive::empty()
+  archive.add(m1)
+  archive.add(m2)
+  archive.add(m3)
 
   // 5. Serialize to ZIP format
   let zip_bytes = archive.to_bytes()
