@@ -20,7 +20,7 @@ pub fn compress(data : Bytes) -> Bytes {
   let deflate_data = create_uncompressed_deflate(data)
 
   // Compute CRC32 of original data (should match Python's zlib.crc32)
-  let crc32 = @bobzhang/zip/checksum/crc32.bytes_crc32(data, 0, data.length())
+  let crc32 = @crc32.bytes_crc32(data, 0, data.length())
 
   // Build footer (8 bytes): CRC32 + size (both little-endian)
   let footer = FixedArray::make(8, b'\x00')

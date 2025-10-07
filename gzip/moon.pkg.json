@@ -1,5 +1,5 @@
 {
   "is_main": false,
-  "test_import": ["bobzhang/zip/deflate", "bobzhang/zip/checksum/crc32"],
+  "test_import": ["bobzhang/zip/deflate"],
   "import": ["bobzhang/zip/deflate", "bobzhang/zip/checksum/crc32"]
 }

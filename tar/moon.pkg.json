@@ -1,3 +1,9 @@
 {
-  "is-main": false
+  "is-main": false,
+  "pre-build": [
+    { "input": "test1_simple.tar", "output": "embedded_test1_simple_embedded_test.mbt", "command": "node tar/tar_embed.js --input $input --name test1_simple_tar --output $output" },
+    { "input": "test2_multiple.tar", "output": "embedded_test2_multiple_embedded_test.mbt", "command": "node tar/tar_embed.js --input $input --name test2_multiple_tar --output $output" },
+    { "input": "test3_binary.tar", "output": "embedded_test3_binary_embedded_test.mbt", "command": "node tar/tar_embed.js --input $input --name test3_binary_tar --output $output" },
+    { "input": "test4_empty.tar", "output": "embedded_test4_empty_embedded_test.mbt", "command": "node tar/tar_embed.js --input $input --name test4_empty_tar --output $output" }
+  ]
 }
