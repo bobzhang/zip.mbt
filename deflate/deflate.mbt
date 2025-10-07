@@ -439,6 +439,11 @@ fn inflate_loop(decoder : InflateDecoder) -> Bytes raise {
 
 ///|
 /// Decompress deflate format data (RFC 1951)
+/// Decompress a deflate (RFC 1951) stream segment.
+/// Parameters:
+///   src,start,len - slice identifying compressed data.
+///   decompressed_size - optional expected output size (optimizes allocation / validation).
+/// Errors: raises on malformed block headers, invalid Huffman codes, or truncated input.
 pub fn inflate(
   src : Bytes,
   start : Int,
@@ -451,6 +456,8 @@ pub fn inflate(
 
 ///|
 /// Decompress deflate data and compute CRC-32
+/// Inflate and also compute CRC-32 of the decompressed output (single pass over result).
+/// Returns (bytes, crc32).
 pub fn inflate_and_crc32(
   src : Bytes,
   start : Int,
@@ -466,6 +473,8 @@ pub fn inflate_and_crc32(
 
 ///|
 /// Decompress deflate data and compute Adler-32
+/// Inflate and also compute Adler-32 of the decompressed output (single pass over result).
+/// Returns (bytes, adler32).
 pub fn inflate_and_adler32(
   src : Bytes,
   start : Int,
@@ -485,6 +494,8 @@ pub fn inflate_and_adler32(
 
 ///|
 /// Create stored (uncompressed) deflate blocks (RFC 1951)
+/// Emit a single stored (uncompressed) block if length <= 65535.
+/// Limitation: does not chunk > 65535 yet (caller should split or use higher-level deflate).
 pub fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes raise {
   let max_block_size = 65535
   if len <= max_block_size {
@@ -927,6 +938,8 @@ fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
 
 ///|
 /// Deflate with LZ77 + Fixed Huffman
+/// Compress using LZ77 + fixed Huffman codes (block type=1) for given slice.
+/// Heuristics controlled by good_match / max_chain.
 pub fn deflate_fixed(
   bytes : Bytes,
   start : Int,
@@ -1041,6 +1054,8 @@ pub fn deflate_fixed(
 
 ///|
 /// Deflate with LZ77 + Dynamic Huffman
+/// Compress using LZ77 + dynamic Huffman (block type=2).
+/// Builds symbol frequencies, encodes dynamic header, then payload.
 pub fn deflate_dynamic(
   bytes : Bytes,
   start : Int,
@@ -1224,6 +1239,7 @@ pub fn deflate_dynamic(
 // ============================================================================
 
 ///|
+/// Compression level influencing strategy / effort.
 pub(all) enum DeflateLevel {
   None // No compression, use stored blocks only
   Fast // Fast compression with fixed Huffman
@@ -1238,6 +1254,8 @@ pub(all) enum DeflateLevel {
 ///|
 /// Compress data with DEFLATE format (RFC 1951)
 /// Returns compressed bytes
+/// High-level deflate entry point selecting strategy by DeflateLevel and size.
+/// Returns a single final block (no streaming multi-block segmentation yet except stored).
 pub fn deflate(
   bytes : Bytes,
   start : Int,
@@ -1265,6 +1283,7 @@ pub fn deflate(
 ///|
 /// Compress data with DEFLATE and compute CRC-32 of input
 /// Returns (CRC-32 checksum, compressed bytes)
+/// Compute CRC-32 of input then compress (order: checksum of original data, not compressed).
 pub fn crc32_and_deflate(
   bytes : Bytes,
   start : Int,
@@ -1280,6 +1299,7 @@ pub fn crc32_and_deflate(
 ///|
 /// Compress data with DEFLATE and compute Adler-32 of input
 /// Returns (Adler-32 checksum, compressed bytes)
+/// Compute Adler-32 of input then compress (checksum over original data).
 pub fn adler32_and_deflate(
   bytes : Bytes,
   start : Int,
@@ -1303,6 +1323,8 @@ pub fn adler32_and_deflate(
 /// - 2 bytes: CMF + FLG header
 /// - N bytes: deflate compressed data
 /// - 4 bytes: Adler-32 checksum (big-endian)
+/// Produce a zlib (RFC 1950) wrapped deflate stream.
+/// Returns (adler32, bytes) where checksum is of original data.
 pub fn zlib_compress(
   bytes : Bytes,
   start : Int,
@@ -1356,6 +1378,8 @@ pub fn zlib_compress(
 /// Decompress zlib format data (RFC 1950)
 /// Returns (decompressed bytes, Adler-32 checksum)
 /// Validates header and checksum
+/// Parse and decompress a zlib wrapper, validating header & Adler-32.
+/// Returns (decompressed bytes, adler32) and raises on header/checksum errors.
 pub fn zlib_decompress(
   bytes : Bytes,
   start : Int,
