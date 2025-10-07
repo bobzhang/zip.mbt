@@ -52,7 +52,6 @@ fn File::version_made_by(Self) -> UInt16
 fn File::version_needed_to_extract(Self) -> UInt16
 
 // Type aliases
-pub typealias @types.Compression as Compression
 
 // Traits
 

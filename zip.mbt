@@ -247,19 +247,6 @@ typealias @file.File
 typealias @member.Member
 
 ///|
-pub typealias @member.MemberKind
-
-///|
-// pub let max_member_count : Int = @member.max_member_count
-
-///|
-/// ZIP file format constants and detection
-
-///|
-/// ZIP local file header signature: 0x04034b50 ("PK\x03\x04")
-// let zip_local_file_sig : Int = 0x04034b50
-
-///|
 /// ZIP local file header (little endian) ("PK\x03\x04")
 const ZIP_LOCAL_FILE_SIG : UInt = 0x04034b50
 
@@ -275,13 +262,6 @@ fn bytes_has_zip_magic(data : Bytes) -> Bool {
   // [u32(0x04034b50|0x06054b50),..] => true 
   data[:] is [u32le(ZIP_LOCAL_FILE_SIG | ZIP_EOCD_SIG), ..]
 }
-
-///|
-/// ZIP file encoding utilities
-
-///|
-/// Central directory file header signature: 0x02014b50
-// let zip_central_dir_sig : Int = 0x02014b50
 
 ///|
 /// Central directory file header signature (little endian)
@@ -305,9 +285,9 @@ fn find_and_parse_eocd(data : Bytes) -> (Int, Int, Int) raise {
   // Maximum comment size is 65535, so search last 65557 bytes (22 + 65535)
   let search_start = if len > 65557 { len - 65557 } else { 0 }
   for i = len - 22; i >= search_start; i = i - 1 {
-    if data[i:] is [u32le(ZIP_EOCD_SIG), ..] {
+    if data[i:] is [u32le(ZIP_EOCD_SIG), .. next] {
       // Found EOCD signature, now parse it
-      match data[i + 4:] {
+      match next {
         [
           u16le(disk), // Disk number (multi-disk not supported)
           u16le(cd_disk), // Disk where central directory starts

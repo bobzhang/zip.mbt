@@ -5,21 +5,6 @@
 // SPDX-License-Identifier: ISC
 
 ///|
-/// Helper to convert UInt to hex string
-fn UInt::to_hex_string(self : UInt) -> String {
-  let hex_digits = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
-  ]
-  let mut result = ""
-  let v = self
-  for i = 0; i < 8; i = i + 1 {
-    let digit = ((v >> (28 - i * 4)) & 0xF).reinterpret_as_int()
-    result = result + Char::to_string(hex_digits[digit])
-  }
-  result
-}
-
-///|
 /// CRC-32 state for incremental checksum computation
 struct Crc32(UInt) derive(Eq, Show)
 

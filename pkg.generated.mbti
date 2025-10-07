@@ -30,7 +30,6 @@ fn Archive::to_map(Self) -> @sorted_map.SortedMap[@fpath.Fpath, @member.Member]
 impl ToJson for Archive
 
 // Type aliases
-pub typealias @member.MemberKind as MemberKind
 
 // Traits
 
