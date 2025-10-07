@@ -1,10 +1,15 @@
-// Clean gzip tests
+// Gzip tests updated after refactor to use real deflate compression.
 
 ///|
 /// Test basic compression and decompression
 test "basic_round_trip" {
   let input = "Hello, World!".to_bytes()
   let compressed = @gzip.compress(input)
+  // Basic structural checks (magic/method, footer length)
+  inspect(compressed.length() > 18, content="true")
+  inspect(compressed[0].to_int() == 0x1f, content="true")
+  inspect(compressed[1].to_int() == 0x8b, content="true")
+  inspect(compressed[2].to_int() == 0x08, content="true")
   let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == input, content="true")
 }
@@ -102,12 +107,8 @@ test "repetitive_data_python_compat" {
   }
   let data = repetitive.to_bytes()
   let compressed = @gzip.compress(data)
-
-  // Our uncompressed deflate will be larger than Python's compressed deflate
-  // But it should still be valid gzip format with reasonable size
-  inspect(compressed.length() > 100, content="true") // Should be larger than original
-
-  // Verify round trip works perfectly
+  // With real compression the payload should be smaller than original (header+footer overhead tolerated)
+  inspect(compressed.length() < data.length() + 18, content="true")
   let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == data, content="true")
 }
@@ -141,15 +142,9 @@ test "large_block_python_compat" {
   }
   let data = large_data.to_bytes()
   let compressed = @gzip.compress(data)
-
-  // Should handle large data correctly
-  inspect(compressed.length() > 1000, content="true")
-
-  // Verify gzip header is correct
+  inspect(compressed.length() < data.length(), content="true")
   inspect(compressed[0].to_int() == 0x1f, content="true")
   inspect(compressed[1].to_int() == 0x8b, content="true")
-
-  // Test round trip maintains all data
   let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == data, content="true")
 }
@@ -199,25 +194,32 @@ test "whitespace_data_python_compat" {
 /// Test that our uncompressed deflate format is valid
 /// Python can decompress uncompressed deflate blocks (RFC 1951 section 3.2.4)
 /// This documents that our format choice is standards-compliant
-test "uncompressed_deflate_format_valid" {
-  let data = "Uncompressed test".to_bytes()
-  let compressed = @gzip.compress(data)
+// Removed obsolete uncompressed block structure test; compression now uses real deflate.
 
-  // Find deflate block (after 10-byte header, before 8-byte footer)
-  let deflate_start = 10
+///|
+/// Compare DeflateLevel::None (stored blocks) vs Best for repetitive data.
+test "compression_levels_effect" {
+  let mut repetitive = ""
+  for i = 0; i < 256; i = i + 1 {
+    repetitive = repetitive + "A"
+  }
+  let data = repetitive.to_bytes()
+  let stored = @gzip.compress(data, level=@deflate.DeflateLevel::None)
+  let best = @gzip.compress(data, level=@deflate.DeflateLevel::Best)
+  // Stored should be larger or equal to Best
+  inspect(stored.length() >= best.length(), content="true")
+  // Round trip both
+  inspect(@gzip.decompress(stored) == data, content="true")
+  inspect(@gzip.decompress(best) == data, content="true")
+}
 
-  // First byte should be 0x01 (BFINAL=1, BTYPE=00 for uncompressed)
-  inspect(compressed[deflate_start].to_int() == 0x01, content="true")
-
-  // Next 4 bytes should be length and complement
-  let len = compressed[deflate_start + 1].to_int() |
-    (compressed[deflate_start + 2].to_int() << 8)
-  let nlen = compressed[deflate_start + 3].to_int() |
-    (compressed[deflate_start + 4].to_int() << 8)
-  inspect(len == data.length(), content="true")
-  inspect(nlen == (len ^ 0xFFFF), content="true")
-
-  // Test round trip still works
-  let decompressed = @gzip.decompress(compressed)
-  inspect(decompressed == data, content="true")
+///|
+/// Ensure compress_default delegates correctly.
+test "compress_default_delegation" {
+  let data = "Default delegation".to_bytes()
+  let a = @gzip.compress(data)
+  let b = @gzip.compress_default(data)
+  // Outputs may differ if default chooses dynamic trees differently on separate runs; ensure both decompress.
+  inspect(@gzip.decompress(a) == data, content="true")
+  inspect(@gzip.decompress(b) == data, content="true")
 }

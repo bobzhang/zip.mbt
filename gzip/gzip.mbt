@@ -1,77 +1,63 @@
-// Simple gzip compression using uncompressed deflate blocks
-// This creates valid gzip files that are compatible with Python's gzip
-// but without actual compression for simplicity
+// Gzip compression using the shared deflate implementation.
+// Previously this module emitted only a single uncompressed deflate block; that
+// approach was functional but ignored the existing deflate encoder/decoder in
+// the codebase. We now delegate to @deflate for real compression while still
+// constructing/validating the gzip container (RFC 1952).
 
 ///|
-/// Simple gzip compression
-pub fn compress(data : Bytes) -> Bytes {
-  // Build minimal gzip header (10 bytes)
+/// Compress data to gzip format. Optional deflate level may be supplied.
+pub fn compress(data : Bytes, level? : @deflate.DeflateLevel) -> Bytes raise {
+  // --- Header (10 bytes) ---
   let header = FixedArray::make(10, b'\x00')
-  header[0] = b'\x1f' // Magic 1
-  header[1] = b'\x8b' // Magic 2  
-  header[2] = b'\x08' // Deflate method
-  header[3] = b'\x00' // No flags
-  // header[4-7] = mtime (already zero)
-  header[8] = b'\x00' // Extra flags
-  header[9] = b'\xff' // OS (unknown)
+  header[0] = b'\x1f' // ID1
+  header[1] = b'\x8b' // ID2
+  header[2] = b'\x08' // CM = deflate
+  header[3] = b'\x00' // FLG (no extra/name/comment)
+  // MTIME (4 bytes zero)
+  header[8] = b'\x00' // XFL (0 = default)
+  header[9] = b'\xff' // OS = unknown
   let header_bytes = Bytes::from_fixedarray(header)
 
-  // Create uncompressed deflate block
-  let deflate_data = create_uncompressed_deflate(data)
+  // --- Deflate compressed payload ---
+  let comp = match level {
+    Some(lv) => @deflate.deflate(data, 0, data.length(), level=lv) // named optional level
+    None => @deflate.deflate(data, 0, data.length())
+  }
 
-  // Compute CRC32 of original data (should match Python's zlib.crc32)
+  // --- Footer (CRC32 + ISIZE) ---
   let crc32 = @crc32.bytes_crc32(data, 0, data.length())
-
-  // Build footer (8 bytes): CRC32 + size (both little-endian)
+  let size = data.length().reinterpret_as_uint()
   let footer = FixedArray::make(8, b'\x00')
-  // CRC32 in little-endian format
+  // CRC32 little-endian
   footer[0] = (crc32 & 0xFF).reinterpret_as_int().to_byte()
   footer[1] = ((crc32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
   footer[2] = ((crc32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
   footer[3] = ((crc32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
-
-  // Size in little-endian format
-  let size = data.length().reinterpret_as_uint()
+  // ISIZE (input size modulo 2^32) little-endian
   footer[4] = (size & 0xFF).reinterpret_as_int().to_byte()
   footer[5] = ((size >> 8) & 0xFF).reinterpret_as_int().to_byte()
   footer[6] = ((size >> 16) & 0xFF).reinterpret_as_int().to_byte()
   footer[7] = ((size >> 24) & 0xFF).reinterpret_as_int().to_byte()
   let footer_bytes = Bytes::from_fixedarray(footer)
-  header_bytes + deflate_data + footer_bytes
+  header_bytes + comp + footer_bytes
+}
+
+///|
+/// Backwards-compatible helper retaining old signature with default level.
+pub fn compress_default(data : Bytes) -> Bytes raise {
+  compress(data)
 }
 
 ///|
 /// Create uncompressed deflate block (RFC 1951, section 3.2.4)
-fn create_uncompressed_deflate(data : Bytes) -> Bytes {
-  let len = data.length()
-
-  // Block header: BFINAL=1, BTYPE=00 (uncompressed)
-  let header_size = 5 // 1 byte header + 2 bytes len + 2 bytes nlen
-  let total_size = header_size + len
-  let result = FixedArray::make(total_size, b'\x00')
-
-  // Block header: BFINAL=1 (last block), BTYPE=00 (uncompressed)
-  result[0] = b'\x01' // 00000001 in binary
-
-  // Length (little-endian)
-  result[1] = (len & 0xFF).to_byte()
-  result[2] = ((len >> 8) & 0xFF).to_byte()
-
-  // One's complement of length (little-endian)
-  let nlen = len ^ 0xFFFF
-  result[3] = (nlen & 0xFF).to_byte()
-  result[4] = ((nlen >> 8) & 0xFF).to_byte()
-
-  // Copy original data
-  for i = 0; i < len; i = i + 1 {
-    result[header_size + i] = data[i]
-  }
-  Bytes::from_fixedarray(result)
-}
+// Removed the manual 'create_uncompressed_deflate'; use @deflate.deflate or
+// @deflate.deflate_stored if a future optimization wants explicit 'stored'
+// blocks. Keeping a tiny shim (commented) for reference:
+// fn create_uncompressed_deflate(data: Bytes) -> Bytes raise { @deflate.deflate_stored(data, 0, data.length()) }
 
 ///|
 /// Simple gzip decompression
-pub fn decompress(data : Bytes) -> Bytes {
+pub fn decompress(data : Bytes) -> Bytes raise {
   if data.length() < 18 {
     abort("Invalid gzip data: too short")
   }
@@ -94,14 +80,21 @@ pub fn decompress(data : Bytes) -> Bytes {
     abort("Invalid gzip data: no compressed data")
   }
 
-  // Extract deflate data
+  // Extract deflate-coded payload slice
   let deflate_start = header_size
   let deflate_end = data.length() - footer_size
-
-  // Decompress uncompressed deflate block
-  let decompressed = decompress_uncompressed_deflate(
-    data, deflate_start, deflate_end,
-  )
+  if deflate_end < deflate_start {
+    abort("Invalid gzip data: corrupt lengths")
+  }
+  let comp_len = deflate_end - deflate_start
+  let comp_slice_view = data[deflate_start:deflate_start + comp_len]
+  // Materialize view into Bytes (allocate fixed array then convert)
+  let tmp = FixedArray::make(comp_len, b'\x00')
+  for i = 0; i < comp_len; i = i + 1 {
+    tmp[i] = comp_slice_view[i]
+  }
+  let comp_slice = Bytes::from_fixedarray(tmp)
+  let decompressed = @deflate.inflate(comp_slice, 0, comp_slice.length(), None)
 
   // Verify CRC32
   let crc_offset = data.length() - 8
@@ -109,7 +102,7 @@ pub fn decompress(data : Bytes) -> Bytes {
     (data[crc_offset + 1].to_int().reinterpret_as_uint() << 8) |
     (data[crc_offset + 2].to_int().reinterpret_as_uint() << 16) |
     (data[crc_offset + 3].to_int().reinterpret_as_uint() << 24)
-  let computed_crc32 = @bobzhang/zip/checksum/crc32.bytes_crc32(
+  let computed_crc32 = @crc32.bytes_crc32(
     decompressed,
     0,
     decompressed.length(),
@@ -122,39 +115,5 @@ pub fn decompress(data : Bytes) -> Bytes {
 
 ///|
 /// Decompress uncompressed deflate block
-fn decompress_uncompressed_deflate(
-  data : Bytes,
-  start : Int,
-  end : Int,
-) -> Bytes {
-  if end - start < 5 {
-    abort("Invalid deflate data: too short")
-  }
-
-  // Check block header
-  let header = data[start]
-  if header != b'\x01' { // BFINAL=1, BTYPE=00
-    abort("Only uncompressed deflate blocks supported")
-  }
-
-  // Read length
-  let len = data[start + 1].to_int() | (data[start + 2].to_int() << 8)
-  let nlen = data[start + 3].to_int() | (data[start + 4].to_int() << 8)
-
-  // Verify length complement
-  if len != (nlen ^ 0xFFFF) {
-    abort("Invalid deflate block: length mismatch")
-  }
-
-  // Check we have enough data
-  if end - start < 5 + len {
-    abort("Invalid deflate data: truncated")
-  }
-
-  // Extract the uncompressed data
-  let result = FixedArray::make(len, b'\x00')
-  for i = 0; i < len; i = i + 1 {
-    result[i] = data[start + 5 + i]
-  }
-  Bytes::from_fixedarray(result)
-}
+// Removed bespoke uncompressed block decoder; inflate from deflate package
+// handles all block types we support.

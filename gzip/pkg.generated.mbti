@@ -1,10 +1,16 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/gzip"
 
-// Values
-fn compress(Bytes) -> Bytes
+import(
+  "bobzhang/zip/deflate"
+)
 
-fn decompress(Bytes) -> Bytes
+// Values
+fn compress(Bytes, level? : @deflate.DeflateLevel) -> Bytes raise
+
+fn compress_default(Bytes) -> Bytes raise
+
+fn decompress(Bytes) -> Bytes raise
 
 // Errors
 
