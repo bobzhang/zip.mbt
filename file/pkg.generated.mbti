@@ -43,7 +43,7 @@ fn File::decompressed_size(Self) -> Int
 fn File::deflate_of_bytes(Bytes, Int, Int, level? : @deflate.DeflateLevel) -> Self raise
 fn File::gp_flags(Self) -> UInt16
 fn File::is_encrypted(Self) -> Bool
-fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, UInt16?, UInt16?, UInt16?) -> Self raise
+fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, version_made_by? : UInt16, version_needed? : UInt16, gp_flags? : UInt16) -> Self raise
 fn File::start(Self) -> Int
 fn File::stored_of_bytes(Bytes, Int, Int) -> Self raise
 fn File::to_bytes(Self) -> Bytes raise

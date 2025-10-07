@@ -165,9 +165,9 @@ pub fn File::make(
   compression : Compression,
   decompressed_size : Int,
   decompressed_crc32 : UInt,
-  version_made_by : UInt16?,
-  version_needed : UInt16?,
-  gp_flags : UInt16?,
+  version_made_by? : UInt16 = version_made_by_default,
+  version_needed? : UInt16 = version_needed_default,
+  gp_flags? : UInt16 = gp_flag_default,
 ) -> File raise {
   if compressed_size.to_int64() > max_file_size ||
     decompressed_size.to_int64() > max_file_size {
@@ -176,9 +176,9 @@ pub fn File::make(
     )
   }
   {
-    version_made_by: version_made_by.unwrap_or(version_made_by_default),
-    version_needed_to_extract: version_needed.unwrap_or(version_needed_default),
-    gp_flags: gp_flags.unwrap_or(gp_flag_default),
+    version_made_by,
+    version_needed_to_extract: version_needed,
+    gp_flags,
     compression,
     start,
     compressed_size,
@@ -198,7 +198,7 @@ pub fn File::stored_of_bytes(
   len : Int,
 ) -> File raise {
   let crc = @crc32.bytes_crc32(bytes, start, len)
-  File::make(bytes, start, len, Compression::Stored, len, crc, None, None, None)
+  File::make(bytes, start, len, Compression::Stored, len, crc)
 }
 
 ///|
@@ -225,9 +225,6 @@ pub fn File::deflate_of_bytes(
         Compression::Deflate,
         len,
         crc,
-        None,
-        None,
-        None,
       )
     }
     Some(@deflate.DeflateLevel::Fast) => (4, 128, false) // Fast: fixed Huffman only
@@ -246,17 +243,7 @@ pub fn File::deflate_of_bytes(
     @deflate.deflate_fixed(bytes, start, len, true, good_match, max_chain)
   }
   let crc = @crc32.bytes_crc32(bytes, start, len)
-  File::make(
-    compressed,
-    0,
-    compressed.length(),
-    Compression::Deflate,
-    len,
-    crc,
-    None,
-    None,
-    None,
-  )
+  File::make(compressed, 0, compressed.length(), Compression::Deflate, len, crc)
 }
 
 ///|

@@ -39,9 +39,7 @@ test "file_is_encrypted" {
     Stored,
     data.length(),
     0,
-    None,
-    None,
-    Some(@file.gp_flag_encrypted),
+    gp_flags=@file.gp_flag_encrypted,
   )
   @json.inspect(encrypted_file.is_encrypted(), content=true)
   @json.inspect(encrypted_file.can_extract(), content=false)

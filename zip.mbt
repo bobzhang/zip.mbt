@@ -433,9 +433,9 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
           compression,
           uncompressed_size,
           crc32,
-          Some(version_made_by),
-          Some(version_needed),
-          Some(gp_flags),
+          version_made_by~,
+          version_needed~,
+          gp_flags~,
         )
         |> File
       }
