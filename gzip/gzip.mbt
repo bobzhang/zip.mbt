@@ -5,7 +5,12 @@
 // constructing/validating the gzip container (RFC 1952).
 
 ///|
-/// Compress data to gzip format. Optional deflate level may be supplied.
+/// Compress data to gzip format (RFC 1952).
+/// Parameters:
+///   data  - raw uncompressed bytes.
+///   level - optional deflate compression level (falls back to encoder default).
+/// Produces standard 10-byte header (no extra/name/comment) + deflate stream + CRC32 + ISIZE.
+/// Limitations: no support yet for original filename, extra fields, OS-specific metadata.
 pub fn compress(data : Bytes, level? : @deflate.DeflateLevel) -> Bytes raise {
   // --- Header (10 bytes) ---
   let header = FixedArray::make(10, b'\x00')
@@ -44,6 +49,7 @@ pub fn compress(data : Bytes, level? : @deflate.DeflateLevel) -> Bytes raise {
 
 ///|
 /// Backwards-compatible helper retaining old signature with default level.
+/// Backwards-compatible one-arg helper (equivalent to compress(data)).
 pub fn compress_default(data : Bytes) -> Bytes raise {
   compress(data)
 }
@@ -56,7 +62,9 @@ pub fn compress_default(data : Bytes) -> Bytes raise {
 // fn create_uncompressed_deflate(data: Bytes) -> Bytes raise { @deflate.deflate_stored(data, 0, data.length()) }
 
 ///|
-/// Simple gzip decompression
+/// Simple gzip decompression.
+/// Validates magic, method, and CRC32. Assumes no optional header fields.
+/// TODO: support FLG flags (FNAME, FCOMMENT, FEXTRA) and ISIZE validation for >4GB wrap.
 pub fn decompress(data : Bytes) -> Bytes raise {
   if data.length() < 18 {
     abort("Invalid gzip data: too short")

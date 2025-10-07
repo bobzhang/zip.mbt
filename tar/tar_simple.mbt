@@ -2,7 +2,8 @@
 /// Based on POSIX.1-1988 ustar format
 
 ///|
-/// TAR entry type flags
+/// TAR entry type flags following POSIX ustar subset.
+/// Only '0' (regular file) and '5' (directory) currently supported.
 pub enum TarType {
   RegularFile // '0'
   Directory // '5'
@@ -18,6 +19,8 @@ impl ToJson for TarType with to_json(self) -> Json {
 
 ///|
 /// TAR entry structure
+/// Represents a single header + data payload within a TAR archive.
+/// Limitations: path length >100 chars, prefix field, PAX headers not supported.
 pub struct TarEntry {
   name : String
   size : Int
@@ -44,6 +47,8 @@ impl ToJson for TarEntry with to_json(self) -> Json {
 
 ///|
 /// TAR archive structure
+/// Collection of TarEntry values and helpers for (de)serialization.
+/// Writer currently pads empty archives to 10KiB (optimization opportunity).
 pub struct TarArchive {
   entries : Array[TarEntry]
 } derive(Show)
@@ -58,24 +63,28 @@ impl ToJson for TarArchive with to_json(self) -> Json {
 
 ///|
 /// Create an empty TAR archive
+/// Create an empty archive.
 pub fn TarArchive::empty() -> TarArchive {
   { entries: [] }
 }
 
 ///|
 /// Add an entry to the archive
+/// Append an entry (no dedup / ordering guarantees beyond insertion order).
 pub fn TarArchive::add(self : TarArchive, entry : TarEntry) -> Unit {
   self.entries.push(entry)
 }
 
 ///|
 /// Get the number of entries in the archive
+/// Number of entries currently stored.
 pub fn TarArchive::length(self : TarArchive) -> Int {
   self.entries.length()
 }
 
 ///|
 /// Create a file entry with default metadata
+/// Construct a regular file entry with default metadata (mode 0644, uid/gid 0, mtime 0).
 pub fn TarEntry::file(name : String, data : Bytes) -> TarEntry {
   {
     name,
@@ -91,6 +100,7 @@ pub fn TarEntry::file(name : String, data : Bytes) -> TarEntry {
 
 ///|
 /// Create a directory entry with default metadata
+/// Construct a directory entry; ensures a trailing '/'.
 pub fn TarEntry::directory(name : String) -> TarEntry {
   let dir_name = if name.has_suffix("/") { name } else { name + "/" }
   {
@@ -212,6 +222,8 @@ fn create_tar_header(entry : TarEntry) -> Bytes {
 ///|
 /// Convert archive to bytes (TAR format)
 /// Now generates proper TAR format with headers
+/// Serialize archive into ustar-compatible bytes.
+/// NOTE: checksum validated by other tools but not re-parsed here; no prefix/long name support.
 pub fn TarArchive::to_bytes(self : TarArchive) -> Bytes {
   // Calculate total size first
   let mut total_size = 1024 // End-of-archive marker (two 512-byte blocks)
@@ -384,6 +396,7 @@ fn to_octal_string(value : Int) -> String {
 
 ///|
 /// Find an entry by name
+/// Linear search for an entry by exact name; returns None if not found.
 pub fn TarArchive::find(self : TarArchive, name : String) -> TarEntry? {
   for entry in self.entries {
     if entry.name == name {
@@ -515,6 +528,9 @@ fn parse_tar_header(data : Bytes, offset : Int) -> (TarEntry, Int)? {
 
 ///|
 /// Parse TAR archive from bytes
+/// Parse a TAR archive from bytes.
+/// Skips entries without valid 'ustar' magic and stops at double zero block.
+/// Does NOT validate header checksum nor support long names/PAX extensions yet.
 pub fn TarArchive::of_bytes(data : Bytes) -> TarArchive {
   let archive = TarArchive::empty()
   let mut offset = 0
