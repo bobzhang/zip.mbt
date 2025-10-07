@@ -4,6 +4,44 @@
 // SPDX-License-Identifier: ISC
 
 ///|
+/// MoonBit ZIP Library - Complete ZIP archive processing.
+/// 
+/// This is the main entry point for the ZIP archive library, providing:
+/// 
+/// ## Core Features
+/// - **ZIP Creation**: Build archives from files/directories
+/// - **ZIP Extraction**: Parse and decompress existing archives  
+/// - **DEFLATE Compression**: RFC 1951 compliant encoder/decoder
+/// - **Multiple Formats**: Stored, DEFLATE, with extensible compression
+/// - **Cross-Platform**: Handles path normalization and DOS timestamps
+/// 
+/// ## Architecture
+/// - `Archive`: Top-level container for multiple files/directories
+/// - `Member`: Individual file or directory entry with metadata
+/// - `File`: File data with compression and integrity checking
+/// - `Compression`: Type-safe compression method enumeration
+/// 
+/// ## Usage Patterns
+/// ```
+/// // Create new archive
+/// let archive = Archive::empty()
+/// archive.add(Member::make_file("readme.txt", content))
+/// let zip_bytes = archive.to_bytes()
+/// 
+/// // Parse existing archive
+/// let loaded = Archive::of_bytes(zip_data)
+/// let file = loaded.find("readme.txt").unwrap()
+/// let content = file.to_bytes()
+/// ```
+/// 
+/// ## Compatibility
+/// - Standard ZIP format (PKWARE specification)
+/// - UTF-8 filenames with proper encoding flags
+/// - DEFLATE compression (RFC 1951)
+/// - CRC-32 integrity checking
+/// - DOS timestamp conversion
+/// 
+/// Based on the OCaml zipc library with MoonBit-specific optimizations.
 
 ///|
 /// Helper: UInt to hex string

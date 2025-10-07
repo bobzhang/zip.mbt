@@ -1,23 +1,32 @@
 ///|
-/// Create an empty archive
+/// Archive utility functions for ZIP archive management.
+/// 
+/// These functions provide convenient operations for working with Archive collections,
+/// including creation, querying, modification, and iteration. Archives use Maps
+/// internally for O(log n) lookup by file path (Fpath keys).
+
+///|
+/// Create an empty archive with no members.
+/// Returns a fresh Archive ready for file additions.
 pub fn Archive::empty() -> Archive {
   { members: {} }
 }
 
 ///|
-/// Check if archive is empty
+/// Check if archive contains any members (files or directories).
 pub fn Archive::is_empty(self : Archive) -> Bool {
   self.members.is_empty()
 }
 
 ///|
-/// Get the number of members in the archive
+/// Get the total count of members (files + directories) in this archive.
 pub fn Archive::member_count(self : Archive) -> Int {
   self.members.length()
 }
 
 ///|
-/// Check if archive has a member with the given path
+/// Test whether archive contains a member at the specified path.
+/// Case-sensitive path comparison using normalized Fpath.
 pub fn Archive::mem(self : Archive, path : Fpath) -> Bool {
   self.members.contains(path)
 }

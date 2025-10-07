@@ -1,13 +1,29 @@
 ///|
-/// POSIX time utilities for ZIP archives
+/// POSIX time utilities for ZIP archives.
+/// 
+/// Provides conversion between POSIX timestamps (Unix epoch) and DOS date/time
+/// format used in ZIP file headers. DOS format has limited range (1980-2107)
+/// and 2-second precision, while POSIX has arbitrary range and 1-second precision.
+/// 
+/// Key conversions:
+/// - POSIX time <-> (year, month, day, hour, minute, second)
+/// - DOS date/time <-> POSIX time (with precision loss)
+/// - Current time -> ZIP-compatible timestamps
 
 ///|
-/// POSIX time (seconds since Unix epoch: 1970-01-01 00:00:00 UTC)
+/// POSIX time (seconds since Unix epoch: 1970-01-01 00:00:00 UTC).
+/// 
+/// Standard Unix timestamp representation. ZIP files require conversion to
+/// DOS format which truncates to 2-second precision and has epoch 1980-01-01.
 pub(all) struct Ptime(Int) derive(Eq, Compare, ToJson, FromJson, Hash)
 
 ///|
-/// DOS epoch: 1980-01-01 00:00:00 UTC (in POSIX time)
-/// This is the earliest representable time in ZIP archives
+/// DOS epoch: 1980-01-01 00:00:00 UTC (in POSIX time).
+/// 
+/// This is the earliest representable time in ZIP archives. Any POSIX time
+/// before this epoch will be clamped to this value when converting to DOS format.
+/// 
+/// Value: 315532800 seconds = 10 years after Unix epoch.
 pub let dos_epoch : Ptime = 315532800
 
 ///|

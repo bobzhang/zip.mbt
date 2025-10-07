@@ -1,41 +1,65 @@
 ///|
-/// Helper to write 16-bit little-endian integer to buffer
-/// Note: stdlib Buffer doesn't have write_uint16_le, so we provide it as extension
+/// ZIP binary encoding utilities and format constants.
+/// 
+/// This module provides low-level ZIP file format encoding functions that serialize
+/// Member metadata and File data into the binary structures defined in PKWARE's
+/// ZIP specification. Handles little-endian integer encoding, DOS date/time
+/// conversion, and proper header layout for maximum compatibility.
+/// 
+/// Key structures:
+/// - Local File Header (before each file's compressed data)
+/// - Central Directory File Header (archive index)
+/// - End of Central Directory Record (terminator + metadata)
+
+///|
+/// Helper to write 16-bit little-endian integer to buffer.
+/// 
+/// Note: MoonBit's stdlib Buffer doesn't have write_uint16_le, so we provide
+/// this extension method for ZIP format compliance (ZIP uses little-endian).
 fn @buffer.Buffer::write_uint16_le(self : Self, value : UInt16) -> Unit {
   self.write_byte((value & 0xFF).to_byte())
   self.write_byte(((value >> 8) & 0xFF).to_byte())
 }
 
-// ZIP file format constants for header sizes
+// ZIP file format constants for header sizes (per PKWARE specification)
 
 ///|
+/// Local file header fixed portion size (30 bytes, excludes variable filename/extra fields).
 let local_header_fixed_size : Int = 30 // Local file header fixed part
 
 ///|
+/// Central directory file header fixed portion size (46 bytes, excludes variable fields).
 let central_dir_header_fixed_size : Int = 46 // Central directory header fixed part
 
 ///|
+/// End of Central Directory Record size (22 bytes, excludes optional comment).
 let eocd_size : Int = 22 // End of central directory record size
 
 ///|
-/// Write local file header for a member to buffer
+/// Write local file header for a member to buffer.
 /// 
-/// Local file header structure (30 bytes fixed + variable):
-/// - signature (4 bytes): 0x04034b50
-/// - version needed to extract (2 bytes)
-/// - general purpose bit flag (2 bytes)
-/// - compression method (2 bytes)
-/// - last mod file time (2 bytes, DOS format)
-/// - last mod file date (2 bytes, DOS format)
-/// - CRC-32 (4 bytes)
-/// - compressed size (4 bytes)
-/// - uncompressed size (4 bytes)
-/// - file name length (2 bytes)
-/// - extra field length (2 bytes)
-/// - file name (variable)
-/// - extra field (variable, currently 0)
+/// Local file header structure (30 bytes fixed + variable filename + extra):
 /// 
-/// Returns the offset where the local header was written (for central directory)
+/// Offset | Size | Field
+/// -------|------|------------------------------------------
+///   0    |  4   | Local file header signature (0x04034b50)
+///   4    |  2   | Version needed to extract
+///   6    |  2   | General purpose bit flag
+///   8    |  2   | Compression method
+///  10    |  2   | Last mod file time (DOS format)
+///  12    |  2   | Last mod file date (DOS format)  
+///  14    |  4   | CRC-32 of uncompressed data
+///  18    |  4   | Compressed size
+///  22    |  4   | Uncompressed size
+///  26    |  2   | Filename length (n)
+///  28    |  2   | Extra field length (m, currently 0)
+///  30    |  n   | Filename (UTF-8 encoded)
+/// 30+n   |  m   | Extra field (unused, m=0)
+/// 
+/// This header precedes each file's compressed data in the ZIP archive.
+/// The returned offset is used by Central Directory headers for file location.
+/// 
+/// Returns: byte offset where this local header was written in the buffer.
 fn Member::write_local_header(self : Member, buf : @buffer.Buffer) -> Int {
   let local_header_offset = buf.length()
   let path_bytes = self.path().to_string().utf8()

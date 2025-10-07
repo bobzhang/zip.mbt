@@ -2,8 +2,18 @@
 // Provides hex dump functionality similar to hexdump -C command
 
 ///|
-/// Convert bytes to a hex dump format similar to hexdump -C
-/// Shows offset, hex bytes, and ASCII representation
+/// Convert bytes to a hex dump format similar to `hexdump -C`.
+/// 
+/// Output format (16 bytes per line):
+/// 00000000  48 65 6c 6c 6f 20 57 6f  72 6c 64 21 0a 00 00 00  |Hello World!....|
+/// 00000010  ...
+/// 
+/// Each line shows:
+/// - 8-digit hex offset
+/// - Up to 16 hex bytes (space-separated, grouped by 8)
+/// - ASCII representation (printable chars, '.' for non-printable)
+/// 
+/// Useful for debugging binary data, ZIP headers, compressed streams.
 pub fn hex_dump(data : Bytes) -> String {
   let mut result = ""
   let mut offset = 0

@@ -2,6 +2,19 @@
 // This creates test ZIP files that can be verified with standard tools
 
 ///|
+/// Main entry point for ZIP library demonstration and testing.
+/// 
+/// This CLI tool exercises the major features of the MoonBit ZIP library:
+/// 1. Single-file ZIP creation (stored format)
+/// 2. Multi-file archives with mixed content
+/// 3. Directory handling and nested paths
+/// 4. Hex dump utilities for debugging binary output
+/// 
+/// Generated ZIP files can be verified with external tools like `unzip -l`,
+/// `7zip`, or `zipinfo` to ensure compatibility with standard implementations.
+/// 
+/// The tool demonstrates both the high-level Archive API and lower-level
+/// File/Member construction patterns.
 #coverage.skip
 fn main {
   println("=== MoonBit ZIP Library Test ===\n")
