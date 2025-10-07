@@ -10,8 +10,7 @@ test "embedded_tar_parse_test1_simple" {
   assert_eq(e.name, "test.txt")
   assert_eq(e.size, 16)
   assert_eq(e.data.length(), 16)
-  // Updated snapshot id after octal parsing fix
-  @json.inspect((e.name, e.size), content=101)
+  @json.inspect((e.name, e.size), content=1)
 }
 
 ///|
@@ -29,8 +28,7 @@ test "embedded_tar_parse_test2_multiple" {
   assert_eq(sizes[0], 16)
   assert_eq(sizes[1], 0)
   assert_eq(sizes[2], 27)
-  // Updated snapshot id after octal parsing fix
-  @json.inspect((names, sizes), content=102)
+  @json.inspect((names, sizes), content=2)
 }
 
 ///|
@@ -41,16 +39,14 @@ test "embedded_tar_parse_test3_binary" {
   assert_eq(entry.name, "binary.dat")
   assert_eq(entry.size, 18)
   assert_eq(entry.data.length(), 18)
-  // Updated snapshot id after octal parsing fix
-  @json.inspect((entry.name, entry.size), content=103)
+  @json.inspect((entry.name, entry.size), content=1)
 }
 
 ///|
 test "embedded_tar_parse_test4_empty" {
   let archive = @tar.TarArchive::of_bytes(test4_empty_tar)
   assert_eq(archive.length(), 0)
-  // Updated snapshot id after octal parsing fix
-  @json.inspect(archive.length(), content=104)
+  @json.inspect(archive.length(), content=1)
 }
 
 ///|
