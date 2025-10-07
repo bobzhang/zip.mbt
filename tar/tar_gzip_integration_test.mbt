@@ -10,8 +10,8 @@
 /// // Use fully-qualified package references (@bobzhang/zip/gzip, @bobzhang/zip/deflate)
 test "tar_gzip_round_trip_programmatic" {
   let archive = @tar.TarArchive::empty()
-  archive.add(@tar.TarEntry::file("a.txt", "AAA".to_bytes()))
-  archive.add(@tar.TarEntry::file("dir/b.txt", "BBB".to_bytes()))
+  archive.add(@tar.TarEntry::file("a.txt", b"AAA"))
+  archive.add(@tar.TarEntry::file("dir/b.txt", b"BBB"))
   let tar_bytes = archive.to_bytes()
   let gz = @gzip.compress(tar_bytes)
   let ungz = @gzip.decompress(gz)

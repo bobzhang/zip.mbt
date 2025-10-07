@@ -348,24 +348,20 @@ fn write_octal_field(
   value : Int,
   width : Int,
 ) -> Unit {
-  // Generate decimal representation (to match parse_octal behavior)
-  // TODO: Fix this to use proper octal when parse_octal is also fixed
-  let decimal_str = value.to_string()
-  let bytes = @encoding/utf8.encode(decimal_str)
-  let len = if bytes.length() > width - 1 { width - 1 } else { bytes.length() }
-
-  // Pad with zeros on the left
-  let start_pos = width - 1 - len
-  for i = 0; i < start_pos; i = i + 1 {
-    buffer[pos + i] = 48 // '0'
+  let raw = to_octal_string(value)
+  let bytes_raw = @encoding/utf8.encode(raw)
+  let len = if bytes_raw.length() > width - 1 {
+    width - 1
+  } else {
+    bytes_raw.length()
   }
-
-  // Write the decimal number (with leading zeros)
+  let pad = width - 1 - len
+  for i = 0; i < pad; i = i + 1 {
+    buffer[pos + i] = 48
+  }
   for i = 0; i < len; i = i + 1 {
-    buffer[pos + start_pos + i] = bytes[i].to_int()
+    buffer[pos + pad + i] = bytes_raw[i].to_int()
   }
-
-  // Null terminate
   buffer[pos + width - 1] = 0
 }
 
@@ -420,21 +416,19 @@ fn extract_string(data : Bytes, start : Int, max_len : Int) -> String {
 ///|
 /// Parse octal string to integer  
 fn parse_octal(s : String) -> Int {
-  // TAR format uses octal strings like "0000644\0"
-  // For now, parse as decimal since MoonBit doesn't have built-in octal parsing
-  // Remove leading zeros manually
-  let mut start = 0
-  while start < s.length() && s[start] == '0' {
-    start = start + 1
-  }
-  if start >= s.length() {
-    0
-  } else {
-    let trimmed = s[start:].to_string() catch { _ => s }
-    @strconv.parse_int(trimmed) catch {
-      _ => 0
+  let mut value = 0
+  for i = 0; i < s.length(); i = i + 1 {
+    let c = s[i]
+    if c == 0 || c == 32 {
+      break
+    } // NUL or space
+    if c >= 48 && c <= 55 { // '0'..'7'
+      value = value * 8 + (c - 48)
+    } else {
+      break
     }
   }
+  value
 }
 
 ///|
