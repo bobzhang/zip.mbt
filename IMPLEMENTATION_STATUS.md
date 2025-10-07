@@ -49,10 +49,10 @@ This is a complete port of the OCaml zipc library to MoonBit, with all core feat
 |-----------|-------------|-------|
 | `Crc_32.string` | `bytes_crc32` | ✅ Implemented |
 | `Crc_32.equal` | `Crc32::` methods | ✅ Implemented |
-| `Crc_32.check` | `check_crc32` | ✅ Implemented |
+| `Crc_32.check` | (removed) | ✅ Replaced by direct equality |
 | `Adler_32.string` | `bytes_adler32` | ✅ Implemented |
 | `Adler_32.equal` | `Adler32::` methods | ✅ Implemented |
-| `Adler_32.check` | `check_adler32` | ✅ Implemented |
+| `Adler_32.check` | (removed) | ✅ Replaced by direct equality |
 | `inflate` | `inflate` | ✅ Implemented |
 | `inflate_and_crc_32` | `inflate_and_crc32` | ✅ Implemented |
 | `inflate_and_adler_32` | `inflate_and_adler32` | ✅ Implemented |

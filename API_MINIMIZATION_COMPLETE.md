@@ -58,7 +58,7 @@ The API minimization refactoring has been successfully completed with a conserva
 
 ✅ **Checksum Functions**
 - `bytes_crc32()`, `bytes_adler32()` - Calculate checksums
-- `check_crc32()`, `check_adler32()` - Validate checksums
+// Removed: `check_crc32()`, `check_adler32()` - direct equality preferred
 
 ✅ **Utility Functions**
 - `fpath_ensure_unix()`, `fpath_ensure_directoryness()`, `fpath_sanitize()`

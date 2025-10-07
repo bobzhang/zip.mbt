@@ -4,8 +4,6 @@ package "bobzhang/zip/checksum/crc32"
 // Values
 fn bytes_crc32(Bytes, Int, Int) -> UInt
 
-fn check_crc32(UInt, UInt) -> Result[Unit, String]
-
 // Errors
 
 // Types and methods

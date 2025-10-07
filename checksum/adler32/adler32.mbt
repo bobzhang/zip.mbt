@@ -90,11 +90,5 @@ pub fn bytes_adler32(bytes : Bytes, start : Int, len : Int) -> UInt {
 ///|
 /// Check if two Adler-32 values match
 /// Returns Ok(()) if they match, or an error message if they don't
-pub fn check_adler32(expect : UInt, found : UInt) -> Result[Unit, String] {
-  if expect == found {
-    Ok(())
-  } else {
-    let msg = "Adler-32 mismatch: expected \{expect.to_hex_string()}, found \{found.to_hex_string()}"
-    Err(msg)
-  }
-}
+// NOTE: `check_adler32` helper removed. Callers should compare values directly:
+//   if expect != found { /* handle mismatch */ }

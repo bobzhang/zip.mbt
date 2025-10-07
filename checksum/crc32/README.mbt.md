@@ -12,7 +12,7 @@ The `crc32` package implements the CRC-32 checksum algorithm as used in ZIP arch
 - **Standard Algorithm**: IEEE 802.3 CRC-32 (used by ZIP, gzip, PNG)
 - **Table-Driven**: Fast computation using 256-entry lookup table
 - **Byte Range Support**: Calculate CRC for a slice of a byte array
-- **Validation Helper**: Check computed vs expected CRC with error messages
+// Validation helper `check_crc32` removed (compare values directly)
 
 ## API
 
@@ -35,15 +35,7 @@ Compute CRC-32 checksum for a byte range.
 
 **Returns:** 32-bit CRC-32 checksum
 
-#### `check_crc32(expect : Crc32, found : Crc32) -> Result[Unit, String]`
-
-Validate a CRC-32 checksum.
-
-**Parameters:**
-- `expect` - Expected checksum value
-- `found` - Computed checksum value
-
-**Returns:** `Ok(())` if checksums match, `Err(message)` if they don't
+// `check_crc32` removed from API (use simple equality comparison)
 
 ## Algorithm Details
 

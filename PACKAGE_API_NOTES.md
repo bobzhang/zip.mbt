@@ -56,12 +56,12 @@ This is different from languages like Rust which have `pub(crate)` or Java's pac
 ### ✅ checksum Packages - Already Minimal
 
 **crc32**:
-- 2 functions: `bytes_crc32()`, `check_crc32()`
+- function: `bytes_crc32()` (removed `check_crc32()`)
 - 1 type: `Crc32` with methods
 - Used by main package and deflate
 
 **adler32**:
-- 2 functions: `bytes_adler32()`, `check_adler32()`
+- function: `bytes_adler32()` (removed `check_adler32()`)
 - 1 type: `Adler32` with methods
 - Used by main package and deflate
 

@@ -12,7 +12,7 @@ The `adler32` package implements the Adler-32 checksum algorithm as defined in R
 - **Standard Algorithm**: RFC 1950 Adler-32 (used by zlib/deflate)
 - **Fast Computation**: Faster than CRC-32, no lookup table needed
 - **Byte Range Support**: Calculate checksum for a slice of a byte array
-- **Validation Helper**: Check computed vs expected checksum with error messages
+// Validation helper `check_adler32` removed (compare values directly)
 
 ## API
 
@@ -35,15 +35,7 @@ Compute Adler-32 checksum for a byte range.
 
 **Returns:** 32-bit Adler-32 checksum
 
-#### `check_adler32(expect : Adler32, found : Adler32) -> Result[Unit, String]`
-
-Validate an Adler-32 checksum.
-
-**Parameters:**
-- `expect` - Expected checksum value
-- `found` - Computed checksum value
-
-**Returns:** `Ok(())` if checksums match, `Err(message)` if they don't
+// `check_adler32` removed from API (use simple equality comparison)
 
 ## Algorithm Details
 

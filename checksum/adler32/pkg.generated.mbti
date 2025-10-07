@@ -4,8 +4,6 @@ package "bobzhang/zip/checksum/adler32"
 // Values
 fn bytes_adler32(Bytes, Int, Int) -> UInt
 
-fn check_adler32(UInt, UInt) -> Result[Unit, String]
-
 // Errors
 
 // Types and methods

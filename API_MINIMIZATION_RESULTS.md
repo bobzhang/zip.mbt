@@ -78,8 +78,7 @@ Successfully reduced the public API surface of the main `bobzhang/zip` package b
 ✅ **Checksum Functions**
 - `bytes_crc32()` - Calculate CRC-32
 - `bytes_adler32()` - Calculate Adler-32
-- `check_crc32()` - Validate CRC-32
-- `check_adler32()` - Validate Adler-32
+// Removed helpers: `check_crc32()`, `check_adler32()` (use direct equality)
 
 ✅ **Utility Functions**
 - `fpath_ensure_unix()` - Path normalization

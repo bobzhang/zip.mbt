@@ -9,13 +9,13 @@ Following the architecture plan in ARCHITECTURE.md, we are extracting packages f
 1. **checksum/crc32** ✅
    - Lines: ~100
    - Tests: 7/7 passing
-   - Exports: `Crc32` struct, `bytes_crc32()`, `check_crc32()`
+   - Exports: `Crc32` struct, `bytes_crc32()` (removed `check_crc32()`)
    - Status: Production-ready
 
 2. **checksum/adler32** ✅
    - Lines: ~110
    - Tests: 6/6 passing
-   - Exports: `Adler32` struct, `bytes_adler32()`, `check_adler32()`
+   - Exports: `Adler32` struct, `bytes_adler32()` (removed `check_adler32()`)
    - Status: Production-ready
 
 ### Level 1: Basic Utilities - 2 packages

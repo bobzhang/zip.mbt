@@ -27,8 +27,7 @@ After reviewing all `pkg.generated.mbti` files, the packages are exposing far to
 - `inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, Int64)` - With Adler-32
 - `bytes_crc32(Bytes, Int, Int) -> Int64` - Calculate CRC-32
 - `bytes_adler32(Bytes, Int, Int) -> Int64` - Calculate Adler-32
-- `check_crc32(Int64, Int64) -> Result[Unit, String]` - Validate CRC-32
-- `check_adler32(Int64, Int64) -> Result[Unit, String]` - Validate Adler-32
+// Removed: `check_crc32`, `check_adler32` (compare directly)
 
 **Utility Functions (from types):**
 - `fpath_ensure_unix(String) -> String`

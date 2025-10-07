@@ -93,11 +93,5 @@ pub fn bytes_crc32(bytes : Bytes, start : Int, len : Int) -> UInt {
 ///|
 /// Check if two CRC-32 values match
 /// Returns Ok(()) if they match, or an error message if they don't
-pub fn check_crc32(expect : UInt, found : UInt) -> Result[Unit, String] {
-  if expect == found {
-    Ok(())
-  } else {
-    let msg = "CRC-32 mismatch: expected \{expect.to_hex_string()}, found \{found.to_hex_string()}"
-    Err(msg)
-  }
-}
+// NOTE: `check_crc32` helper removed. Callers should compare values directly:
+//   if expect != found { /* handle mismatch */ }
