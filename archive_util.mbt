@@ -1,7 +1,7 @@
 ///|
 /// Create an empty archive
 pub fn Archive::empty() -> Archive {
-  { members: @immut/sorted_map.SortedMap::new() }
+  { members: {} }
 }
 
 ///|
@@ -31,42 +31,75 @@ pub fn Archive::find(self : Archive, path : Fpath) -> Member? {
 ///|
 /// Add a member to the archive (replaces if path already exists)
 pub fn Archive::add(self : Archive, m : Member) -> Archive {
-  { members: self.members.add(m.path(), m) }
+  self.members[m.path()] = m
+  self
 }
 
 ///|
 /// Remove a member from the archive by path
 pub fn Archive::remove(self : Archive, path : Fpath) -> Archive {
-  { members: self.members.remove(path) }
+  self.members.remove(path)
+  self
 }
 
 ///|
 /// Fold over all members in lexicographic path order
 pub fn[T] Archive::fold(self : Archive, f : (Member, T) -> T, init : T) -> T {
-  self.members.foldl_with_key(init~, fn(acc, _path, m) { f(m, acc) })
+  // Collect keys and sort lexicographically to preserve previous semantics
+  let keys : Array[Fpath] = []
+  for k, _ in self.members {
+    keys.push(k)
+  }
+  // Simple insertion sort (archives are usually small)
+  for i = 1; i < keys.length(); i = i + 1 {
+    let key = keys[i]
+    let mut j = i - 1
+    while j >= 0 && keys[j].to_string() > key.to_string() {
+      keys[j + 1] = keys[j]
+      j = j - 1
+    }
+    keys[j + 1] = key
+  }
+  let mut acc = init
+  for k in keys {
+    acc = f(self.members[k], acc)
+  }
+  acc
 }
 
 ///|
 /// Convert archive to an array of members (sorted by path)
 pub fn Archive::to_array(self : Archive) -> Array[Member] {
   let result : Array[Member] = []
-  self.members.each(fn(_path, m) { result.push(m) })
+  // Reuse sorted iteration
+  let keys : Array[Fpath] = []
+  for k, _ in self.members {
+    keys.push(k)
+  }
+  for i = 1; i < keys.length(); i = i + 1 {
+    let key = keys[i]
+    let mut j = i - 1
+    while j >= 0 && keys[j].to_string() > key.to_string() {
+      keys[j + 1] = keys[j]
+      j = j - 1
+    }
+    keys[j + 1] = key
+  }
+  for k in keys {
+    result.push(self.members[k])
+  }
   result
 }
 
 ///|
 /// Convert archive to a SortedMap from path to member
-pub fn Archive::to_map(
-  self : Archive,
-) -> @immut/sorted_map.SortedMap[Fpath, Member] {
+pub fn Archive::to_map(self : Archive) -> Map[Fpath, Member] {
   self.members
 }
 
 ///|
 /// Create archive from a SortedMap
 /// Warning: Assumes each key k maps to member m with Member::path(m) == k
-pub fn Archive::of_map(
-  map : @immut/sorted_map.SortedMap[Fpath, Member],
-) -> Archive {
+pub fn Archive::of_map(map : Map[Fpath, Member]) -> Archive {
   { members: map }
 }

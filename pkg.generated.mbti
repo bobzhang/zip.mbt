@@ -4,7 +4,6 @@ package "bobzhang/zip"
 import(
   "bobzhang/zip/member"
   "bobzhang/zip/types/fpath"
-  "moonbitlang/core/immut/sorted_map"
 )
 
 // Values
@@ -22,11 +21,11 @@ fn Archive::is_empty(Self) -> Bool
 fn Archive::mem(Self, @fpath.Fpath) -> Bool
 fn Archive::member_count(Self) -> Int
 fn Archive::of_bytes(Bytes) -> Self raise
-fn Archive::of_map(@sorted_map.SortedMap[@fpath.Fpath, @member.Member]) -> Self
+fn Archive::of_map(Map[@fpath.Fpath, @member.Member]) -> Self
 fn Archive::remove(Self, @fpath.Fpath) -> Self
 fn Archive::to_array(Self) -> Array[@member.Member]
 fn Archive::to_bytes(Self, first? : @fpath.Fpath) -> Bytes raise
-fn Archive::to_map(Self) -> @sorted_map.SortedMap[@fpath.Fpath, @member.Member]
+fn Archive::to_map(Self) -> Map[@fpath.Fpath, @member.Member]
 impl ToJson for Archive
 
 // Type aliases
