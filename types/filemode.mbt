@@ -6,12 +6,14 @@ pub(all) struct FileMode(Int) derive(Eq, Compare, ToJson, FromJson, Hash)
 
 ///|
 /// Get the integer value of the file mode
+/// Raw integer permission bits (includes type bits if supplied externally).
 pub fn FileMode::to_int(self : FileMode) -> Int {
   self.0
 }
 
 ///|
 /// Create FileMode from integer
+/// Wrap raw bits in FileMode.
 pub fn FileMode::from_int(value : Int) -> FileMode {
   FileMode(value)
 }
@@ -30,6 +32,7 @@ pub impl Show for FileMode with to_string(x) {
 
 ///|
 /// Format Unix file mode like ls -l (e.g., "rwxr-xr-x")
+/// Render rwx triads (owner/group/other).
 pub fn format_file_mode(mode : FileMode) -> String {
   fn format_entity(m : Int) -> String {
     let r = if (m & 0o4) != 0 { "r" } else { "-" }

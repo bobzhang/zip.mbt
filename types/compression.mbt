@@ -12,6 +12,7 @@ pub(all) enum Compression {
 
 ///|
 /// Convert compression format to ZIP method number
+/// Map to ZIP numeric method id.
 pub fn Compression::to_int(self : Compression) -> Int {
   match self {
     Stored => 0
@@ -27,6 +28,7 @@ pub fn Compression::to_int(self : Compression) -> Int {
 ///|
 /// Convert ZIP method number to compression format
 #as_free_fn(compression)
+/// Construct enum from ZIP method id; unrecognized -> Other(id).
 pub fn Compression::from_int(compression_method : Int) -> Compression {
   match compression_method {
     0 => Stored
@@ -41,6 +43,7 @@ pub fn Compression::from_int(compression_method : Int) -> Compression {
 
 ///|
 /// Convert compression format to human-readable string
+/// Human-friendly lowercase string.
 pub fn Compression::to_string(self : Compression) -> String {
   match self {
     Stored => "stored"

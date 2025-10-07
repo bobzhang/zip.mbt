@@ -56,6 +56,7 @@ pub impl ToJson for Fpath with to_json(x) {
 
 ///|
 /// Convert backslashes to forward slashes (for Windows paths)
+/// Normalize path separators to '/' (Windows->Unix style), preserving relative structure.
 pub fn ensure_unix(path : Fpath) -> Fpath {
   let chars : Array[Char] = []
   for i = 0; i < path.length(); i = i + 1 {
@@ -74,6 +75,7 @@ pub fn ensure_unix(path : Fpath) -> Fpath {
 
 ///|
 /// Ensure path ends with '/' (for directories)
+/// Ensure trailing '/' for directory semantics (adds if missing; empty -> "./").
 pub fn ensure_directoryness(path : Fpath) -> Fpath {
   if path.is_empty() {
     Fpath("./")
@@ -87,6 +89,7 @@ pub fn ensure_directoryness(path : Fpath) -> Fpath {
 ///|
 /// Sanitize a file path by removing dangerous segments
 /// Removes: empty segments, ".", "..", and absolute path markers
+/// Remove dangerous segments ("", ".", "..") and collapse separators (“/” and “\”).
 pub fn sanitize(path : Fpath) -> Fpath {
   fn keep_segment(seg : String) -> Bool {
     seg != "" && seg != "." && seg != ".."

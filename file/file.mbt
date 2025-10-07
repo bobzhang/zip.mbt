@@ -156,6 +156,8 @@ pub let max_file_size : Int64 = 4294967295L // 2^32 - 1 (4GB)
 
 ///|
 /// Create file data from compressed bytes
+/// Build a File metadata + data wrapper from already-compressed content.
+/// Performs size limit checks and applies default versions/flags if optionals are None.
 pub fn File::make(
   compressed_bytes : Bytes,
   start : Int,
@@ -188,6 +190,8 @@ pub fn File::make(
 
 ///|
 /// Create stored (uncompressed) file data from bytes
+/// Construct a Stored (uncompressed) File directly from raw bytes.
+/// Computes CRC-32 and sets compression=Stored.
 pub fn File::stored_of_bytes(
   bytes : Bytes,
   start : Int,
@@ -200,6 +204,8 @@ pub fn File::stored_of_bytes(
 ///|
 /// Create deflate-compressed file data from bytes
 /// Uses LZ77 + Huffman compression with optimal block type selection
+/// Compress raw bytes using DEFLATE at optional level and wrap as File.
+/// Chooses dynamic vs fixed Huffman based on size & level.
 pub fn File::deflate_of_bytes(
   bytes : Bytes,
   start : Int,
@@ -279,6 +285,7 @@ pub fn File::compressed_bytes(self : File) -> Bytes {
 
 ///|
 /// Extract just the compressed data as a standalone Bytes object
+/// Copy out just this file's compressed payload into a fresh Bytes buffer.
 pub fn File::compressed_bytes_to_bytes(self : File) -> Bytes {
   let result = Array::make(self.compressed_size, b'\x00')
   for i = 0; i < self.compressed_size; i = i + 1 {
@@ -319,12 +326,14 @@ pub fn File::gp_flags(self : File) -> UInt16 {
 
 ///|
 /// Check if file is encrypted
+/// Whether general-purpose bit flag indicates encryption (unsupported here).
 pub fn File::is_encrypted(self : File) -> Bool {
   (self.gp_flags & gp_flag_encrypted) != 0
 }
 
 ///|
 /// Check if we can extract (decompress) this file
+/// True if decompression supported and file not encrypted.
 pub fn File::can_extract(self : File) -> Bool {
   if self.is_encrypted() {
     false
@@ -338,6 +347,7 @@ pub fn File::can_extract(self : File) -> Bool {
 
 ///|
 /// Decompress file data without CRC check
+/// Decompress to bytes (or copy if stored) and return (data, computed_crc32) without verifying.
 pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
   if self.is_encrypted() {
     fail("Encrypted files are not supported")
@@ -368,6 +378,7 @@ pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
 
 ///|
 /// Decompress file data with CRC check
+/// Decompress and validate CRC-32, raising on mismatch.
 pub fn File::to_bytes(self : File) -> Bytes raise {
   let (result, found_crc) = self.to_bytes_no_crc_check()
   let expected_crc = self.decompressed_crc32

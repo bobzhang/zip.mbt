@@ -6,10 +6,12 @@
 
 ///|
 /// CRC-32 state for incremental checksum computation
+/// Internal state wraps the running (bitwise inverted) CRC value.
 struct Crc32(UInt) derive(Eq, Show)
 
 ///|
 /// CRC-32 polynomial (reversed, for table-driven algorithm)
+/// Reversed representation of polynomial 0x04C11DB7 used for little-endian / reflected implementation.
 let crc32_poly : UInt = 0xedb88320
 
 ///|
@@ -30,6 +32,7 @@ let crc32_table : Array[UInt] = {
 ///|
 /// Initialize a new CRC-32 checksum computation
 /// Returns a Crc32 state initialized to the standard starting value
+/// Start a new CRC-32 computation (initial value = 0xFFFFFFFF).
 pub fn Crc32::init() -> Crc32 {
   Crc32(0xFFFFFFFF)
 }
@@ -37,6 +40,7 @@ pub fn Crc32::init() -> Crc32 {
 ///|
 /// Finalize the CRC-32 checksum and return the result
 /// This XORs the internal state with 0xFFFFFFFF as per the standard
+/// Finalize the checksum (bitwise NOT). After finish() the state should be discarded.
 pub fn Crc32::finish(self : Crc32) -> UInt {
   let Crc32(value) = self
   value ^ 0xFFFFFFFF
@@ -45,6 +49,7 @@ pub fn Crc32::finish(self : Crc32) -> UInt {
 ///|
 /// Update CRC-32 with a single byte
 /// Returns a new Crc32 state with the byte incorporated
+/// Feed one byte (0..255). Returns new immutable state.
 pub fn Crc32::update_byte(self : Crc32, byte : Int) -> Crc32 {
   let Crc32(value) = self
   let index = ((value ^ byte.reinterpret_as_uint()) & 0xFF).reinterpret_as_int()
@@ -55,6 +60,7 @@ pub fn Crc32::update_byte(self : Crc32, byte : Int) -> Crc32 {
 ///|
 /// Update CRC-32 with a sequence of bytes
 /// Returns a new Crc32 state with all bytes incorporated
+/// Bulk update over bytes[start .. start+len). No bounds checking beyond caller guarantees.
 pub fn Crc32::update_bytes(
   self : Crc32,
   bytes : Bytes,
@@ -71,6 +77,7 @@ pub fn Crc32::update_bytes(
 ///|
 /// Compute CRC-32 checksum of a byte sequence in one step
 /// Convenience function that initializes, updates, and finalizes in one call
+/// Convenience one-shot helper.
 pub fn bytes_crc32(bytes : Bytes, start : Int, len : Int) -> UInt {
   Crc32::init().update_bytes(bytes, start, len).finish()
 }

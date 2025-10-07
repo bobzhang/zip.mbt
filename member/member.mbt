@@ -55,6 +55,7 @@ pub struct Member {
 ///|
 /// Create a new archive member
 #as_free_fn
+/// Create a new Member, normalizing path, enforcing length, defaulting mode & mtime.
 pub fn Member::make(
   path : Fpath,
   kind : MemberKind,
@@ -138,6 +139,7 @@ pub fn Member::is_file(self : Member) -> Bool {
 
 ///|
 /// Format member info (like ls -l)
+/// Short ls -l style listing line.
 pub fn Member::format(self : Member) -> String {
   let is_dir_char = match self.kind {
     Dir => "d"
@@ -170,6 +172,7 @@ pub fn Member::format(self : Member) -> String {
 
 ///|
 /// Format member info with detailed compression information
+/// Extended listing with compression method & ratio (if file).
 pub fn Member::format_long(self : Member) -> String {
   let basic = self.format()
   match self.kind {
