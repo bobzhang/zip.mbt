@@ -252,9 +252,12 @@ pub fn TarArchive::to_bytes(self : TarArchive) -> Bytes {
   }
 
   // End-of-archive marker (1024 zero bytes) is already in the array
-  // For now, return simplified format with correct size
-  // TODO: Implement proper array->bytes conversion when MoonBit supports it better
-  Bytes::make(total_size, 0)
+  // Convert Array[Int] to Bytes
+  let bytes_array = Array::make(total_size, b'\x00')
+  for i = 0; i < total_size; i = i + 1 {
+    bytes_array[i] = result[i].to_byte()
+  }
+  Bytes::from_array(bytes_array)
 }
 
 ///|
@@ -345,9 +348,10 @@ fn write_octal_field(
   value : Int,
   width : Int,
 ) -> Unit {
-  // Generate octal representation manually
-  let octal_str = to_octal_string(value)
-  let bytes = @encoding/utf8.encode(octal_str)
+  // Generate decimal representation (to match parse_octal behavior)
+  // TODO: Fix this to use proper octal when parse_octal is also fixed
+  let decimal_str = value.to_string()
+  let bytes = @encoding/utf8.encode(decimal_str)
   let len = if bytes.length() > width - 1 { width - 1 } else { bytes.length() }
 
   // Pad with zeros on the left
@@ -356,7 +360,7 @@ fn write_octal_field(
     buffer[pos + i] = 48 // '0'
   }
 
-  // Write the octal number
+  // Write the decimal number (with leading zeros)
   for i = 0; i < len; i = i + 1 {
     buffer[pos + start_pos + i] = bytes[i].to_int()
   }
