@@ -201,9 +201,9 @@ The following internal implementation functions are now private (accessible only
 
 These functions remain public as they are legitimate API for compression clients:
 
-- `deflate_stored(bytes: Bytes, start: Int, len: Int) -> Bytes` - Create uncompressed DEFLATE blocks
+- `deflate_stored(data: BytesView) -> Bytes` - Create uncompressed DEFLATE blocks
 - `deflate_fixed(data: BytesView, is_final: Bool, good_match: Int, max_chain: Int) -> Bytes` - LZ77 + Fixed Huffman compression
-- `deflate_dynamic(bytes: Bytes, start: Int, len: Int, is_final: Bool, good_match: Int, max_chain: Int) -> Bytes` - LZ77 + Dynamic Huffman compression
+- `deflate_dynamic(data: BytesView, is_final: Bool, good_match: Int, max_chain: Int) -> Bytes` - LZ77 + Dynamic Huffman compression
 
 **Rationale**: The `file/file.mbt` module uses these functions to implement ZIP file compression with different compression levels. These are legitimate block-level compression functions that allow fine-grained control.
 

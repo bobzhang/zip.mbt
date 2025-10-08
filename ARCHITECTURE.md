@@ -546,55 +546,34 @@ pub enum DeflateLevel {
   Best      // Maximum compression (dynamic Huffman, extensive matching)
 }
 
-// Low-level compression functions
-pub fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes
+// Low-level compression functions (current simplified API)
+pub fn deflate_stored(data : BytesView) -> Bytes
 
 pub fn deflate_fixed_literals_only(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  final_block : Bool
+  data : BytesView,
+  is_final : Bool
 ) -> Bytes
 
 pub fn deflate_fixed(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  final_block : Bool,
+  data : BytesView,
+  is_final : Bool,
   good_match : Int,
   max_chain : Int
 ) -> Bytes
 
 pub fn deflate_dynamic(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  final_block : Bool,
+  data : BytesView,
+  is_final : Bool,
   good_match : Int,
   max_chain : Int
 ) -> Bytes
 
 // High-level compression API
-pub fn deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level : DeflateLevel?
-) -> Result[Bytes, String]
+pub fn deflate(data : BytesView, level? : DeflateLevel) -> Bytes
 
-pub fn crc32_and_deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level : DeflateLevel?
-) -> Result[(UInt32, Bytes), String]
+pub fn crc32_and_deflate(data : BytesView, level? : DeflateLevel) -> (UInt32, Bytes)
 
-pub fn adler32_and_deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level : DeflateLevel?
-) -> Result[(UInt32, Bytes), String]
+pub fn adler32_and_deflate(data : BytesView, level? : DeflateLevel) -> (UInt32, Bytes)
 ```
 
 **Implementation Size**: ~1,320 lines
