@@ -5,7 +5,6 @@
     "bobzhang/zip/deflate/internal/bitstream",
     "bobzhang/zip/deflate/internal/huffman",
     "bobzhang/zip/deflate/internal/lz77",
-    "bobzhang/zip/checksum/crc32",
     "bobzhang/zip/checksum/adler32"
   ]
 }

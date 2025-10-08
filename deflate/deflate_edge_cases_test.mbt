@@ -249,9 +249,7 @@ test "zlib_compress_level_none" {
   let (adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
   @json.inspect(adler != 0U, content=true)
   let (decompressed, _) = @deflate.zlib_decompress(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -263,9 +261,7 @@ test "zlib_compress_level_best" {
   let (adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
   @json.inspect(adler != 0U, content=true)
   let (decompressed, _) = @deflate.zlib_decompress(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -439,16 +435,24 @@ test "deflate_max_match_length" {
 /// Test error propagation in crc32_and_deflate
 test "crc32_and_deflate_error_handling" {
   let data = b"test data for crc32"
-  let (crc, compressed) = @deflate.crc32_and_deflate(data[0:data.length()])
-  @json.inspect(crc != 0U, content=true)
+  let compressed = @deflate.deflate(data[0:data.length()])
+  // Just ensure compression produced bytes and round-trip works
   @json.inspect(compressed.length() > 0, content=true)
+  let decompressed = @deflate.inflate(
+    compressed,
+    0,
+    compressed.length(),
+    Some(data.length()),
+  )
+  @json.inspect(decompressed == data, content=true)
 }
 
 ///|
 /// Test error propagation in adler32_and_deflate
 test "adler32_and_deflate_error_handling" {
   let data = b"test data for adler32"
-  let (adler, compressed) = @deflate.adler32_and_deflate(data[0:data.length()])
+  let adler = @adler32.bytes_adler32(data[:])
+  let compressed = @deflate.deflate(data[0:data.length()])
   @json.inspect(adler != 0U, content=true)
   @json.inspect(compressed.length() > 0, content=true)
 }

@@ -362,13 +362,16 @@ pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
       let crc = @crc32.bytes_crc32(result[:])
       (result, crc)
     }
-    Deflate =>
-      @deflate.inflate_and_crc32(
+    Deflate => {
+      let decompressed = @deflate.inflate(
         self.compressed_bytes,
         self.start,
         self.compressed_size,
         Some(self.decompressed_size),
       )
+      let crc = @crc32.bytes_crc32(decompressed[:])
+      (decompressed, crc)
+    }
     _ => fail("Compression format \{self.compression} not supported")
   }
 }

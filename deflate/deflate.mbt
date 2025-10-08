@@ -479,35 +479,13 @@ pub fn inflate(
 /// Decompress deflate data and compute CRC-32
 /// Inflate and also compute CRC-32 of the decompressed output (single pass over result).
 /// Returns (bytes, crc32).
-pub fn inflate_and_crc32(
-  src : Bytes,
-  start : Int,
-  len : Int,
-  decompressed_size : Int?,
-) -> (Bytes, UInt) raise {
-  let decoder = InflateDecoder::new(src, start, len, decompressed_size)
-  let result = inflate_loop(decoder)
-  // Compute CRC-32 of the decompressed data
-  let crc = @crc32.bytes_crc32(result[:])
-  (result, crc)
-}
-
-///|
-/// Decompress deflate data and compute Adler-32
-/// Inflate and also compute Adler-32 of the decompressed output (single pass over result).
-/// Returns (bytes, adler32).
-pub fn inflate_and_adler32(
-  src : Bytes,
-  start : Int,
-  len : Int,
-  decompressed_size : Int?,
-) -> (Bytes, UInt) raise {
-  let decoder = InflateDecoder::new(src, start, len, decompressed_size)
-  let result = inflate_loop(decoder)
-  // Compute Adler-32 of the decompressed data
-  let adler = @adler32.bytes_adler32(result[:])
-  (result, adler)
-}
+// NOTE: Previously we exposed helper wrappers `inflate_and_crc32` and
+// `inflate_and_adler32` that returned (bytes, checksum). These added API
+// surface without providing substantial value (a single extra line for the
+// caller). They have been removed; callers should now:
+//   let bytes = inflate(src, start, len, size?)
+//   let crc  = @crc32.bytes_crc32(bytes[:])
+// (or Adler-32 respectively).
 
 // ============================================================================
 // Deflate Encoder (Compression)
@@ -1480,27 +1458,12 @@ pub fn deflate(data : BytesView, level? : DeflateLevel) -> Bytes raise {
 /// ## Performance Note
 /// CRC-32 calculation adds minimal overhead (~1-2% of compression time)
 /// since it's a simple linear pass over the input data.
-pub fn crc32_and_deflate(
-  data : BytesView,
-  level? : DeflateLevel,
-) -> (UInt, Bytes) raise {
-  let crc = @crc32.bytes_crc32(data)
-  let result = deflate(data, level?)
-  (crc, result)
-}
-
-///|
-/// Compress data with DEFLATE and compute Adler-32 of input
-/// Returns (Adler-32 checksum, compressed bytes)
-/// Compute Adler-32 of input then compress (checksum over original data).
-pub fn adler32_and_deflate(
-  data : BytesView,
-  level? : DeflateLevel,
-) -> (UInt, Bytes) raise {
-  let adler = @adler32.bytes_adler32(data)
-  let compressed = deflate(data, level?)
-  (adler, compressed)
-}
+// NOTE: Convenience wrappers `crc32_and_deflate` and `adler32_and_deflate`
+// have been removed. Callers should now compute the checksum explicitly on
+// the uncompressed input before (or after) invoking `deflate` as needed.
+// Example:
+//   let crc = @crc32.bytes_crc32(data)
+//   let compressed = deflate(data, level?)
 
 // ============================================================================
 // zlib Wrapper Format (RFC 1950)
@@ -1566,32 +1529,23 @@ pub fn zlib_compress(data : BytesView, level? : DeflateLevel) -> (UInt, Bytes) {
 /// Validates header and checksum
 /// Parse and decompress a zlib wrapper, validating header & Adler-32.
 /// Returns (decompressed bytes, adler32) and raises on header/checksum errors.
-pub fn zlib_decompress(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-) -> (Bytes, UInt) raise {
+pub fn zlib_decompress(data : BytesView) -> (Bytes, UInt) raise {
+  let len = data.length()
   if len < 6 {
     fail("zlib data too short (minimum 6 bytes)")
   }
-
-  // Read and validate CMF
-  let cmf = bytes[start].to_int()
-  let cm = cmf & 0x0F // Compression method
-  let cinfo = (cmf >> 4) & 0x0F // Window size
+  // Header bytes
+  let cmf = data[0].to_int()
+  let flg = data[1].to_int()
+  let cm = cmf & 0x0F
+  let cinfo = (cmf >> 4) & 0x0F
   if cm != 8 {
     fail("Invalid compression method (expected 8 for deflate)")
   }
   if cinfo > 7 {
     fail("Invalid window size")
   }
-
-  // Read and validate FLG
-  let flg = bytes[start + 1].to_int()
-  let _fcheck = flg & 0x1F
   let fdict = (flg >> 5) & 0x01
-
-  // Validate check bits
   let header = (cmf << 8) | flg
   if header.mod(31) != 0 {
     fail("Invalid zlib header checksum")
@@ -1599,23 +1553,17 @@ pub fn zlib_decompress(
   if fdict != 0 {
     fail("Preset dictionary not supported")
   }
-
-  // Decompress deflate data (skip 2-byte header, 4-byte trailer)
-  let deflate_start = start + 2
+  // Copy bytes (BytesView -> Bytes) for inflate API
+  let bytes_copy = data.to_bytes()
   let deflate_len = len - 6
-  let decompressed = inflate(bytes, deflate_start, deflate_len, None)
-
-  // Read Adler-32 checksum (big-endian, last 4 bytes)
-  let trailer_pos = start + len - 4
-  let stored_adler = (bytes[trailer_pos].to_int() << 24) |
-    (bytes[trailer_pos + 1].to_int() << 16) |
-    (bytes[trailer_pos + 2].to_int() << 8) |
-    bytes[trailer_pos + 3].to_int()
-
-  // Compute Adler-32 of decompressed data
+  let decompressed = inflate(bytes_copy, 2, deflate_len, None)
+  // Trailer
+  let trailer_pos = len - 4
+  let stored_adler = (data[trailer_pos].to_int() << 24) |
+    (data[trailer_pos + 1].to_int() << 16) |
+    (data[trailer_pos + 2].to_int() << 8) |
+    data[trailer_pos + 3].to_int()
   let computed_adler = @adler32.bytes_adler32(decompressed[:])
-
-  // Validate checksum
   if computed_adler.reinterpret_as_int() != stored_adler {
     fail("Adler-32 checksum mismatch")
   }

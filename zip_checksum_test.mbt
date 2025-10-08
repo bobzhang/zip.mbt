@@ -78,12 +78,8 @@ test "inflate_with_crc32" {
      252, 255, // ~length
      0x41, 0x42, 0x43, // "ABC"
   ])
-  let (result, crc) = @deflate.inflate_and_crc32(
-    compressed,
-    0,
-    compressed.length(),
-    None,
-  )
+  let result = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let crc = @crc32.bytes_crc32(result[:])
   // Verify data and that CRC is computed
   @json.inspect(
     (result[0].to_int(), result[1].to_int(), result[2].to_int(), crc > 0),
@@ -125,12 +121,10 @@ test "e2e_adler32_known_value" {
 ///|
 test "@deflate.crc32_and_deflate_api" {
   let data = b"test data"
-  let (crc, compressed) = @deflate.crc32_and_deflate(data[0:data.length()])
-  // CRC should match direct calculation
+  let crc = @crc32.bytes_crc32(data[:])
+  let compressed = @deflate.deflate(data[0:data.length()])
   let expected_crc = @crc32.bytes_crc32(data[:])
   @json.inspect(crc == expected_crc, content=true)
-
-  // Compressed data should be valid
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -143,12 +137,10 @@ test "@deflate.crc32_and_deflate_api" {
 ///|
 test "@deflate.adler32_and_deflate_api" {
   let data = b"test data"
-  let (adler, compressed) = @deflate.adler32_and_deflate(data[0:data.length()])
-  // Adler-32 should match direct calculation
+  let adler = @adler32.bytes_adler32(data[:])
+  let compressed = @deflate.deflate(data[0:data.length()])
   let expected_adler = @adler32.bytes_adler32(data[:])
   @json.inspect(adler == expected_adler, content=true)
-
-  // Compressed data should be valid
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -163,16 +155,17 @@ test "@deflate.adler32_and_deflate_api" {
 // ============================================================================
 
 ///|
-/// Test @deflate.inflate_and_adler32
+/// Test inflate + explicit Adler-32 (replacement for removed inflate_and_adler32 helper)
 test "coverage_inflate_adler32" {
   let data = b"Inflate with Adler-32"
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 128)
-  let (dec, adler) = @deflate.inflate_and_adler32(
+  let dec = @deflate.inflate(
     compressed,
     0,
     compressed.length(),
     Some(data.length()),
   )
+  let adler = @adler32.bytes_adler32(dec[:])
   @json.inspect((dec == data, adler == @adler32.bytes_adler32(data[:])), content=[
     true, true,
   ])
