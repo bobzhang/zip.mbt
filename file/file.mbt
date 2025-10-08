@@ -215,8 +215,8 @@ pub fn File::deflate_of_bytes(
   // Determine compression parameters based on level
   let (good_match, max_chain, use_dynamic) = match level {
     Some(@deflate.DeflateLevel::None) => {
-      // No compression, use stored blocks
-      let compressed = @deflate.deflate_stored(bytes, start, len)
+      // No compression, use stored block
+      let compressed = @deflate.deflate_stored(bytes[start:start + len])
       let crc = @crc32.bytes_crc32(bytes, start, len)
       return File::make(
         compressed,

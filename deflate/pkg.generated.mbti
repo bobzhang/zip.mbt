@@ -12,7 +12,7 @@ fn deflate_dynamic(BytesView, Bool, Int, Int) -> Bytes
 
 fn deflate_fixed(BytesView, Bool, Int, Int) -> Bytes
 
-fn deflate_stored(Bytes, Int, Int) -> Bytes raise
+fn deflate_stored(BytesView) -> Bytes raise
 
 fn inflate(Bytes, Int, Int, Int?) -> Bytes raise
 

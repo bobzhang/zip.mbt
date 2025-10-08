@@ -537,24 +537,25 @@ pub fn inflate_and_adler32(
 /// 
 /// ## Returns
 /// Complete deflate stream with stored block containing the specified data slice.
-pub fn deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes raise {
+pub fn deflate_stored(data : BytesView) -> Bytes raise {
+  let len = data.length()
   let max_block_size = 65535
   guard len <= max_block_size else {
     fail("Deflate compression for data > 65535 bytes not yet implemented")
   }
-  // Single block
+  // Single block (always final)
   let result_size = 1 + 4 + len
   let buffer = @buffer.new(size_hint=result_size)
   buffer.write_byte((0b00000001).to_byte()) // BFINAL=1, BTYPE=00
-  // Length (little-endian)
+  // LEN (little-endian)
   buffer.write_byte((len & 0xFF).to_byte())
   buffer.write_byte(((len >> 8) & 0xFF).to_byte())
-  // One's complement of length
+  // NLEN = one's complement
   let nlen = len ^ 0xFFFF
   buffer.write_byte((nlen & 0xFF).to_byte())
   buffer.write_byte(((nlen >> 8) & 0xFF).to_byte())
-  // Copy data
-  buffer.write_bytesview(bytes[start:start + len])
+  // Raw bytes
+  buffer.write_bytesview(data)
   buffer.contents()
 }
 
@@ -1439,8 +1440,8 @@ pub fn deflate(data : BytesView, level? : DeflateLevel) -> Bytes raise {
   let len = data.length()
   let (good_match, max_chain, use_dynamic) = match level {
     Some(DeflateLevel::None) =>
-      // No compression: stored block requires full Bytes; avoid copy if already full slice
-      return deflate_stored(data.to_bytes(), 0, len)
+      // No compression: return stored (uncompressed) block
+      return deflate_stored(data)
     Some(DeflateLevel::Fast) => (4, 128, false) // Fast: fixed Huffman only
     Some(DeflateLevel::Default) | None => (8, 1024, true) // Default: dynamic Huffman
     Some(DeflateLevel::Best) => (32, 4096, true) // Best: dynamic Huffman with max effort

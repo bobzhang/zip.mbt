@@ -212,7 +212,7 @@ test "deflate_level_best" {
 /// Test deflate_stored for very small data
 test "deflate_stored_small" {
   let data = b"x"
-  let compressed = @deflate.deflate_stored(data, 0, 1)
+  let compressed = @deflate.deflate_stored(data[:])
   @json.inspect(compressed.length(), content=6) // 1 header + 4 length + 1 data
   let decompressed = @deflate.inflate(
     compressed,
@@ -231,7 +231,7 @@ test "deflate_stored_max_block" {
     buf.write_byte((i % 256).to_byte())
   }
   let data = buf.contents()
-  let compressed = @deflate.deflate_stored(data, 0, 65535)
+  let compressed = @deflate.deflate_stored(data[:])
   @json.inspect(compressed.length(), content=65540) // 1 + 4 + 65535
   let decompressed = @deflate.inflate(
     compressed,

@@ -22,7 +22,7 @@ Successfully migrated error handling in the zip.mbt project from uncatchable `ab
 - `inflate_and_crc32(...) -> (Bytes, UInt) raise`
 - `inflate_and_adler32(...) -> (Bytes, UInt) raise`
 - `zlib_decompress(bytes, start, len) -> (Bytes, UInt) raise`
-- `deflate_stored(bytes, start, len) -> Bytes raise`
+- `deflate_stored(data: BytesView) -> Bytes raise`
 - `deflate(data : BytesView, level?) -> Bytes raise`
 - `crc32_and_deflate(...) -> (UInt, Bytes) raise`
 - `adler32_and_deflate(...) -> (UInt, Bytes) raise`

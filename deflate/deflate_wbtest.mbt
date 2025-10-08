@@ -4,7 +4,7 @@
 ///|
 test "deflate_stored_basic" {
   let data = b"hello"
-  let compressed = deflate_stored(data, 0, data.length())
+  let compressed = deflate_stored(data[:])
   let decompressed = inflate(
     compressed,
     0,
