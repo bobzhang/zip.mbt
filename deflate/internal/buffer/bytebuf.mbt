@@ -28,7 +28,7 @@ pub fn ByteBuf::length(self : ByteBuf) -> Int {
 pub fn ByteBuf::contents(self : ByteBuf) -> Bytes {
   // Convert Array to Bytes using literal syntax
   Bytes::from_fixedarray(
-    FixedArray::from_iter(self.buffer[0:self.length].iter()),
+    FixedArray::from_iter(self.buffer[0:self.length].iter()), // TODO: consider self.buffer[:self.length] when language adds shorthand
   )
 }
 
