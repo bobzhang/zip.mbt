@@ -24,7 +24,7 @@ The `deflate` package implements the complete DEFLATE compression algorithm (RFC
 
 ### 1. Stored Blocks (No Compression)
 ```
-deflate_stored(bytes, start, len) -> Bytes
+deflate_stored(data : BytesView) -> Bytes
 ```
 - No compression, just wraps data in DEFLATE format
 - Useful for already-compressed data
@@ -78,11 +78,11 @@ Decompress and compute Adler-32 in one pass.
 
 ### Deflation (Compression)
 
-#### `deflate_stored(bytes : Bytes, start : Int, len : Int) -> Bytes`
+#### `deflate_stored(data : BytesView) -> Bytes`
 
 Create uncompressed DEFLATE blocks.
 
-**Use case:** When data is incompressible or already compressed
+**Use case:** When data is incompressible or already compressed (wraps raw slice in a single stored block)
 
 #### `deflate_fixed_literals_only(bytes, start, len, is_final) -> Bytes`
 

@@ -87,7 +87,7 @@ pub fn File::deflate_of_bytes(
   _level : DeflateLevel?,
 ) -> Result[File, String] {
   // ONLY USES STORED BLOCKS - NO ACTUAL COMPRESSION!
-  let compressed = deflate_stored(bytes, start, len)
+  let compressed = deflate_stored(bytes[start:start+len])
   // ...
 }
 ```
