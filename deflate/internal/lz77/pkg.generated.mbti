@@ -10,7 +10,7 @@ fn find_backref(Bytes, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> 
 
 fn find_match_length(Bytes, Int, Int, Int, Int) -> Int
 
-fn hash4(Bytes, Int) -> Int
+fn hash4(BytesView) -> Int
 
 let hash_size : Int
 

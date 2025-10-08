@@ -1087,7 +1087,7 @@ pub fn deflate_fixed(
         }
         return
       }
-      let hash = @lz77.hash4(bytes, pos)
+      let hash = @lz77.hash4(bytes[pos:])
       let max_match = (start + len - pos).min(@lz77.max_match_len)
       let prev_len = @lz77.backref_len(prev_bref)
       let cur_bref = @lz77.find_backref(
@@ -1106,7 +1106,7 @@ pub fn deflate_fixed(
         let last = (next - 1).min(max_pos)
         for j = pos + 1; j <= last; j = j + 1 {
           if j + 3 < start + len {
-            let h = @lz77.hash4(bytes, j)
+            let h = @lz77.hash4(bytes[j:])
             @lz77.insert_hash(hash_head, hash_prev, h, j)
           }
         }
@@ -1248,7 +1248,7 @@ pub fn deflate_dynamic(
         }
         return
       }
-      let hash = @lz77.hash4(bytes, pos)
+      let hash = @lz77.hash4(bytes[pos:])
       let max_match = (start + len - pos).min(@lz77.max_match_len)
       let prev_len = @lz77.backref_len(prev_bref)
       let cur_bref = @lz77.find_backref(
@@ -1267,7 +1267,7 @@ pub fn deflate_dynamic(
         let last = (next - 1).min(max_pos)
         for j = pos + 1; j <= last; j = j + 1 {
           if j + 3 < start + len {
-            let h = @lz77.hash4(bytes, j)
+            let h = @lz77.hash4(bytes[j:])
             @lz77.insert_hash(hash_head, hash_prev, h, j)
           }
         }

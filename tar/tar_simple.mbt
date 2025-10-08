@@ -54,11 +54,8 @@ pub struct TarArchive {
 } derive(Show)
 
 ///|
-impl ToJson for TarArchive with to_json(self) -> Json {
-  {
-    "length": self.entries.length(),
-    "entries": self.entries.map(fn(entry) { entry.to_json() }),
-  }
+pub impl ToJson for TarArchive with to_json(self) -> Json {
+  self.entries.to_json()
 }
 
 ///|

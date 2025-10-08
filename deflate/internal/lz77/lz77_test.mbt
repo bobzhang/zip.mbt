@@ -4,7 +4,7 @@
 test "hash4_basic" {
   // Test hash function with known values
   let data = b"test"
-  let hash = @lz77.hash4(data, 0)
+  let hash = @lz77.hash4(data[0:4])
 
   // Hash should be in valid range [0, 32767]
   let valid = hash >= 0 && hash < 32768
@@ -17,16 +17,16 @@ test "hash4_same_string_same_hash" {
   let data2 = b"xhello world"
 
   // Same 4 bytes should produce same hash
-  let hash1 = @lz77.hash4(data1, 0) // "hell"
-  let hash2 = @lz77.hash4(data2, 1) // "hell"
+  let hash1 = @lz77.hash4(data1[0:4]) // "hell"
+  let hash2 = @lz77.hash4(data2[1:5]) // "hell"
   @json.inspect(hash1 == hash2, content=true)
 }
 
 ///|
 test "hash4_different_string_likely_different_hash" {
   let data = b"abcdefgh"
-  let hash1 = @lz77.hash4(data, 0) // "abcd"
-  let hash2 = @lz77.hash4(data, 4) // "efgh"
+  let hash1 = @lz77.hash4(data[0:4]) // "abcd"
+  let hash2 = @lz77.hash4(data[4:8]) // "efgh"
 
   // Different strings should (usually) have different hashes
   // Not guaranteed but very likely with good hash function
@@ -147,11 +147,11 @@ test "find_backref_basic" {
   let hash_prev = Array::make(32768, 0)
 
   // Insert position 0 ("hell")
-  let hash0 = @lz77.hash4(data, 0)
+  let hash0 = @lz77.hash4(data[0:4])
   @lz77.insert_hash(hash_head, hash_prev, hash0, 0)
 
   // Now search for match at position 12 ("hell")
-  let hash12 = @lz77.hash4(data, 12)
+  let hash12 = @lz77.hash4(data[12:16])
   let bref = @lz77.find_backref(
     data, hash_head, hash_prev, 12, // Current position
      hash12, 0, // No previous match
@@ -173,11 +173,11 @@ test "find_backref_no_match" {
   let hash_prev = Array::make(32768, 0)
 
   // Insert position 0
-  let hash0 = @lz77.hash4(data, 0)
+  let hash0 = @lz77.hash4(data[0:4])
   @lz77.insert_hash(hash_head, hash_prev, hash0, 0)
 
   // Search at position 6 with different hash - should find no match
-  let hash6 = @lz77.hash4(data, 6)
+  let hash6 = @lz77.hash4(data[6:10])
   let bref = @lz77.find_backref(
     data, hash_head, hash_prev, 6, hash6, 0, 10, 4, 4096,
   )
@@ -192,11 +192,11 @@ test "find_backref_requires_min_length" {
   let hash_prev = Array::make(32768, 0)
 
   // Insert position 0 ("abXX")
-  let hash0 = @lz77.hash4(data, 0)
+  let hash0 = @lz77.hash4(data[0:4])
   @lz77.insert_hash(hash_head, hash_prev, hash0, 0)
 
   // Search at position 6 ("abYY") - first 2 bytes match but not enough
-  let hash6 = @lz77.hash4(data, 6)
+  let hash6 = @lz77.hash4(data[6:10])
   let bref = @lz77.find_backref(
     data, hash_head, hash_prev, 6, hash6, 0, 10, 4, 4096,
   )

@@ -30,28 +30,12 @@ pub let no_pos : Int = -1 // Marker for no position
 ///|
 /// Compute rolling hash of 4 bytes starting at position i
 /// Uses Fibonacci hashing: multiply by golden ratio and take upper bits
-pub fn hash4(bytes : Bytes, i : Int) -> Int {
-  // Read 4 bytes as little-endian Int32
-  let b0 = bytes[i].to_int()
-  let b1 = bytes[i + 1].to_int()
-  let b2 = bytes[i + 2].to_int()
-  let b3 = bytes[i + 3].to_int()
-  let v = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
-
+pub fn hash4(bytes : BytesView) -> Int {
+  guard bytes is [u32le(v), ..]
   // Fibonacci hash: multiply by golden ratio approximation
-  let hmul = 0x9E3779B1 // 2^32 / phi, where phi = golden ratio
+  let hmul : UInt = 0x9E3779B1 // 2^32 / phi, where phi = golden ratio
   let product = v * hmul
-
-  // Take upper bits (shift right to get most significant bits).
-  // NOTE: This uses the signed (arithmetic) right shift operator. For the bits we
-  // subsequently keep (the lower 15 bits after the shift), arithmetic and logical
-  // right shift produce the SAME result because those bits correspond to the
-  // original bits [32-hash_bit_size .. 31] of the 32-bit product; sign-extension
-  // only affects the vacated high bits that we immediately discard with the mask.
-  // Mask 0x7FFF (= (1<<15)-1) trims to exactly hash_bit_size (15) bits.
-  // If Int were wider than 32 bits we would first ensure `product` is limited to
-  // 32 bits (e.g. `product & 0xFFFFFFFF`) to avoid pulling in higher-order bits.
-  (product >> (32 - hash_bit_size)) & 0x7FFF // Extract high 15 bits of 32-bit hash
+  ((product >> (32 - hash_bit_size)) & 0x7FFF).reinterpret_as_int() // Extract high 15 bits of 32-bit hash
 }
 
 ///|

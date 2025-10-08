@@ -16,6 +16,7 @@ fn TarArchive::length(Self) -> Int
 fn TarArchive::of_bytes(Bytes) -> Self
 fn TarArchive::to_bytes(Self) -> Bytes
 impl Show for TarArchive
+impl ToJson for TarArchive
 
 pub struct TarEntry {
   name : String
