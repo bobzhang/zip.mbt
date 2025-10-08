@@ -11,7 +11,6 @@ struct ByteBuf {
 ///|
 /// Create a new byte buffer
 #as_free_fn
-#callsite(migration(size_hint, allow_positional=true))
 pub fn ByteBuf::new(size_hint~ : Int, fixed? : Bool = false) -> ByteBuf {
   let actual_size = if size_hint == 0 && not(fixed) { 1024 } else { size_hint }
   { buffer: FixedArray::make(actual_size, b'\x00'), length: 0, fixed }
@@ -26,10 +25,7 @@ pub fn ByteBuf::length(self : ByteBuf) -> Int {
 ///|
 /// Get contents as Bytes
 pub fn ByteBuf::contents(self : ByteBuf) -> Bytes {
-  // Convert Array to Bytes using literal syntax
-  Bytes::from_fixedarray(
-    FixedArray::from_iter(self.buffer[:self.length].iter()), // TODO: consider self.buffer[:self.length] when language adds shorthand
-  )
+  @bytes.from_fixedarray(self.buffer, len=self.length)
 }
 
 ///|
