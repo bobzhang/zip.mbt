@@ -17,17 +17,13 @@ let crc32_poly : UInt = 0xedb88320
 ///|
 /// CRC-32 lookup table (256 entries)
 /// Pre-computed for fast table-driven CRC calculation. Also used as tables[0] for slice-by-8.
-let crc32_table : Array[UInt] = {
-  let table : Array[UInt] = Array::make(256, 0)
-  for i = 0; i < 256; i = i + 1 {
-    let mut c = i.reinterpret_as_uint()
-    for k = 0; k < 8; k = k + 1 {
-      c = if (c & 1) != 0 { crc32_poly ^ (c >> 1) } else { c >> 1 }
-    }
-    table[i] = c
+let crc32_table : Array[UInt] = Array::makei(256, i => {
+  let mut c = i.reinterpret_as_uint()
+  for k in 0..<8 {
+    c = if (c & 1) != 0 { crc32_poly ^ (c >> 1) } else { c >> 1 }
   }
-  table
-}
+  c
+})
 
 ///|
 /// Slice-by-8 tables for high-throughput CRC (8KB total)
@@ -35,16 +31,14 @@ let crc32_table : Array[UInt] = {
 let crc32_tables : Array[Array[UInt]] = {
   // Initialize all slots referencing base table (will overwrite 1..7)
   let tables : Array[Array[UInt]] = Array::make(8, crc32_table)
-  for n = 1; n < 8; n = n + 1 {
+  for n in 1..<8 {
     let prev_tbl = tables[n - 1]
-    let tbl : Array[UInt] = Array::make(256, 0)
-    for i = 0; i < 256; i = i + 1 {
+    tables[n] = Array::makei(256, i => {
       let prev = prev_tbl[i]
       let shifted = prev >> 8
       let low_index = (prev & 0xFF).reinterpret_as_int()
-      tbl[i] = shifted ^ crc32_table[low_index]
-    }
-    tables[n] = tbl
+      shifted ^ crc32_table[low_index]
+    })
   }
   tables
 }
