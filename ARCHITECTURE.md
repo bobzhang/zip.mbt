@@ -79,7 +79,7 @@ pub struct Crc32 { value : UInt32 }
 pub fn Crc32::init() -> Crc32
 pub fn Crc32::finish(self : Crc32) -> UInt32
 pub fn Crc32::update_byte(self : Crc32, byte : Int) -> Crc32
-pub fn Crc32::update_bytes(self : Crc32, bytes : Bytes, start : Int, len : Int) -> Crc32
+pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32
 pub fn bytes_crc32(bytes : Bytes, start : Int, len : Int) -> UInt32
 // removed: pub fn check_crc32(expect : UInt32, found : UInt32) -> Result[Unit, String]
 ```
@@ -118,7 +118,7 @@ pub struct Adler32 { s1 : UInt32, s2 : UInt32 }
 
 pub fn Adler32::init() -> Adler32
 pub fn Adler32::finish(self : Adler32) -> UInt32
-pub fn Adler32::update_bytes(self : Adler32, bytes : Bytes, start : Int, len : Int) -> Adler32
+pub fn Adler32::update_bytes(self : Adler32, data : BytesView) -> Adler32
 pub fn bytes_adler32(bytes : Bytes, start : Int, len : Int) -> UInt32
 // removed: pub fn check_adler32(expect : UInt32, found : UInt32) -> Result[Unit, String]
 ```

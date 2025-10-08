@@ -70,15 +70,15 @@ test "adler32_incremental_equivalence" {
 
   // Incremental computation (split at multiple points)
   let incr1 = @adler32.Adler32::init()
-    .update_bytes(test_string, 0, 13) // "Hello, World!"
-    .update_bytes(test_string, 13, len - 13) // Rest
+    .update_bytes(test_string[0:13]) // "Hello, World!"
+    .update_bytes(test_string[13:len]) // Rest
     .finish()
 
   // Three-way split
   let incr2 = @adler32.Adler32::init()
-    .update_bytes(test_string, 0, 5) // "Hello"
-    .update_bytes(test_string, 5, 8) // ", World!"
-    .update_bytes(test_string, 13, len - 13) // Rest
+    .update_bytes(test_string[0:5]) // "Hello"
+    .update_bytes(test_string[5:13]) // ", World!"
+    .update_bytes(test_string[13:len]) // Rest
     .finish()
 
   // Python: zlib.adler32(b"Hello, World! This is a longer test string.") = 0x42b10f0b (1118899979)
@@ -97,7 +97,7 @@ test "adler32_large_data_handling" {
   // Add 1000 times the character 'Z' (ASCII 90)
   // This creates large s1 and s2 values that need modulo reduction
   for i = 0; i < 1000; i = i + 1 {
-    adler = adler.update_bytes(b"Z", 0, 1)
+    adler = adler.update_bytes(b"Z"[0:1])
   }
   let result = adler.finish()
 

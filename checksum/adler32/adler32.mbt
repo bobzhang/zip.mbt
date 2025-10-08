@@ -38,29 +38,21 @@ pub fn Adler32::finish(self : Adler32) -> UInt {
 /// Implementation processes data in blocks of 5552 bytes to avoid overflow
 /// while maintaining efficiency
 /// Incrementally update with bytes[start .. start+len). Processes in 5552-byte chunks to limit overflow.
-pub fn Adler32::update_bytes(
-  self : Adler32,
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-) -> Adler32 {
+pub fn Adler32::update_bytes(self : Adler32, data : BytesView) -> Adler32 {
   let Adler32(value) = self
   let mut s1 = value & 0xFFFF
   let mut s2 = value >> 16
-  let mut pos = start
-  let max = start + len
+  let mut pos = 0
+  let len = data.length()
+  let max = len
   while pos < max {
     // Process in blocks to avoid overflow
-    let block_len = if len - (pos - start) < 5552 {
-      len - (pos - start)
-    } else {
-      5552
-    }
+    let block_len = if len - pos < 5552 { len - pos } else { 5552 }
     let block_max = pos + block_len
 
     // Process block
     while pos < block_max {
-      s1 = s1 + bytes[pos].to_int().reinterpret_as_uint()
+      s1 = s1 + data[pos].to_int().reinterpret_as_uint()
       s2 = s2 + s1
       pos = pos + 1
     }
@@ -75,7 +67,7 @@ pub fn Adler32::update_bytes(
 /// Convenience function that initializes, updates, and finalizes in one call
 /// One-shot checksum convenience function.
 pub fn bytes_adler32(bytes : Bytes, start : Int, len : Int) -> UInt {
-  Adler32::init().update_bytes(bytes, start, len).finish()
+  Adler32::init().update_bytes(bytes[start:start + len]).finish()
 }
 
 ///|

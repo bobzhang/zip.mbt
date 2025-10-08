@@ -10,7 +10,7 @@ fn bytes_adler32(Bytes, Int, Int) -> UInt
 type Adler32
 fn Adler32::finish(Self) -> UInt
 fn Adler32::init() -> Self
-fn Adler32::update_bytes(Self, Bytes, Int, Int) -> Self
+fn Adler32::update_bytes(Self, BytesView) -> Self
 impl Eq for Adler32
 impl Show for Adler32
 

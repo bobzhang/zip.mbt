@@ -69,8 +69,8 @@ test "crc32_incremental_equivalence" {
 
   // Incremental computation (split at multiple points)
   let incr1 = @crc32.Crc32::init()
-    .update_bytes(test_string, 0, 13) // "Hello, World!"
-    .update_bytes(test_string, 13, len - 13) // Rest
+    .update_bytes(test_string[0:13]) // "Hello, World!"
+    .update_bytes(test_string[13:len]) // Rest
     .finish()
 
   // Byte by byte computation (first 5 chars)
@@ -78,7 +78,7 @@ test "crc32_incremental_equivalence" {
   for i = 0; i < 5; i = i + 1 {
     incr2 = incr2.update_byte(test_string[i].to_int())
   }
-  let incr2_final = incr2.update_bytes(test_string, 5, len - 5).finish()
+  let incr2_final = incr2.update_bytes(test_string[5:len]).finish()
   @json.inspect(
     (direct, incr1, incr2_final, direct == incr1 && incr1 == incr2_final),
     content=[1700084974, 1700084974, 1700084974, true],

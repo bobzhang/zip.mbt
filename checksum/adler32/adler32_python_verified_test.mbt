@@ -79,8 +79,8 @@ test "adler32_incremental_hello_world_python_verified" {
 
   // Compute incrementally: "hello" + " world"
   let adler_incremental = @adler32.Adler32::init()
-    .update_bytes(data, 0, 5) // "hello"
-    .update_bytes(data, 5, 6) // " world"
+    .update_bytes(data[0:5]) // "hello"
+    .update_bytes(data[5:11]) // " world"
     .finish()
 
   // Compute all at once
@@ -100,8 +100,8 @@ test "adler32_incremental_abc_python_verified" {
 
   // Compute incrementally: "a" + "bc"
   let adler_incremental = @adler32.Adler32::init()
-    .update_bytes(data, 0, 1) // "a"
-    .update_bytes(data, 1, 2) // "bc"
+    .update_bytes(data[0:1]) // "a"
+    .update_bytes(data[1:3]) // "bc"
     .finish()
 
   // Compute all at once
@@ -147,7 +147,7 @@ test "adler32_init_finish_python_verified" {
   @json.inspect(adler_empty, content=1)
 
   // Single byte computation matches manual calculation
-  let adler_a = @adler32.Adler32::init().update_bytes(b"a", 0, 1).finish()
+  let adler_a = @adler32.Adler32::init().update_bytes(b"a"[0:1]).finish()
   // Python: zlib.adler32(b"a") = 0x00620062 (6422626)
   @json.inspect(adler_a, content=6422626)
 }
@@ -158,7 +158,7 @@ test "adler32_large_repeated_python_verified" {
   // Test incremental computation of 100 'A' characters
   let mut adler = @adler32.Adler32::init()
   for i = 0; i < 100; i = i + 1 {
-    adler = adler.update_bytes(b"A", 0, 1)
+    adler = adler.update_bytes(b"A"[0:1])
   }
   let result = adler.finish()
 

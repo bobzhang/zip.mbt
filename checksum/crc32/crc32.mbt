@@ -61,15 +61,10 @@ pub fn Crc32::update_byte(self : Crc32, byte : Int) -> Crc32 {
 /// Update CRC-32 with a sequence of bytes
 /// Returns a new Crc32 state with all bytes incorporated
 /// Bulk update over bytes[start .. start+len). No bounds checking beyond caller guarantees.
-pub fn Crc32::update_bytes(
-  self : Crc32,
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-) -> Crc32 {
+pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
   let mut crc = self
-  for i = start; i < start + len; i = i + 1 {
-    crc = crc.update_byte(bytes[i].to_int())
+  for i = 0; i < data.length(); i = i + 1 {
+    crc = crc.update_byte(data[i].to_int())
   }
   crc
 }
@@ -79,7 +74,7 @@ pub fn Crc32::update_bytes(
 /// Convenience function that initializes, updates, and finalizes in one call
 /// Convenience one-shot helper.
 pub fn bytes_crc32(bytes : Bytes, start : Int, len : Int) -> UInt {
-  Crc32::init().update_bytes(bytes, start, len).finish()
+  Crc32::init().update_bytes(bytes[start:start + len]).finish()
 }
 
 ///|

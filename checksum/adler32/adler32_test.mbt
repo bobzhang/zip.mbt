@@ -21,8 +21,8 @@ test "adler32_simple" {
 test "adler32_incremental" {
   let data = b"hello world"
   let adler1 = @adler32.Adler32::init()
-    .update_bytes(data, 0, 5) // "hello"
-    .update_bytes(data, 5, 6) // " world"
+    .update_bytes(data[0:5]) // "hello"
+    .update_bytes(data[5:11]) // " world"
     .finish()
   let adler2 = @adler32.bytes_adler32(data, 0, data.length())
   @json.inspect((adler1 == adler2, adler1), content=[true, 436929629])

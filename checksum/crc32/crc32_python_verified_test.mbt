@@ -79,8 +79,8 @@ test "crc32_incremental_hello_world_python_verified" {
 
   // Compute incrementally: "hello" + " world"
   let crc_incremental = @crc32.Crc32::init()
-    .update_bytes(data, 0, 5) // "hello"
-    .update_bytes(data, 5, 6) // " world"
+    .update_bytes(data[0:5]) // "hello"
+    .update_bytes(data[5:11]) // " world"
     .finish()
 
   // Compute all at once
@@ -99,8 +99,8 @@ test "crc32_incremental_abc_python_verified" {
 
   // Compute incrementally: "a" + "bc"
   let crc_incremental = @crc32.Crc32::init()
-    .update_bytes(data, 0, 1) // "a"
-    .update_bytes(data, 1, 2) // "bc"
+    .update_bytes(data[0:1]) // "a"
+    .update_bytes(data[1:3]) // "bc"
     .finish()
 
   // Compute all at once

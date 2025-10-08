@@ -11,7 +11,7 @@ type Crc32
 fn Crc32::finish(Self) -> UInt
 fn Crc32::init() -> Self
 fn Crc32::update_byte(Self, Int) -> Self
-fn Crc32::update_bytes(Self, Bytes, Int, Int) -> Self
+fn Crc32::update_bytes(Self, BytesView) -> Self
 impl Eq for Crc32
 impl Show for Crc32
 
