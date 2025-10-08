@@ -78,7 +78,7 @@ test "inflate_with_crc32" {
      252, 255, // ~length
      0x41, 0x42, 0x43, // "ABC"
   ])
-  let result = @deflate.inflate(compressed[0:compressed.length()], None)
+  let result = @deflate.inflate(compressed[0:compressed.length()])
   let crc = @crc32.bytes_crc32(result[:])
   // Verify data and that CRC is computed
   @json.inspect(
@@ -127,7 +127,7 @@ test "@deflate.crc32_and_deflate_api" {
   @json.inspect(crc == expected_crc, content=true)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect(decompressed.length(), content=9)
 }
@@ -141,7 +141,7 @@ test "@deflate.adler32_and_deflate_api" {
   @json.inspect(adler == expected_adler, content=true)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect(decompressed.length(), content=9)
 }
@@ -157,7 +157,7 @@ test "coverage_inflate_adler32" {
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 128)
   let dec = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   let adler = @adler32.bytes_adler32(dec[:])
   @json.inspect((dec == data, adler == @adler32.bytes_adler32(data[:])), content=[

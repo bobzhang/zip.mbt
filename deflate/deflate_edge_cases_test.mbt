@@ -17,7 +17,7 @@ test "inflate_invalid_litlen_symbol" {
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(4),
+    decompressed_size=4,
   )
   @json.inspect(decompressed.length(), content=4)
 }
@@ -31,7 +31,7 @@ test "inflate_invalid_distance_symbol" {
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(10),
+    decompressed_size=10,
   )
   @json.inspect(decompressed.length(), content=10)
 }
@@ -45,7 +45,7 @@ test "inflate_distance_too_large" {
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(16),
+    decompressed_size=16,
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -64,7 +64,7 @@ test "inflate_dynamic_invalid_hlit" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(9),
+    decompressed_size=9,
   )
   @json.inspect(decompressed.length(), content=9)
 }
@@ -83,7 +83,7 @@ test "inflate_dynamic_empty_codelen" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -101,7 +101,7 @@ test "inflate_dynamic_invalid_codelen_symbol" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(36),
+    decompressed_size=36,
   )
   @json.inspect(decompressed.length(), content=36)
 }
@@ -120,7 +120,7 @@ test "inflate_dynamic_repeat_no_previous" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(21),
+    decompressed_size=21,
   )
   @json.inspect(decompressed.length(), content=21)
 }
@@ -138,7 +138,7 @@ test "inflate_dynamic_repeat_overflow" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(52),
+    decompressed_size=52,
   )
   @json.inspect(decompressed.length(), content=52)
 }
@@ -157,7 +157,7 @@ test "inflate_dynamic_missing_eob" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -169,7 +169,7 @@ test "deflate_level_none" {
   let compressed = @deflate.deflate(data[0:data.length()])
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(25),
+    decompressed_size=25,
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -181,7 +181,7 @@ test "deflate_level_best" {
   let compressed = @deflate.deflate(data[0:data.length()])
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(64),
+    decompressed_size=64,
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -194,7 +194,7 @@ test "deflate_stored_small" {
   @json.inspect(compressed.length(), content=6) // 1 header + 4 length + 1 data
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(1),
+    decompressed_size=1,
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -211,7 +211,7 @@ test "deflate_stored_max_block" {
   @json.inspect(compressed.length(), content=65540) // 1 + 4 + 65535
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(65535),
+    decompressed_size=65535,
   )
   @json.inspect(decompressed.length(), content=65535)
 }
@@ -248,7 +248,7 @@ test "deflate_fixed_boundary_conditions" {
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 1024)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(52),
+    decompressed_size=52,
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -269,7 +269,7 @@ test "deflate_dynamic_high_repetition" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(1000),
+    decompressed_size=1000,
   )
   @json.inspect(decompressed.length(), content=1000)
 }
@@ -287,7 +287,7 @@ test "deflate_dynamic_lazy_matching" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(39),
+    decompressed_size=39,
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -300,7 +300,7 @@ test "deflate_empty_data" {
   @json.inspect(compressed.length() > 0, content=true) // Should have header + EOB
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(0),
+    decompressed_size=0,
   )
   @json.inspect(decompressed.length(), content=0)
 }
@@ -317,7 +317,7 @@ test "rfc1951_example_hello" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(5),
+    decompressed_size=5,
   )
   @json.inspect(decompressed == data, content=true)
 }
@@ -343,7 +343,7 @@ test "deflate_long_distance_backref" {
   )
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(2014),
+    decompressed_size=2014,
   )
   @json.inspect(decompressed.length(), content=2014)
 }
@@ -359,7 +359,7 @@ test "deflate_all_byte_values" {
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(256),
+    decompressed_size=256,
   )
   @json.inspect(decompressed.length(), content=256)
   // Verify all bytes match
@@ -384,7 +384,7 @@ test "deflate_max_match_length" {
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(300),
+    decompressed_size=300,
   )
   @json.inspect(decompressed.length(), content=300)
 }
@@ -398,7 +398,7 @@ test "crc32_and_deflate_error_handling" {
   @json.inspect(compressed.length() > 0, content=true)
   let decompressed = @deflate.inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect(decompressed == data, content=true)
 }

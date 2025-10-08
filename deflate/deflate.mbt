@@ -465,7 +465,7 @@ fn inflate_loop(decoder : InflateDecoder) -> Bytes raise {
 ///   src,start,len - slice identifying compressed data.
 ///   decompressed_size - optional expected output size (optimizes allocation / validation).
 /// Errors: raises on malformed block headers, invalid Huffman codes, or truncated input.
-pub fn inflate(src_view : BytesView, decompressed_size : Int?) -> Bytes raise {
+pub fn inflate(src_view : BytesView, decompressed_size? : Int) -> Bytes raise {
   // Materialize view into Bytes for decoder (decoder expects contiguous Bytes)
   let src = src_view.to_bytes()
   let len = src.length()
@@ -1554,7 +1554,7 @@ pub fn zlib_decompress(data : BytesView) -> (Bytes, UInt) raise {
   // Copy bytes (BytesView -> Bytes) for inflate API
   let bytes_copy = data.to_bytes()
   let deflate_len = len - 6
-  let decompressed = inflate(bytes_copy[2:2 + deflate_len], None)
+  let decompressed = inflate(bytes_copy[2:2 + deflate_len])
   // Trailer
   let trailer_pos = len - 4
   let stored_adler = (data[trailer_pos].to_int() << 24) |

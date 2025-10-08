@@ -7,7 +7,7 @@ test "deflate_stored_basic" {
   let compressed = deflate_stored(data[:])
   let decompressed = inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect((decompressed.length(), decompressed[0].to_int()), content=[
     5, 104,
@@ -44,7 +44,7 @@ test "deflate_fixed_simple" {
   let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect((decompressed.length(), decompressed[0].to_int()), content=[
     5, 104,
@@ -57,7 +57,7 @@ test "deflate_fixed_with_repetition" {
   let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect(
     (
@@ -79,7 +79,7 @@ test "deflate_fixed_all_same" {
   let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect((decompressed.length(), compressed.length() < 20), content=[
     100, true,
@@ -92,7 +92,7 @@ test "deflate_dynamic_simple" {
   let compressed = deflate_dynamic(data[0:data.length()], true, 4, 4096)
   let decompressed = inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect((decompressed.length(), decompressed[0].to_int()), content=[
     5, 104,
@@ -105,7 +105,7 @@ test "deflate_dynamic_with_repetition" {
   let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
   let decompressed = inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect(
     (
@@ -127,7 +127,7 @@ test "deflate_dynamic_highly_compressible" {
   let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
   let decompressed = inflate(
     compressed[0:compressed.length()],
-    Some(data.length()),
+    decompressed_size=data.length(),
   )
   @json.inspect((decompressed.length(), compressed.length() < 30), content=[
     200, true,

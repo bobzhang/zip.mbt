@@ -137,7 +137,7 @@ test {
   )
 
   // Decompress
-  let decompressed = @deflate.inflate(compressed[0:compressed.length()], None)
+  let decompressed = @deflate.inflate(compressed[0:compressed.length()])
   @json.inspect(decompressed.length(), content=27)
 }
 ```
@@ -148,7 +148,7 @@ test {
 // Compress and get CRC-32
 let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
 // (Former helper inflate_and_crc32 removed) Explicit pattern:
-let decompressed = inflate(compressed[0:compressed.length()], Some(data.length()))
+let decompressed = inflate(compressed[0:compressed.length()], decompressed_size=data.length())
 let crc = @crc32.bytes_crc32(decompressed[:])
 ```
 

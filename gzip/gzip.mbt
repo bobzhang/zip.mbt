@@ -12,11 +12,11 @@
 /// Produces standard 10-byte header (no extra/name/comment) + deflate stream + CRC32 + ISIZE.
 /// Limitations: no support yet for original filename, extra fields, OS-specific metadata.
 pub fn compress(
-  data_view : BytesView,
+  data : BytesView,
   level? : @deflate.DeflateLevel,
 ) -> Bytes raise {
   // Materialize view (needed for CRC & size; single allocation) – mirrors deflate.inflate pattern
-  let data = data_view.to_bytes()
+
   // --- Header (10 bytes) ---
   let header = FixedArray::make(10, b'\x00')
   header[0] = b'\x1f' // ID1
@@ -86,7 +86,7 @@ pub fn decompress(data : BytesView) -> Bytes raise {
   let deflate_end = data.length() - footer_size
   let comp_len = deflate_end - deflate_start
   let comp_slice_view = data[deflate_start:deflate_start + comp_len]
-  let decompressed = @deflate.inflate(comp_slice_view, None)
+  let decompressed = @deflate.inflate(comp_slice_view)
 
   // Verify CRC32
   match data[-8:] {
