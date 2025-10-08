@@ -167,7 +167,7 @@ let dist_value_of_sym : Array[Int] = [
 ///|
 /// Inflate decoder state
 priv struct InflateDecoder {
-  src : Bytes // Source compressed data
+  src : BytesView // Source compressed data view (no copy)
   src_max : Int // Maximum valid index in src
   mut src_pos : Int // Current read position
   mut src_bits : Int // Buffered bits (up to 31 bits)
@@ -180,20 +180,19 @@ priv struct InflateDecoder {
 ///|
 /// Create a new inflate decoder
 fn InflateDecoder::new(
-  src : Bytes,
-  start : Int,
-  len : Int,
+  src_view : BytesView,
   decompressed_size : Int?,
 ) -> InflateDecoder {
-  let src_max = start + len - 1
+  let len = src_view.length()
+  let src_max = len - 1
   let dst = match decompressed_size {
     Some(size) => @bytebuf.new(size_hint=size, fixed=true)
     None => @bytebuf.new(size_hint=len * 3)
   }
   {
-    src,
+    src: src_view,
     src_max,
-    src_pos: start,
+    src_pos: 0,
     src_bits: 0,
     src_bits_len: 0,
     dst,
@@ -462,14 +461,12 @@ fn inflate_loop(decoder : InflateDecoder) -> Bytes raise {
 /// Decompress deflate format data (RFC 1951)
 /// Decompress a deflate (RFC 1951) stream segment.
 /// Parameters:
-///   src,start,len - slice identifying compressed data.
-///   decompressed_size - optional expected output size (optimizes allocation / validation).
+///   src_view - BytesView identifying compressed data (no copy performed)
+///   decompressed_size - optional expected output size (optimizes allocation / validation)
 /// Errors: raises on malformed block headers, invalid Huffman codes, or truncated input.
 pub fn inflate(src_view : BytesView, decompressed_size? : Int) -> Bytes raise {
-  // Materialize view into Bytes for decoder (decoder expects contiguous Bytes)
-  let src = src_view.to_bytes()
-  let len = src.length()
-  let decoder = InflateDecoder::new(src, 0, len, decompressed_size)
+  // Directly construct decoder from view (avoid intermediate copy)
+  let decoder = InflateDecoder::new(src_view, decompressed_size)
   inflate_loop(decoder)
 }
 
