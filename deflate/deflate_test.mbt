@@ -8,7 +8,7 @@ test "inflate_uncompressed_block" {
      252, 255, // ~length = 0xFFFC (complement of 3)
      0x41, 0x42, 0x43, // "ABC"
   ])
-  let result = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let result = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect((result[0].to_int(), result[1].to_int(), result[2].to_int()), content=[
     65, 66, 67,
   ])
@@ -17,7 +17,7 @@ test "inflate_uncompressed_block" {
 ///|
 test "inflate_with_crc32" {
   let compressed : Bytes = [0b00000001, 3, 0, 252, 255, 0x41, 0x42, 0x43]
-  let result = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let result = @deflate.inflate(compressed[0:compressed.length()], None)
   // Basic sanity: result has expected prefix and non-zero length
   @json.inspect((result[:3], result.length() > 0), content=["ABC", true])
 }
@@ -27,7 +27,7 @@ test "inflate_with_adler32" {
   let compressed = Bytes::from_fixedarray([
     0b00000001, 3, 0, 252, 255, 0x41, 0x42, 0x43,
   ])
-  let result = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let result = @deflate.inflate(compressed[0:compressed.length()], None)
   let adler = @adler32.bytes_adler32(result[:])
   @json.inspect(
     (result[0].to_int(), result[1].to_int(), result[2].to_int(), adler > 0),

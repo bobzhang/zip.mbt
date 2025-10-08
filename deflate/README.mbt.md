@@ -52,29 +52,18 @@ deflate_dynamic(data : BytesView, is_final : Bool, good_match : Int, max_chain :
 
 ### Inflation (Decompression)
 
-#### `inflate(src : Bytes, start : Int, len : Int, decompressed_size : Int?) -> Bytes`
+#### `inflate(src : BytesView, decompressed_size : Int?) -> Bytes`
 
-Decompress DEFLATE data.
+Decompress DEFLATE data from a bytes view. Optional expected decompressed size
+is used purely as a capacity hint; the function still validates actual sizes.
 
-**Parameters:**
-- `src` - Source compressed bytes
-- `start` - Starting offset
-- `len` - Compressed data length
-- `decompressed_size` - Expected size (optional, for pre-allocation)
-
-**Returns:** Decompressed bytes
-
-#### `inflate_and_crc32(src, start, len, decompressed_size) -> (Bytes, UInt32)`
-
-Decompress and compute CRC-32 in one pass.
-
-**Returns:** (decompressed bytes, CRC-32 checksum)
-
-#### `inflate_and_adler32(src, start, len, decompressed_size) -> (Bytes, UInt32)`
-
-Decompress and compute Adler-32 in one pass.
-
-**Returns:** (decompressed bytes, Adler-32 checksum)
+Helpers `inflate_and_crc32` / `inflate_and_adler32` were removed to keep the
+API minimal. Use:
+```
+let decompressed = inflate(compressed[0:compressed.length()], Some(expected_len))
+let crc32 = @crc32.bytes_crc32(decompressed[:])
+let adler32 = @adler32.bytes_adler32(decompressed[:])
+```
 
 ### Deflation (Compression)
 
@@ -148,7 +137,7 @@ test {
   )
 
   // Decompress
-  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect(decompressed.length(), content=27)
 }
 ```
@@ -158,9 +147,9 @@ test {
 ```
 // Compress and get CRC-32
 let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
-let (decompressed, crc) = inflate_and_crc32(
-  compressed, 0, compressed.length(), Some(data.length())
-)
+// (Former helper inflate_and_crc32 removed) Explicit pattern:
+let decompressed = inflate(compressed[0:compressed.length()], Some(data.length()))
+let crc = @crc32.bytes_crc32(decompressed[:])
 ```
 
 ### Compression Levels

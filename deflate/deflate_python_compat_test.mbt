@@ -16,9 +16,7 @@ test "python_compat_empty" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -28,9 +26,7 @@ test "python_compat_empty" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -48,9 +44,7 @@ test "python_compat_single_byte" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -60,9 +54,7 @@ test "python_compat_single_byte" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -80,9 +72,7 @@ test "python_compat_repeated_10" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -92,9 +82,7 @@ test "python_compat_repeated_10" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -112,9 +100,7 @@ test "python_compat_repeated_100" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -124,9 +110,7 @@ test "python_compat_repeated_100" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -144,9 +128,7 @@ test "python_compat_repeated_1000" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -156,9 +138,7 @@ test "python_compat_repeated_1000" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -176,9 +156,7 @@ test "python_compat_hello_world" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -188,9 +166,7 @@ test "python_compat_hello_world" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -208,9 +184,7 @@ test "python_compat_lorem_ipsum" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -220,9 +194,7 @@ test "python_compat_lorem_ipsum" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -240,9 +212,7 @@ test "python_compat_binary_sequence" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -252,9 +222,7 @@ test "python_compat_binary_sequence" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -272,9 +240,7 @@ test "python_compat_pattern_abc" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -284,9 +250,7 @@ test "python_compat_pattern_abc" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -304,9 +268,7 @@ test "python_compat_mixed" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -316,9 +278,7 @@ test "python_compat_mixed" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -336,9 +296,7 @@ test "python_compat_zeros_100" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -348,9 +306,7 @@ test "python_compat_zeros_100" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -368,9 +324,7 @@ test "python_compat_zeros_1000" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -380,9 +334,7 @@ test "python_compat_zeros_1000" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -400,9 +352,7 @@ test "python_compat_level_none" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -412,9 +362,7 @@ test "python_compat_level_none" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -432,9 +380,7 @@ test "python_compat_level_fast" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -444,9 +390,7 @@ test "python_compat_level_fast" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -464,9 +408,7 @@ test "python_compat_level_default" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -476,9 +418,7 @@ test "python_compat_level_default" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -496,9 +436,7 @@ test "python_compat_level_best" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -508,9 +446,7 @@ test "python_compat_level_best" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -528,9 +464,7 @@ test "python_compat_alternating" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -540,9 +474,7 @@ test "python_compat_alternating" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -560,9 +492,7 @@ test "python_compat_long_match" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -572,9 +502,7 @@ test "python_compat_long_match" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -592,9 +520,7 @@ test "python_compat_json_data" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -604,9 +530,7 @@ test "python_compat_json_data" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)
@@ -624,9 +548,7 @@ test "python_compat_large_text" {
 
   // Test decompression: our inflate should handle Python's output
   let decompressed = @deflate.inflate(
-    expected_compressed,
-    0,
-    expected_compressed.length(),
+    expected_compressed[0:expected_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(decompressed == input, content=true)
@@ -636,9 +558,7 @@ test "python_compat_large_text" {
   // but should decompress to the same input
   let our_compressed = @deflate.deflate(input[0:input.length()])
   let roundtrip = @deflate.inflate(
-    our_compressed,
-    0,
-    our_compressed.length(),
+    our_compressed[0:our_compressed.length()],
     Some(input.length()),
   )
   @json.inspect(roundtrip == input, content=true)

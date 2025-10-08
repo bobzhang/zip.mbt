@@ -10,7 +10,7 @@ fn deflate_fixed(BytesView, Bool, Int, Int) -> Bytes
 
 fn deflate_stored(BytesView) -> Bytes raise
 
-fn inflate(Bytes, Int, Int, Int?) -> Bytes raise
+fn inflate(BytesView, Int?) -> Bytes raise
 
 fn zlib_compress(BytesView, level? : DeflateLevel) -> (UInt, Bytes)
 

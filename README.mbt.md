@@ -231,9 +231,7 @@ test "direct_deflate_usage" {
 
   // Decompress
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(original.length()),
   )
 

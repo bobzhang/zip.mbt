@@ -12,7 +12,7 @@ test "inflate_uncompressed_block" {
      252, 255, // ~length = 0xFFFC (complement of 3)
      0x41, 0x42, 0x43, // "ABC"
   ])
-  let result = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let result = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect((result[0].to_int(), result[1].to_int(), result[2].to_int()), content=[
     65, 66, 67,
   ])
@@ -96,9 +96,7 @@ test "deflate_fixed_empty" {
   let data = b""
   let compressed = @deflate.deflate_fixed(data[0:0], true, 4, 4096)
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(0),
   )
   @json.inspect(decompressed.length(), content=0)
@@ -109,9 +107,7 @@ test "deflate_fixed_simple" {
   let data = b"hello"
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(data.length()),
   )
   @json.inspect(
@@ -133,9 +129,7 @@ test "deflate_fixed_with_repetition" {
   let data = b"abcabcabcabc"
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(data.length()),
   )
 
@@ -161,9 +155,7 @@ test "deflate_fixed_longer_text" {
   let data = b"The quick brown fox jumps over the lazy dog. The quick brown fox."
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(data.length()),
   )
 
@@ -189,9 +181,7 @@ test "deflate_fixed_all_same" {
   let data = buf.contents()
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(data.length()),
   )
 
@@ -209,9 +199,7 @@ test "deflate_fixed_binary_data" {
   let data = b"\x00\x01\x02\x03\x00\x01\x02\x03\xff\xfe\xfd"
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(data.length()),
   )
   @json.inspect(
@@ -231,9 +219,7 @@ test "deflate_fixed_no_compression_benefit" {
   let data = b"abcdefghijklmnop"
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(data.length()),
   )
 
@@ -250,9 +236,7 @@ test "deflate_fixed_substring_matches" {
   let data = b"aaabbbaaabbbccc"
   let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(data.length()),
   )
   @json.inspect(
@@ -344,7 +328,7 @@ test "dynamic_huffman_simple" {
   let compressed = @deflate.deflate_dynamic(data[0:data.length()], true, 8, 128)
 
   // Should decompress correctly
-  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect(decompressed, content="AAAAAABBBBBBCCCCCC")
 }
 
@@ -356,8 +340,8 @@ test "dynamic_huffman_vs_fixed" {
   let fixed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 128)
 
   // Both should decompress correctly
-  let d1 = @deflate.inflate(dynamic, 0, dynamic.length(), None)
-  let d2 = @deflate.inflate(fixed, 0, fixed.length(), None)
+  let d1 = @deflate.inflate(dynamic[0:dynamic.length()], None)
+  let d2 = @deflate.inflate(fixed[0:fixed.length()], None)
   @json.inspect((d1, d2), content=[
     "AAAAAAAAAAABBBBBCCCCCDDD", "AAAAAAAAAAABBBBBCCCCCDDD",
   ])
@@ -373,7 +357,7 @@ test "dynamic_huffman_single_symbol" {
   let compressed = @deflate.deflate_dynamic(data[0:data.length()], true, 8, 128)
 
   // Should compress to less than original (LZ77 + dynamic Huffman)
-  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect((compressed.length() < data.length(), decompressed.length()), content=[
     true, 28,
   ])
@@ -382,7 +366,7 @@ test "dynamic_huffman_single_symbol" {
 ///|
 test "dynamic_huffman_empty" {
   let compressed = @deflate.deflate_dynamic([], true, 8, 128)
-  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect(decompressed.length(), content=0)
 }
 
@@ -390,7 +374,7 @@ test "dynamic_huffman_empty" {
 test "dynamic_huffman_short" {
   let data = b"Hi"
   let compressed = @deflate.deflate_dynamic(data[0:data.length()], true, 8, 128)
-  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect(decompressed, content="Hi")
 }
 
@@ -400,7 +384,7 @@ test "dynamic_huffman_text" {
   let compressed = @deflate.deflate_dynamic(data[0:data.length()], true, 8, 128)
 
   // Should compress well
-  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect(
     decompressed,
     content="The quick brown fox jumps over the lazy dog.",
@@ -418,7 +402,7 @@ test "dynamic_huffman_binary" {
     FixedArray::from_iter(data[0:].iter()),
   )
   let compressed = @deflate.deflate_dynamic(data_bytes[0:256], true, 8, 128)
-  let decompressed = @deflate.inflate(compressed, 0, compressed.length(), None)
+  let decompressed = @deflate.inflate(compressed[0:compressed.length()], None)
   @json.inspect(
     (
       decompressed.length(),
@@ -437,8 +421,8 @@ test "dynamic_vs_fixed" {
   let fixed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 128)
 
   // Both must decompress correctly
-  let d1 = @deflate.inflate(dynamic, 0, dynamic.length(), None)
-  let d2 = @deflate.inflate(fixed, 0, fixed.length(), None)
+  let d1 = @deflate.inflate(dynamic[0:dynamic.length()], None)
+  let d2 = @deflate.inflate(fixed[0:fixed.length()], None)
   @json.inspect((d1, d2), content=["AAAA", "AAAA"])
 }
 
@@ -453,9 +437,7 @@ test "compression_level_fast_integration" {
   let file = @file.File::deflate_of_bytes(data, 0, data.length())
   // Decompress and verify
   let decompressed = @deflate.inflate(
-    file.compressed_bytes,
-    file.start,
-    file.compressed_size,
+    file.compressed_bytes[file.start:file.start + file.compressed_size],
     None,
   )
   @json.inspect(decompressed, content="AAAABBBBCCCCDDDDEEEEFFFFGGGG")
@@ -480,9 +462,7 @@ test "compression_level_large_data_integration" {
   let file = @file.File::deflate_of_bytes(data_bytes, 0, 300)
   // Decompress and verify  
   let decompressed = @deflate.inflate(
-    file.compressed_bytes,
-    file.start,
-    file.compressed_size,
+    file.compressed_bytes[file.start:file.start + file.compressed_size],
     None,
   )
   @json.inspect(
@@ -505,9 +485,7 @@ test "compression_with_lz77_matches" {
   @json.inspect(file.compressed_size < data.length(), content=true)
   // Verify decompression
   let decompressed = @deflate.inflate(
-    file.compressed_bytes,
-    file.start,
-    file.compressed_size,
+    file.compressed_bytes[file.start:file.start + file.compressed_size],
     None,
   )
   @json.inspect(decompressed.length() == data.length(), content=true)
@@ -525,9 +503,7 @@ test "deflate_api_basic" {
 
   // Should decompress back to original
   let decompressed = @deflate.inflate(
-    compressed,
-    0,
-    compressed.length(),
+    compressed[0:compressed.length()],
     Some(data.length()),
   )
   @json.inspect(decompressed.length(), content=19)

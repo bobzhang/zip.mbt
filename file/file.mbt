@@ -364,9 +364,7 @@ pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
     }
     Deflate => {
       let decompressed = @deflate.inflate(
-        self.compressed_bytes,
-        self.start,
-        self.compressed_size,
+        self.compressed_bytes[self.start:self.start + self.compressed_size],
         Some(self.decompressed_size),
       )
       let crc = @crc32.bytes_crc32(decompressed[:])

@@ -97,12 +97,12 @@ pub fn decompress(data : Bytes) -> Bytes raise {
   let comp_len = deflate_end - deflate_start
   let comp_slice_view = data[deflate_start:deflate_start + comp_len]
   // Materialize view into Bytes (allocate fixed array then convert)
-  let tmp = FixedArray::make(comp_len, b'\x00')
-  for i = 0; i < comp_len; i = i + 1 {
-    tmp[i] = comp_slice_view[i]
-  }
-  let comp_slice = Bytes::from_fixedarray(tmp)
-  let decompressed = @deflate.inflate(comp_slice, 0, comp_slice.length(), None)
+  // let tmp = FixedArray::make(comp_len, b'\x00')
+  // for i = 0; i < comp_len; i = i + 1 {
+  //   tmp[i] = comp_slice_view[i]
+  // }
+  // let comp_slice = Bytes::from_fixedarray(tmp)
+  let decompressed = @deflate.inflate(comp_slice_view, None)
 
   // Verify CRC32
   let crc_offset = data.length() - 8
