@@ -4,7 +4,7 @@
 ///|
 /// Test CRC-32 of empty data (Python verified)
 test "crc32_empty_python_verified" {
-  let crc = @crc32.bytes_crc32(b"", 0, 0)
+  let crc = @crc32.bytes_crc32(b""[:])
   // Python: zlib.crc32(b"") = 0x00000000 (0)
   @json.inspect(crc, content=0)
 }
@@ -13,7 +13,7 @@ test "crc32_empty_python_verified" {
 /// Test CRC-32 of single character (Python verified)
 test "crc32_single_char_python_verified" {
   let data = b"a"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   // Python: zlib.crc32(b"a") = 0xe8b7be43 (3904355907)
   @json.inspect(crc, content=3904355907)
 }
@@ -22,7 +22,7 @@ test "crc32_single_char_python_verified" {
 /// Test CRC-32 of "abc" (Python verified)
 test "crc32_abc_python_verified" {
   let data = b"abc"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   // Python: zlib.crc32(b"abc") = 0x352441c2 (891568578)
   @json.inspect(crc, content=891568578)
 }
@@ -31,7 +31,7 @@ test "crc32_abc_python_verified" {
 /// Test CRC-32 of "hello" (Python verified)
 test "crc32_hello_python_verified" {
   let data = b"hello"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   // Python: zlib.crc32(b"hello") = 0x3610a686 (907060870)
   @json.inspect(crc, content=907060870)
 }
@@ -40,7 +40,7 @@ test "crc32_hello_python_verified" {
 /// Test CRC-32 of "hello world" (Python verified)
 test "crc32_hello_world_python_verified" {
   let data = b"hello world"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   // Python: zlib.crc32(b"hello world") = 0x0d4a1185 (222957957)
   @json.inspect(crc, content=222957957)
 }
@@ -49,7 +49,7 @@ test "crc32_hello_world_python_verified" {
 /// Test CRC-32 of "123456789" (Python verified)
 test "crc32_numbers_python_verified" {
   let data = b"123456789"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   // Python: zlib.crc32(b"123456789") = 0xcbf43926 (3421780262)
   @json.inspect(crc, content=3421780262)
 }
@@ -58,7 +58,7 @@ test "crc32_numbers_python_verified" {
 /// Test CRC-32 of "The quick brown fox jumps over the lazy dog" (Python verified)
 test "crc32_quick_fox_python_verified" {
   let data = b"The quick brown fox jumps over the lazy dog"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   // Python: zlib.crc32(b"The quick brown fox jumps over the lazy dog") = 0x414fa339 (1095738169)
   @json.inspect(crc, content=1095738169)
 }
@@ -67,7 +67,7 @@ test "crc32_quick_fox_python_verified" {
 /// Test CRC-32 of binary data with all byte values 0-15 (Python verified)
 test "crc32_binary_data_python_verified" {
   let data = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   // Python: zlib.crc32(bytes([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15])) = 0xcecee288 (3469664904)
   @json.inspect(crc, content=3469664904)
 }
@@ -84,7 +84,7 @@ test "crc32_incremental_hello_world_python_verified" {
     .finish()
 
   // Compute all at once
-  let crc_direct = @crc32.bytes_crc32(data, 0, data.length())
+  let crc_direct = @crc32.bytes_crc32(data[:])
 
   // Both should match Python's result: 0x0d4a1185 (222957957)
   @json.inspect((crc_incremental, crc_direct, crc_incremental == crc_direct), content=[
@@ -104,7 +104,7 @@ test "crc32_incremental_abc_python_verified" {
     .finish()
 
   // Compute all at once
-  let crc_direct = @crc32.bytes_crc32(data, 0, data.length())
+  let crc_direct = @crc32.bytes_crc32(data[:])
 
   // Both should match Python's result: 0x352441c2 (891568578)
   @json.inspect((crc_incremental, crc_direct, crc_incremental == crc_direct), content=[
@@ -132,11 +132,11 @@ test "crc32_partial_data_python_verified" {
   let data = b"hello world"
 
   // Test "hello" part (first 5 bytes)
-  let crc_hello = @crc32.bytes_crc32(data, 0, 5)
+  let crc_hello = @crc32.bytes_crc32(data[0:5])
   // Python: zlib.crc32(b"hello") = 0x3610a686 (907060870)
 
   // Test "world" part (last 5 bytes, skipping space)
-  let crc_world = @crc32.bytes_crc32(data, 6, 5)
+  let crc_world = @crc32.bytes_crc32(data[6:11])
   // Python: zlib.crc32(b"world") = 0x3a771143 (980881731)
 
   @json.inspect((crc_hello, crc_world), content=[907060870, 980881731])
@@ -177,9 +177,9 @@ test "crc32_edge_cases_python_verified" {
   let data = b"hello world"
 
   // Test different substrings
-  let crc_hell = @crc32.bytes_crc32(data, 0, 4) // "hell"
-  let crc_ello = @crc32.bytes_crc32(data, 1, 4) // "ello"
-  let crc_space_world = @crc32.bytes_crc32(data, 5, 6) // " world"
+  let crc_hell = @crc32.bytes_crc32(data[0:4]) // "hell"
+  let crc_ello = @crc32.bytes_crc32(data[1:5]) // "ello"
+  let crc_space_world = @crc32.bytes_crc32(data[5:11]) // " world"
 
   // Python verification:
   // zlib.crc32(b"hell") = 0x1c8600e3 (478544099)

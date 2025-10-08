@@ -2,7 +2,7 @@
 package "bobzhang/zip/checksum/crc32"
 
 // Values
-fn bytes_crc32(Bytes, Int, Int) -> UInt
+fn bytes_crc32(BytesView) -> UInt
 
 // Errors
 

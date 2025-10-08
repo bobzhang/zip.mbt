@@ -3,7 +3,7 @@
 ///|
 /// Test CRC-32 of empty data
 test "crc32_empty" {
-  let crc = @crc32.bytes_crc32(b"", 0, 0)
+  let crc = @crc32.bytes_crc32(b""[:])
   @json.inspect((crc, crc == 0), content=[0, true])
 }
 
@@ -11,7 +11,7 @@ test "crc32_empty" {
 /// Test CRC-32 of simple string
 test "crc32_simple" {
   let data = b"hello world"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   // CRC-32 of "hello world" should be 0x0d4a1185 (222957317 in decimal)
   @json.inspect(crc, content=222957957)
 }
@@ -24,7 +24,7 @@ test "crc32_incremental" {
     .update_bytes(data[0:5]) // "hello"
     .update_bytes(data[5:11]) // " world"
     .finish()
-  let crc2 = @crc32.bytes_crc32(data, 0, data.length())
+  let crc2 = @crc32.bytes_crc32(data[:])
   @json.inspect((crc1 == crc2, crc1), content=[true, 222957957])
 }
 
@@ -62,8 +62,8 @@ test "crc32_update_byte" {
 /// Test CRC-32 with partial data
 test "crc32_partial" {
   let data = b"hello world"
-  let crc_hello = @crc32.bytes_crc32(data, 0, 5) // Just "hello"
-  let crc_world = @crc32.bytes_crc32(data, 6, 5) // Just "world"
+  let crc_hello = @crc32.bytes_crc32(data[0:5]) // Just "hello"
+  let crc_world = @crc32.bytes_crc32(data[6:11]) // Just "world"
   // These should be different
   @json.inspect(crc_hello != crc_world, content=true)
 }

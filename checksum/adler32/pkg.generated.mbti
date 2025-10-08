@@ -2,7 +2,7 @@
 package "bobzhang/zip/checksum/adler32"
 
 // Values
-fn bytes_adler32(Bytes, Int, Int) -> UInt
+fn bytes_adler32(BytesView) -> UInt
 
 // Errors
 

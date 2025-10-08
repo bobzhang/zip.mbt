@@ -5,22 +5,22 @@
 /// Complete verification against Python's zlib.adler32 - All common test cases
 test "adler32_complete_python_verification" {
   // Empty data
-  let adler0 = @adler32.bytes_adler32(b"", 0, 0)
+  let adler0 = @adler32.bytes_adler32(b""[:])
 
   // Single character
-  let adler1 = @adler32.bytes_adler32(b"a", 0, 1)
+  let adler1 = @adler32.bytes_adler32(b"a"[0:1])
 
   // Common string
-  let adler2 = @adler32.bytes_adler32(b"abc", 0, 3)
+  let adler2 = @adler32.bytes_adler32(b"abc"[0:3])
 
   // Hello
-  let adler3 = @adler32.bytes_adler32(b"hello", 0, 5)
+  let adler3 = @adler32.bytes_adler32(b"hello"[0:5])
 
   // Hello world
-  let adler4 = @adler32.bytes_adler32(b"hello world", 0, 11)
+  let adler4 = @adler32.bytes_adler32(b"hello world"[0:11])
 
   // Numbers
-  let adler5 = @adler32.bytes_adler32(b"123456789", 0, 9)
+  let adler5 = @adler32.bytes_adler32(b"123456789"[0:9])
 
   // Verify all match Python exactly
   @json.inspect([adler0, adler1, adler2, adler3, adler4, adler5], content=[
@@ -35,9 +35,9 @@ test "adler32_algorithm_verification" {
   // Note: We can't access the constant directly, but we can verify behavior
 
   // Test known single-byte values that verify the algorithm
-  let adler_0 = @adler32.bytes_adler32(b"\x00", 0, 1) // byte 0
-  let adler_1 = @adler32.bytes_adler32(b"\x01", 0, 1) // byte 1
-  let adler_255 = @adler32.bytes_adler32(b"\xff", 0, 1) // byte 255
+  let adler_0 = @adler32.bytes_adler32(b"\x00"[0:1]) // byte 0
+  let adler_1 = @adler32.bytes_adler32(b"\x01"[0:1]) // byte 1
+  let adler_255 = @adler32.bytes_adler32(b"\xff"[0:1]) // byte 255
 
   // Python verification:
   // zlib.adler32(b"\x00") = 0x00010001 (65537)
@@ -51,7 +51,7 @@ test "adler32_algorithm_verification" {
 test "adler32_state_consistency" {
   let initial = @adler32.Adler32::init()
   let empty_result = initial.finish()
-  let also_empty = @adler32.bytes_adler32(b"", 0, 0)
+  let also_empty = @adler32.bytes_adler32(b""[:])
 
   // Both should give the same result (1)
   @json.inspect((empty_result, also_empty, empty_result == also_empty), content=[
@@ -66,7 +66,7 @@ test "adler32_incremental_equivalence" {
   let len = test_string.length()
 
   // Direct computation
-  let direct = @adler32.bytes_adler32(test_string, 0, len)
+  let direct = @adler32.bytes_adler32(test_string[:])
 
   // Incremental computation (split at multiple points)
   let incr1 = @adler32.Adler32::init()

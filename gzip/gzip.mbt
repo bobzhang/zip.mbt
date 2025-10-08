@@ -30,7 +30,7 @@ pub fn compress(data : Bytes, level? : @deflate.DeflateLevel) -> Bytes raise {
   }
 
   // --- Footer (CRC32 + ISIZE) ---
-  let crc32 = @crc32.bytes_crc32(data, 0, data.length())
+  let crc32 = @crc32.bytes_crc32(data[:])
   let size = data.length().reinterpret_as_uint()
   let footer = FixedArray::make(8, b'\x00')
   // CRC32 little-endian
@@ -110,11 +110,7 @@ pub fn decompress(data : Bytes) -> Bytes raise {
     (data[crc_offset + 1].to_int().reinterpret_as_uint() << 8) |
     (data[crc_offset + 2].to_int().reinterpret_as_uint() << 16) |
     (data[crc_offset + 3].to_int().reinterpret_as_uint() << 24)
-  let computed_crc32 = @crc32.bytes_crc32(
-    decompressed,
-    0,
-    decompressed.length(),
-  )
+  let computed_crc32 = @crc32.bytes_crc32(decompressed[:])
   if computed_crc32 != expected_crc32 {
     abort("CRC32 mismatch")
   }

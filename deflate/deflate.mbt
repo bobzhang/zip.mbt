@@ -488,7 +488,7 @@ pub fn inflate_and_crc32(
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   let result = inflate_loop(decoder)
   // Compute CRC-32 of the decompressed data
-  let crc = @crc32.bytes_crc32(result, 0, result.length())
+  let crc = @crc32.bytes_crc32(result[:])
   (result, crc)
 }
 
@@ -505,7 +505,7 @@ pub fn inflate_and_adler32(
   let decoder = InflateDecoder::new(src, start, len, decompressed_size)
   let result = inflate_loop(decoder)
   // Compute Adler-32 of the decompressed data
-  let adler = @adler32.bytes_adler32(result, 0, result.length())
+  let adler = @adler32.bytes_adler32(result[:])
   (result, adler)
 }
 
@@ -1484,8 +1484,7 @@ pub fn crc32_and_deflate(
   data : BytesView,
   level? : DeflateLevel,
 ) -> (UInt, Bytes) raise {
-  let len = data.length()
-  let crc = @crc32.bytes_crc32(data.to_bytes(), 0, len)
+  let crc = @crc32.bytes_crc32(data)
   let result = deflate(data, level?)
   (crc, result)
 }
@@ -1498,8 +1497,7 @@ pub fn adler32_and_deflate(
   data : BytesView,
   level? : DeflateLevel,
 ) -> (UInt, Bytes) raise {
-  let len = data.length()
-  let adler = @adler32.bytes_adler32(data.to_bytes(), 0, len)
+  let adler = @adler32.bytes_adler32(data)
   let compressed = deflate(data, level?)
   (adler, compressed)
 }
@@ -1551,7 +1549,7 @@ pub fn zlib_compress(data : BytesView, level? : DeflateLevel) -> (UInt, Bytes) {
     output.write_byte(compressed[i])
   }
   // Compute Adler-32 checksum of uncompressed data
-  let adler = @adler32.bytes_adler32(data.to_bytes(), 0, len)
+  let adler = @adler32.bytes_adler32(data)
 
   // Write Adler-32 checksum (big-endian, 4 bytes)
   let a32 = adler.reinterpret_as_int()
@@ -1615,11 +1613,7 @@ pub fn zlib_decompress(
     bytes[trailer_pos + 3].to_int()
 
   // Compute Adler-32 of decompressed data
-  let computed_adler = @adler32.bytes_adler32(
-    decompressed,
-    0,
-    decompressed.length(),
-  )
+  let computed_adler = @adler32.bytes_adler32(decompressed[:])
 
   // Validate checksum
   if computed_adler.reinterpret_as_int() != stored_adler {

@@ -73,8 +73,8 @@ pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
 /// Compute CRC-32 checksum of a byte sequence in one step
 /// Convenience function that initializes, updates, and finalizes in one call
 /// Convenience one-shot helper.
-pub fn bytes_crc32(bytes : Bytes, start : Int, len : Int) -> UInt {
-  Crc32::init().update_bytes(bytes[start:start + len]).finish()
+pub fn bytes_crc32(data : BytesView) -> UInt {
+  Crc32::init().update_bytes(data).finish()
 }
 
 ///|

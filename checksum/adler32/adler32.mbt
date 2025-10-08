@@ -66,8 +66,8 @@ pub fn Adler32::update_bytes(self : Adler32, data : BytesView) -> Adler32 {
 /// Compute Adler-32 checksum of a byte sequence in one step
 /// Convenience function that initializes, updates, and finalizes in one call
 /// One-shot checksum convenience function.
-pub fn bytes_adler32(bytes : Bytes, start : Int, len : Int) -> UInt {
-  Adler32::init().update_bytes(bytes[start:start + len]).finish()
+pub fn bytes_adler32(data : BytesView) -> UInt {
+  Adler32::init().update_bytes(data).finish()
 }
 
 ///|

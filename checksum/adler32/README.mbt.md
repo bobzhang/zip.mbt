@@ -24,14 +24,12 @@ Type alias for Adler-32 values (32-bit unsigned integer).
 
 ### Functions
 
-#### `bytes_adler32(bytes : Bytes, start : Int, len : Int) -> Adler32`
+#### `bytes_adler32(data : BytesView) -> Adler32`
 
-Compute Adler-32 checksum for a byte range.
+Compute Adler-32 checksum for a byte slice (view). The entire view is processed.
 
 **Parameters:**
-- `bytes` - Source byte array
-- `start` - Starting offset
-- `len` - Number of bytes to process
+- `data` - BytesView slice to checksum
 
 **Returns:** 32-bit Adler-32 checksum
 
@@ -58,7 +56,7 @@ result = (s2 << 16) | s1
 ///|
 test {
   let data = b"Hello, World!"
-  let adler = @adler32.bytes_adler32(data, 0, data.length())
+  let adler = @adler32.bytes_adler32(data[:])
   println("Adler-32: 0x\{adler.reinterpret_as_int().to_string(radix=16)}")
   @json.inspect(adler, content=530449514)
 }

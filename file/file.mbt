@@ -197,7 +197,7 @@ pub fn File::stored_of_bytes(
   start : Int,
   len : Int,
 ) -> File raise {
-  let crc = @crc32.bytes_crc32(bytes, start, len)
+  let crc = @crc32.bytes_crc32(bytes[start:start + len])
   File::make(bytes, start, len, Compression::Stored, len, crc)
 }
 
@@ -217,7 +217,7 @@ pub fn File::deflate_of_bytes(
     Some(@deflate.DeflateLevel::None) => {
       // No compression, use stored block
       let compressed = @deflate.deflate_stored(bytes[start:start + len])
-      let crc = @crc32.bytes_crc32(bytes, start, len)
+      let crc = @crc32.bytes_crc32(bytes[start:start + len])
       return File::make(
         compressed,
         0,
@@ -252,7 +252,7 @@ pub fn File::deflate_of_bytes(
       max_chain,
     )
   }
-  let crc = @crc32.bytes_crc32(bytes, start, len)
+  let crc = @crc32.bytes_crc32(bytes[start:start + len])
   File::make(compressed, 0, compressed.length(), Compression::Deflate, len, crc)
 }
 
@@ -359,7 +359,7 @@ pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
       let result = Bytes::from_fixedarray(
         FixedArray::from_iter(result_arr[0:].iter()),
       )
-      let crc = @crc32.bytes_crc32(result, 0, result.length())
+      let crc = @crc32.bytes_crc32(result[:])
       (result, crc)
     }
     Deflate =>

@@ -24,14 +24,12 @@ Type alias for CRC-32 values (32-bit unsigned integer).
 
 ### Functions
 
-#### `bytes_crc32(bytes : Bytes, start : Int, len : Int) -> Crc32`
+#### `bytes_crc32(data : BytesView) -> Crc32`
 
-Compute CRC-32 checksum for a byte range.
+Compute CRC-32 checksum for a byte slice (view). The entire view is processed.
 
 **Parameters:**
-- `bytes` - Source byte array
-- `start` - Starting offset
-- `len` - Number of bytes to process
+- `data` - BytesView slice to checksum
 
 **Returns:** 32-bit CRC-32 checksum
 
@@ -56,7 +54,7 @@ The lookup table is precomputed using the IEEE 802.3 polynomial: `0xEDB88320`
 ///|
 test {
   let data = b"Hello, World!"
-  let crc = @crc32.bytes_crc32(data, 0, data.length())
+  let crc = @crc32.bytes_crc32(data[:])
   println("CRC-32: 0x\{crc.reinterpret_as_int().to_string(radix=16)}")
   @json.inspect(crc, content=3964322768)
 }

@@ -5,22 +5,22 @@
 /// Complete verification against Python's zlib.crc32 - All common test cases
 test "crc32_complete_python_verification" {
   // Empty data
-  let crc0 = @crc32.bytes_crc32(b"", 0, 0)
+  let crc0 = @crc32.bytes_crc32(b""[:])
 
   // Single character
-  let crc1 = @crc32.bytes_crc32(b"a", 0, 1)
+  let crc1 = @crc32.bytes_crc32(b"a"[0:1])
 
   // Common string
-  let crc2 = @crc32.bytes_crc32(b"abc", 0, 3)
+  let crc2 = @crc32.bytes_crc32(b"abc"[0:3])
 
   // Hello
-  let crc3 = @crc32.bytes_crc32(b"hello", 0, 5)
+  let crc3 = @crc32.bytes_crc32(b"hello"[0:5])
 
   // Hello world
-  let crc4 = @crc32.bytes_crc32(b"hello world", 0, 11)
+  let crc4 = @crc32.bytes_crc32(b"hello world"[0:11])
 
   // Numbers
-  let crc5 = @crc32.bytes_crc32(b"123456789", 0, 9)
+  let crc5 = @crc32.bytes_crc32(b"123456789"[0:9])
 
   // Verify all match Python exactly
   @json.inspect([crc0, crc1, crc2, crc3, crc4, crc5], content=[
@@ -33,9 +33,9 @@ test "crc32_complete_python_verification" {
 test "crc32_implementation_details" {
   // Test that specific single bytes produce expected CRC values
   // These verify our table is correctly computed
-  let crc_0 = @crc32.bytes_crc32(b"\x00", 0, 1)
-  let crc_1 = @crc32.bytes_crc32(b"\x01", 0, 1)
-  let crc_2 = @crc32.bytes_crc32(b"\x02", 0, 1)
+  let crc_0 = @crc32.bytes_crc32(b"\x00"[0:1])
+  let crc_1 = @crc32.bytes_crc32(b"\x01"[0:1])
+  let crc_2 = @crc32.bytes_crc32(b"\x02"[0:1])
 
   // Python: zlib.crc32(b"\x00") = 0xd202ef8d (3523407757)
   // Python: zlib.crc32(b"\x01") = 0xa505df1b (2768625435) 
@@ -50,7 +50,7 @@ test "crc32_implementation_details" {
 test "crc32_state_consistency" {
   let initial = @crc32.Crc32::init()
   let empty_result = initial.finish()
-  let also_empty = @crc32.bytes_crc32(b"", 0, 0)
+  let also_empty = @crc32.bytes_crc32(b""[:])
 
   // Both should give the same result (0)
   @json.inspect((empty_result, also_empty, empty_result == also_empty), content=[
@@ -65,7 +65,7 @@ test "crc32_incremental_equivalence" {
   let len = test_string.length()
 
   // Direct computation
-  let direct = @crc32.bytes_crc32(test_string, 0, len)
+  let direct = @crc32.bytes_crc32(test_string[:])
 
   // Incremental computation (split at multiple points)
   let incr1 = @crc32.Crc32::init()

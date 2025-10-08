@@ -3,7 +3,7 @@
 ///|
 /// Test Adler-32 of empty data
 test "adler32_empty" {
-  let adler = @adler32.bytes_adler32(b"", 0, 0)
+  let adler = @adler32.bytes_adler32(b""[:])
   @json.inspect((adler, adler == 1), content=[1, true])
 }
 
@@ -11,7 +11,7 @@ test "adler32_empty" {
 /// Test Adler-32 of simple string
 test "adler32_simple" {
   let data = b"hello world"
-  let adler = @adler32.bytes_adler32(data, 0, data.length())
+  let adler = @adler32.bytes_adler32(data[:])
   // Adler-32 of "hello world" should be 0x26e4023c (651924540 in decimal)
   @json.inspect(adler, content=436929629)
 }
@@ -24,7 +24,7 @@ test "adler32_incremental" {
     .update_bytes(data[0:5]) // "hello"
     .update_bytes(data[5:11]) // " world"
     .finish()
-  let adler2 = @adler32.bytes_adler32(data, 0, data.length())
+  let adler2 = @adler32.bytes_adler32(data[:])
   @json.inspect((adler1 == adler2, adler1), content=[true, 436929629])
 }
 
@@ -32,8 +32,8 @@ test "adler32_incremental" {
 /// Test Adler-32 with partial data
 test "adler32_partial" {
   let data = b"hello world"
-  let adler_hello = @adler32.bytes_adler32(data, 0, 5) // Just "hello"
-  let adler_world = @adler32.bytes_adler32(data, 6, 5) // Just "world"
+  let adler_hello = @adler32.bytes_adler32(data[0:5]) // Just "hello"
+  let adler_world = @adler32.bytes_adler32(data[6:11]) // Just "world"
   // These should be different
   @json.inspect(adler_hello != adler_world, content=true)
 }
@@ -42,7 +42,7 @@ test "adler32_partial" {
 /// Test Adler-32 with single byte
 test "adler32_single_byte" {
   let data = b"x"
-  let adler = @adler32.bytes_adler32(data, 0, 1)
+  let adler = @adler32.bytes_adler32(data[0:1])
   // Adler-32 starts at 1, adding 'x' (120): s1 = 121, s2 = 121
   // result = (121 << 16) | 121 = 7929977
   @json.inspect(adler, content=7929977)
