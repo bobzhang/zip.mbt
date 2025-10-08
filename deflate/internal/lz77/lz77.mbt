@@ -42,8 +42,16 @@ pub fn hash4(bytes : Bytes, i : Int) -> Int {
   let hmul = 0x9E3779B1 // 2^32 / phi, where phi = golden ratio
   let product = v * hmul
 
-  // Take upper bits (shift right to get most significant bits)
-  (product >> (32 - hash_bit_size)) & 0x7FFF // Keep 15 bits
+  // Take upper bits (shift right to get most significant bits).
+  // NOTE: This uses the signed (arithmetic) right shift operator. For the bits we
+  // subsequently keep (the lower 15 bits after the shift), arithmetic and logical
+  // right shift produce the SAME result because those bits correspond to the
+  // original bits [32-hash_bit_size .. 31] of the 32-bit product; sign-extension
+  // only affects the vacated high bits that we immediately discard with the mask.
+  // Mask 0x7FFF (= (1<<15)-1) trims to exactly hash_bit_size (15) bits.
+  // If Int were wider than 32 bits we would first ensure `product` is limited to
+  // 32 bits (e.g. `product & 0xFFFFFFFF`) to avoid pulling in higher-order bits.
+  (product >> (32 - hash_bit_size)) & 0x7FFF // Extract high 15 bits of 32-bit hash
 }
 
 ///|
