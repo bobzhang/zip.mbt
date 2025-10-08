@@ -32,7 +32,7 @@ deflate_stored(bytes, start, len) -> Bytes
 
 ### 2. Fixed Huffman
 ```
-deflate_fixed(bytes, start, len, is_final, good_match, max_chain) -> Bytes
+deflate_fixed(data : BytesView, is_final : Bool, good_match : Int, max_chain : Int) -> Bytes
 ```
 - Uses predefined Huffman trees (RFC 1951)
 - No header overhead for tree description
@@ -41,7 +41,7 @@ deflate_fixed(bytes, start, len, is_final, good_match, max_chain) -> Bytes
 
 ### 3. Dynamic Huffman
 ```
-deflate_dynamic(bytes, start, len, is_final, good_match, max_chain) -> Bytes
+deflate_dynamic(data : BytesView, is_final : Bool, good_match : Int, max_chain : Int) -> Bytes
 ```
 - Builds optimal Huffman trees for the data
 - Better compression than fixed Huffman
@@ -90,25 +90,23 @@ Compress using fixed Huffman without LZ77 matching.
 
 **Use case:** Testing, education, or when LZ77 provides no benefit
 
-#### `deflate_fixed(bytes, start, len, is_final, good_match, max_chain) -> Bytes`
+#### `deflate_fixed(data : BytesView, is_final : Bool, good_match : Int, max_chain : Int) -> Bytes`
 
 Compress using LZ77 + Fixed Huffman.
 
 **Parameters:**
-- `bytes` - Data to compress
-- `start` - Starting offset
-- `len` - Data length
-- `is_final` - Whether this is the final block
-- `good_match` - "Good enough" match length (stop searching)
-- `max_chain` - Maximum hash chain depth
+- `data` - Input slice to compress (use `bytes[start:start+len]` to select a region)
+- `is_final` - Whether this is the final block (sets BFINAL)
+- `good_match` - Early-exit match length threshold
+- `max_chain` - Maximum LZ77 hash chain traversal depth
 
 **Use case:** Fast compression, small data, streaming
 
-#### `deflate_dynamic(bytes, start, len, is_final, good_match, max_chain) -> Bytes`
+#### `deflate_dynamic(data : BytesView, is_final : Bool, good_match : Int, max_chain : Int) -> Bytes`
 
 Compress using LZ77 + Dynamic Huffman.
 
-**Parameters:** Same as `deflate_fixed`
+**Parameters:** Same fields as `deflate_fixed` (operates on a BytesView slice)
 
 **Use case:** Best compression for larger data (>256 bytes)
 
@@ -143,12 +141,10 @@ test {
 
   // Compress with default settings
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
-    true, // is_final block
-    8, // good_match (balanced)
-    1024, // max_chain (balanced)
+    data[0:data.length()],
+    true,
+    8,
+    1024,
   )
 
   // Decompress
@@ -161,7 +157,7 @@ test {
 
 ```
 // Compress and get CRC-32
-let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 1024)
+let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
 let (decompressed, crc) = inflate_and_crc32(
   compressed, 0, compressed.length(), Some(data.length())
 )
@@ -282,24 +278,19 @@ BTYPE (2 bits):  00 = stored, 01 = fixed Huffman, 10 = dynamic Huffman
 ```
 - HLIT (5 bits): # of literal codes - 257
 - HDIST (5 bits): # of distance codes - 1
-- HCLEN (4 bits): # of code length codes - 4
-- Code length code lengths (3 bits × HCLEN)
-- Literal/length code lengths (encoded)
-- Distance code lengths (encoded)
-- Encoded data
 ```
-
-## Performance
-
-### Compression Speed
-
-| Method | Speed | Ratio | Use Case |
-|--------|-------|-------|----------|
-| Stored | Instant | 0% | Already compressed |
-| Fixed | Fast | 30-60% | Small data, streaming |
-| Dynamic | Moderate | 40-70% | General purpose |
-
-### Memory Usage
+deflate_dynamic(data : BytesView, is_final : Bool, good_match : Int, max_chain : Int) -> Bytes
+```
+- Literal/length code lengths (encoded)
+#### `deflate_dynamic(data : BytesView, is_final : Bool, good_match : Int, max_chain : Int) -> Bytes`
+- Encoded data
+#### `deflate_dynamic(data : BytesView, is_final : Bool, good_match : Int, max_chain : Int) -> Bytes`
+    let compressed = @deflate.deflate_dynamic(data[0:data.length()], true, 8, 1024)
+// Compress and get CRC-32
+let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
+let default = deflate_dynamic(data[0:len], true, 8, 1024)
+let best = deflate_dynamic(data[0:len], true, 32, 4096)
+    let block = deflate_dynamic(data[i:i + len], is_final, 8, 1024)
 
 - **Compression**: ~100KB (hash tables + buffers)
 - **Decompression**: ~300KB (Huffman trees + output buffer)

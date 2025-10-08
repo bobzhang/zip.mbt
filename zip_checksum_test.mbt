@@ -166,7 +166,7 @@ test "@deflate.adler32_and_deflate_api" {
 /// Test @deflate.inflate_and_adler32
 test "coverage_inflate_adler32" {
   let data = b"Inflate with Adler-32"
-  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 8, 128)
+  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 128)
   let (dec, adler) = @deflate.inflate_and_adler32(
     compressed,
     0,

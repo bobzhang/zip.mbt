@@ -46,14 +46,14 @@ pub fn insert_hash(
   hash : Int,
   pos : Int,
 ) -> Unit {
-  hash_prev[pos.mod(window_size)] = hash_head[hash]
+  hash_prev[pos % window_size] = hash_head[hash]
   hash_head[hash] = pos
 }
 
 ///|
 /// Match bytes backward from positions i and j for len bytes
 /// Returns -1 if all match, or the count of remaining unmatched bytes
-fn match_bwd(bytes : Bytes, i : Int, j : Int, len : Int) -> Int {
+fn match_bwd(bytes : BytesView, i : Int, j : Int, len : Int) -> Int {
   if len < 0 {
     return len
   }
@@ -68,7 +68,7 @@ fn match_bwd(bytes : Bytes, i : Int, j : Int, len : Int) -> Int {
 /// Match bytes forward from positions i and j, up to max_match_len
 /// Returns the length of the match
 pub fn match_fwd(
-  bytes : Bytes,
+  bytes : BytesView,
   i : Int,
   j : Int,
   len : Int,
@@ -92,7 +92,7 @@ pub fn match_fwd(
 /// Only returns a length if it's strictly longer than prev_match_len
 /// Uses bidirectional matching: check backward first, then forward
 pub fn find_match_length(
-  bytes : Bytes,
+  bytes : BytesView,
   i : Int,
   j : Int,
   prev_match_len : Int,
@@ -146,7 +146,7 @@ pub fn backref_len(bref : Int) -> Int {
 /// - good_match: If match >= this length, reduce search effort (quality vs speed)
 /// - max_chain_len: Maximum number of hash chain entries to check
 pub fn find_backref(
-  bytes : Bytes,
+  bytes : BytesView,
   hash_head : Array[Int],
   hash_prev : Array[Int],
   pos : Int,

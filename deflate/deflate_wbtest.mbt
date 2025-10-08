@@ -43,7 +43,7 @@ test "deflate_stored_basic" {
 ///|
 test "deflate_fixed_simple" {
   let data = b"hello"
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = inflate(
     compressed,
     0,
@@ -58,7 +58,7 @@ test "deflate_fixed_simple" {
 ///|
 test "deflate_fixed_with_repetition" {
   let data = b"abcabcabcabc"
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = inflate(
     compressed,
     0,
@@ -82,7 +82,7 @@ test "deflate_fixed_all_same" {
     buf.write_byte(b'a')
   }
   let data = buf.contents()
-  let compressed = deflate_fixed(data, 0, data.length(), true, 4, 4096)
+  let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
   let decompressed = inflate(
     compressed,
     0,
@@ -97,7 +97,7 @@ test "deflate_fixed_all_same" {
 ///|
 test "deflate_dynamic_simple" {
   let data = b"hello"
-  let compressed = deflate_dynamic(data, 0, data.length(), true, 4, 4096)
+  let compressed = deflate_dynamic(data[0:data.length()], true, 4, 4096)
   let decompressed = inflate(
     compressed,
     0,
@@ -112,7 +112,7 @@ test "deflate_dynamic_simple" {
 ///|
 test "deflate_dynamic_with_repetition" {
   let data = b"abcabcabcabcabcabcabcabc"
-  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 1024)
+  let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
   let decompressed = inflate(
     compressed,
     0,
@@ -136,7 +136,7 @@ test "deflate_dynamic_highly_compressible" {
     buf.write_byte(b'a')
   }
   let data = buf.contents()
-  let compressed = deflate_dynamic(data, 0, data.length(), true, 8, 1024)
+  let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
   let decompressed = inflate(
     compressed,
     0,

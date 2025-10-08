@@ -8,9 +8,9 @@ fn crc32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> (UInt, Bytes) ra
 
 fn deflate(Bytes, Int, Int, level? : DeflateLevel) -> Bytes raise
 
-fn deflate_dynamic(Bytes, Int, Int, Bool, Int, Int) -> Bytes
+fn deflate_dynamic(BytesView, Bool, Int, Int) -> Bytes
 
-fn deflate_fixed(Bytes, Int, Int, Bool, Int, Int) -> Bytes
+fn deflate_fixed(BytesView, Bool, Int, Int) -> Bytes
 
 fn deflate_stored(Bytes, Int, Int) -> Bytes raise
 

@@ -14,7 +14,7 @@ test "inflate_invalid_litlen_symbol" {
   // This would require crafting a Huffman-encoded stream with invalid symbol
   // For now, test that valid symbols work
   let data = b"test"
-  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 128)
+  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -30,7 +30,7 @@ test "inflate_invalid_distance_symbol" {
   // This would require crafting a stream with distance > 29
   // For now, test that valid distances work
   let data = b"aaaaaaaaaa" // Highly repetitive for back-references
-  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 128)
+  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -46,7 +46,7 @@ test "inflate_distance_too_large" {
   // Would require crafting a stream with dist > output_pos
   // Testing normal back-reference behavior
   let data = b"abcdefghijklmnop" // 16 bytes
-  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 128)
+  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -63,9 +63,7 @@ test "inflate_dynamic_invalid_hlit" {
   // This is very complex to craft manually
   let data = b"test data"
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -86,9 +84,7 @@ test "inflate_dynamic_empty_codelen" {
   // Testing normal dynamic huffman
   let data = b"The quick brown fox jumps over the lazy dog"
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -108,9 +104,7 @@ test "inflate_dynamic_invalid_codelen_symbol" {
   // Testing normal code length encoding
   let data = b"abcdefghijklmnopqrstuvwxyz0123456789"
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -131,9 +125,7 @@ test "inflate_dynamic_repeat_no_previous" {
   // This requires crafting a specific bit pattern
   let data = b"compression test data"
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -153,9 +145,7 @@ test "inflate_dynamic_repeat_overflow" {
   // Repeat count would exceed total
   let data = b"testing deflate compression algorithm implementation"
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -176,9 +166,7 @@ test "inflate_dynamic_missing_eob" {
   // Very complex to craft, testing normal case
   let data = b"DEFLATE RFC 1951 compliance testing"
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -307,7 +295,7 @@ test "zlib_compress_level_best" {
 test "deflate_fixed_boundary_conditions" {
   // Test with data that triggers lazy matching at boundaries
   let data = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 8, 1024)
+  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 1024)
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -326,9 +314,7 @@ test "deflate_dynamic_high_repetition" {
   }
   let data = buf.contents()
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -348,9 +334,7 @@ test "deflate_dynamic_lazy_matching" {
   // Create data that exercises lazy matching logic
   let data = b"abcabcdefabcdefghabcdefghijabcdefghijkl"
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -368,7 +352,7 @@ test "deflate_dynamic_lazy_matching" {
 /// Test empty data compression
 test "deflate_empty_data" {
   let data = b""
-  let compressed = @deflate.deflate_fixed(data, 0, 0, true, 4, 128)
+  let compressed = @deflate.deflate_fixed(data[0:0], true, 4, 128)
   @json.inspect(compressed.length() > 0, content=true) // Should have header + EOB
   let decompressed = @deflate.inflate(
     compressed,
@@ -384,9 +368,7 @@ test "deflate_empty_data" {
 test "rfc1951_example_hello" {
   let data = b"hello"
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     8,
     1024,
@@ -414,9 +396,7 @@ test "deflate_long_distance_backref" {
   buf.write_bytesview(b"pattern"[0:7])
   let data = buf.contents()
   let compressed = @deflate.deflate_dynamic(
-    data,
-    0,
-    data.length(),
+    data[0:data.length()],
     true,
     32,
     4096,
@@ -438,7 +418,7 @@ test "deflate_all_byte_values" {
     buf.write_byte(i.to_byte())
   }
   let data = buf.contents()
-  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 128)
+  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -465,7 +445,7 @@ test "deflate_max_match_length" {
     buf.write_byte(b'A')
   }
   let data = buf.contents()
-  let compressed = @deflate.deflate_fixed(data, 0, data.length(), true, 4, 128)
+  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
   let decompressed = @deflate.inflate(
     compressed,
     0,

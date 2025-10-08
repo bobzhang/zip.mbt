@@ -881,7 +881,7 @@ fn distance_to_symbol(dist : Int) -> Int {
 
 ///|
 /// Write a literal or end-of-block symbol
-fn write_literal_symbol(
+fn BitWriter::write_literal_symbol(
   writer : BitWriter,
   encoder : HuffmanEncoder,
   symbol : Int,
@@ -1024,22 +1024,22 @@ fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
 /// ## Returns
 /// Deflate block with fixed Huffman encoding of LZ77-compressed data.
 pub fn deflate_fixed(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
+  data : BytesView,
   is_final : Bool,
   good_match : Int,
   max_chain : Int,
 ) -> Bytes {
+  let len = data.length()
   if len == 0 {
     let output = @buffer.new(size_hint=10)
-    let writer = @bitstream.BitWriter::new(output)
     let header = if is_final { 0b011 } else { 0b010 }
-    writer.write_bits(header, 3)
-    write_literal_symbol(
-      writer, @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
+    let writer = @bitstream.BitWriter::new(output)
+    writer
+    ..write_bits(header, 3)
+    ..write_literal_symbol(
+      @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
     )
-    writer.flush()
+    ..flush()
     return output.contents()
   }
   let hash_head = Array::make(@lz77.hash_size, @lz77.no_pos)
@@ -1048,7 +1048,7 @@ pub fn deflate_fixed(
   let writer = @bitstream.BitWriter::new(output)
   let header = if is_final { 0b011 } else { 0b010 }
   writer.write_bits(header, 3)
-  let max_pos = start + len - @lz77.min_match_len
+  let max_pos = len - @lz77.min_match_len
   fn compress_loop(pos : Int, prev_bref : Int) -> Unit {
     if pos > max_pos {
       let prev_len = @lz77.backref_len(prev_bref)
@@ -1062,16 +1062,16 @@ pub fn deflate_fixed(
         )
         pos - 1 + prev_len
       }
-      let end = start + len
+      let end = len
       for i = final_pos; i < end; i = i + 1 {
-        let byte = bytes[i].to_int()
-        write_literal_symbol(writer, @huffman.fixed_litlen_encoder, byte)
+        let byte = data[i].to_int()
+        writer.write_literal_symbol(@huffman.fixed_litlen_encoder, byte)
       }
-      write_literal_symbol(
-        writer, @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
+      writer.write_literal_symbol(
+        @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
       )
     } else {
-      if pos + 4 > start + len {
+      if pos + 4 > len {
         if prev_bref > 0 {
           let prev_len = @lz77.backref_len(prev_bref)
           let dist = @lz77.backref_dist(prev_bref)
@@ -1081,18 +1081,17 @@ pub fn deflate_fixed(
           )
           compress_loop(pos - 1 + prev_len, 0)
         } else {
-          let byte = bytes[pos].to_int()
-          write_literal_symbol(writer, @huffman.fixed_litlen_encoder, byte)
+          let byte = data[pos].to_int()
+          writer.write_literal_symbol(@huffman.fixed_litlen_encoder, byte)
           compress_loop(pos + 1, 0)
         }
         return
       }
-      let hash = @lz77.hash4(bytes[pos:])
-      let max_match = (start + len - pos).min(@lz77.max_match_len)
+      let hash = @lz77.hash4(data[pos:])
+      let max_match = (len - pos).min(@lz77.max_match_len)
       let prev_len = @lz77.backref_len(prev_bref)
       let cur_bref = @lz77.find_backref(
-        bytes, hash_head, hash_prev, pos, hash, prev_len, max_match, good_match,
-        max_chain,
+        data, hash_head, hash_prev, pos, hash, prev_len, max_match, good_match, max_chain,
       )
       let cur_len = @lz77.backref_len(cur_bref)
       @lz77.insert_hash(hash_head, hash_prev, hash, pos)
@@ -1105,32 +1104,32 @@ pub fn deflate_fixed(
         let next = pos - 1 + prev_len
         let last = (next - 1).min(max_pos)
         for j = pos + 1; j <= last; j = j + 1 {
-          if j + 3 < start + len {
-            let h = @lz77.hash4(bytes[j:])
+          if j + 3 < len {
+            let h = @lz77.hash4(data[j:])
             @lz77.insert_hash(hash_head, hash_prev, h, j)
           }
         }
         compress_loop(next, 0)
       } else if cur_len == 0 {
         if prev_len > 0 {
-          let byte = bytes[pos - 1].to_int()
-          write_literal_symbol(writer, @huffman.fixed_litlen_encoder, byte)
+          let byte = data[pos - 1].to_int()
+          writer.write_literal_symbol(@huffman.fixed_litlen_encoder, byte)
         } else {
-          let byte = bytes[pos].to_int()
-          write_literal_symbol(writer, @huffman.fixed_litlen_encoder, byte)
+          let byte = data[pos].to_int()
+          writer.write_literal_symbol(@huffman.fixed_litlen_encoder, byte)
         }
         compress_loop(pos + 1, 0)
       } else {
         if prev_len > 0 {
-          let byte = bytes[pos - 1].to_int()
-          write_literal_symbol(writer, @huffman.fixed_litlen_encoder, byte)
+          let byte = data[pos - 1].to_int()
+          writer.write_literal_symbol(@huffman.fixed_litlen_encoder, byte)
         }
         compress_loop(pos + 1, cur_bref)
       }
     }
   }
 
-  compress_loop(start, 0)
+  compress_loop(0, 0)
   writer.flush()
   output.contents()
 }
@@ -1181,33 +1180,50 @@ pub fn deflate_fixed(
 /// ## Returns
 /// Complete DEFLATE block with dynamic Huffman encoding including tree headers.
 pub fn deflate_dynamic(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
+  data : BytesView,
   is_final : Bool,
   good_match : Int,
   max_chain : Int,
 ) -> Bytes {
+  /// Dynamic Huffman DEFLATE compression.
+  ///
+  /// This variant builds optimal Huffman trees for the provided data slice.
+  /// Takes a BytesView instead of (bytes,start,len) so callers can pass
+  /// subranges directly: `deflate_dynamic(bytes[i:j], true, 8, 1024)`.
+  ///
+  /// Parameters:
+  /// - `data`: Input window to compress (treated as an independent block)
+  /// - `is_final`: Whether this block is the last (sets BFINAL bit)
+  /// - `good_match`: LZ77 early-exit threshold for match search effort
+  /// - `max_chain`: Maximum hash chain traversal depth (search effort)
+  ///
+  /// Returns: A complete DEFLATE block (header + compressed payload).
+  let len = data.length()
   if len == 0 {
     let output = @buffer.new(size_hint=10)
     let writer = @bitstream.BitWriter::new(output)
-    let header = if is_final { 0b011 } else { 0b010 }
+    // For empty input we emit a (possibly final) *fixed* Huffman block (BTYPE=01).
+    // Rationale: avoids building dynamic trees & keeps a canonical minimal representation.
+    // Previous implementation (before BytesView refactor) used fixed here; restoring to
+    // preserve test expectations and spec correctness (a dynamic header without trees is invalid).
+    let header = if is_final { 0b011 } else { 0b010 } // BFINAL + BTYPE=01 (fixed)
     writer.write_bits(header, 3)
-    write_literal_symbol(
-      writer, @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
+    // End-of-block only symbol using fixed encoder
+    writer.write_literal_symbol(
+      @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
     )
     writer.flush()
     return output.contents()
   }
 
-  // Step 1: Run LZ77 and collect frequencies
+  // Step 1: Run LZ77 and collect frequencies directly on BytesView (no copy)
   let hash_head = Array::make(@lz77.hash_size, @lz77.no_pos)
   let hash_prev = Array::make(@lz77.window_size, 0)
   let freqs = FrequencyCounter::new()
   let max_symbols = len + 1000
   let symbols = Array::make(max_symbols, 0)
   let mut sym_idx = 0
-  let max_pos = start + len - @lz77.min_match_len
+  let max_pos = len - @lz77.min_match_len
   fn compress_and_count(pos : Int, prev_bref : Int) -> Unit {
     if pos > max_pos {
       let prev_len = @lz77.backref_len(prev_bref)
@@ -1221,16 +1237,16 @@ pub fn deflate_dynamic(
         sym_idx = sym_idx + 1
         pos - 1 + prev_len
       }
-      let end = start + len
+      let end = len
       for i = final_pos; i < end; i = i + 1 {
-        let byte = bytes[i].to_int()
+        let byte = data[i].to_int()
         freqs.add_literal(byte)
         symbols[sym_idx] = byte
         sym_idx = sym_idx + 1
       }
       freqs.add_end_of_block()
     } else {
-      if pos + 4 > start + len {
+      if pos + 4 > len {
         if prev_bref > 0 {
           let prev_len = @lz77.backref_len(prev_bref)
           let dist = @lz77.backref_dist(prev_bref)
@@ -1240,7 +1256,7 @@ pub fn deflate_dynamic(
           sym_idx = sym_idx + 1
           compress_and_count(pos - 1 + prev_len, 0)
         } else {
-          let byte = bytes[pos].to_int()
+          let byte = data[pos].to_int()
           freqs.add_literal(byte)
           symbols[sym_idx] = byte
           sym_idx = sym_idx + 1
@@ -1248,12 +1264,11 @@ pub fn deflate_dynamic(
         }
         return
       }
-      let hash = @lz77.hash4(bytes[pos:])
-      let max_match = (start + len - pos).min(@lz77.max_match_len)
+      let hash = @lz77.hash4(data[pos:])
+      let max_match = (len - pos).min(@lz77.max_match_len)
       let prev_len = @lz77.backref_len(prev_bref)
       let cur_bref = @lz77.find_backref(
-        bytes, hash_head, hash_prev, pos, hash, prev_len, max_match, good_match,
-        max_chain,
+        data, hash_head, hash_prev, pos, hash, prev_len, max_match, good_match, max_chain,
       )
       let cur_len = @lz77.backref_len(cur_bref)
       @lz77.insert_hash(hash_head, hash_prev, hash, pos)
@@ -1266,20 +1281,20 @@ pub fn deflate_dynamic(
         let next = pos - 1 + prev_len
         let last = (next - 1).min(max_pos)
         for j = pos + 1; j <= last; j = j + 1 {
-          if j + 3 < start + len {
-            let h = @lz77.hash4(bytes[j:])
+          if j + 3 < len {
+            let h = @lz77.hash4(data[j:])
             @lz77.insert_hash(hash_head, hash_prev, h, j)
           }
         }
         compress_and_count(next, 0)
       } else if cur_len == 0 {
         if prev_len > 0 {
-          let byte = bytes[pos - 1].to_int()
+          let byte = data[pos - 1].to_int()
           freqs.add_literal(byte)
           symbols[sym_idx] = byte
           sym_idx = sym_idx + 1
         } else {
-          let byte = bytes[pos].to_int()
+          let byte = data[pos].to_int()
           freqs.add_literal(byte)
           symbols[sym_idx] = byte
           sym_idx = sym_idx + 1
@@ -1287,7 +1302,7 @@ pub fn deflate_dynamic(
         compress_and_count(pos + 1, 0)
       } else {
         if prev_len > 0 {
-          let byte = bytes[pos - 1].to_int()
+          let byte = data[pos - 1].to_int()
           freqs.add_literal(byte)
           symbols[sym_idx] = byte
           sym_idx = sym_idx + 1
@@ -1297,7 +1312,7 @@ pub fn deflate_dynamic(
     }
   }
 
-  compress_and_count(start, 0)
+  compress_and_count(0, 0)
 
   // Step 2: Build Huffman trees
   let litlen_lengths = build_optimal_code_lengths(freqs.litlen_freqs, 285, 15)
@@ -1347,13 +1362,13 @@ pub fn deflate_dynamic(
     let dist = @lz77.backref_dist(sym)
     if dist == 0 {
       let lit = @lz77.backref_len(sym)
-      write_literal_symbol(writer, litlen_encoder, lit)
+      writer.write_literal_symbol(litlen_encoder, lit)
     } else {
       let length = @lz77.backref_len(sym)
       write_length_distance(writer, litlen_encoder, dist_encoder, length, dist)
     }
   }
-  write_literal_symbol(writer, litlen_encoder, litlen_end_of_block_sym)
+  writer.write_literal_symbol(litlen_encoder, litlen_end_of_block_sym)
   writer.flush()
   output.contents()
 }
@@ -1439,9 +1454,9 @@ pub fn deflate(
 
   // Choose between Fixed and Dynamic Huffman based on size and level
   let compressed = if use_dynamic && len >= 256 {
-    deflate_dynamic(bytes, start, len, true, good_match, max_chain)
+    deflate_dynamic(bytes[start:start + len], true, good_match, max_chain)
   } else {
-    deflate_fixed(bytes, start, len, true, good_match, max_chain)
+    deflate_fixed(bytes[start:start + len], true, good_match, max_chain)
   }
   compressed
 }
@@ -1548,7 +1563,12 @@ pub fn zlib_compress(
   output.write_byte(flg.to_byte())
 
   // Write deflate compressed data
-  let compressed = deflate_fixed(bytes, start, len, true, good_match, max_chain)
+  let compressed = deflate_fixed(
+    bytes[start:start + len],
+    true,
+    good_match,
+    max_chain,
+  )
   for i = 0; i < compressed.length(); i = i + 1 {
     output.write_byte(compressed[i])
   }

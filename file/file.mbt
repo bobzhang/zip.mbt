@@ -237,10 +237,20 @@ pub fn File::deflate_of_bytes(
   // For small data (<256 bytes), fixed Huffman is often better
   let compressed = if use_dynamic && len >= 256 {
     // Use Dynamic Huffman for better compression on larger data
-    @deflate.deflate_dynamic(bytes, start, len, true, good_match, max_chain)
+    @deflate.deflate_dynamic(
+      bytes[start:start + len],
+      true,
+      good_match,
+      max_chain,
+    )
   } else {
     // Use Fixed Huffman for small data or Fast level
-    @deflate.deflate_fixed(bytes, start, len, true, good_match, max_chain)
+    @deflate.deflate_fixed(
+      bytes[start:start + len],
+      true,
+      good_match,
+      max_chain,
+    )
   }
   let crc = @crc32.bytes_crc32(bytes, start, len)
   File::make(compressed, 0, compressed.length(), Compression::Deflate, len, crc)

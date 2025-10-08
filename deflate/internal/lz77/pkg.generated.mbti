@@ -6,9 +6,9 @@ fn backref_dist(Int) -> Int
 
 fn backref_len(Int) -> Int
 
-fn find_backref(Bytes, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> Int
+fn find_backref(BytesView, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> Int
 
-fn find_match_length(Bytes, Int, Int, Int, Int) -> Int
+fn find_match_length(BytesView, Int, Int, Int, Int) -> Int
 
 fn hash4(BytesView) -> Int
 
@@ -18,7 +18,7 @@ fn insert_hash(Array[Int], Array[Int], Int, Int) -> Unit
 
 fn make_backref(Int, Int) -> Int
 
-fn match_fwd(Bytes, Int, Int, Int, Int) -> Int
+fn match_fwd(BytesView, Int, Int, Int, Int) -> Int
 
 let max_match_len : Int
 
