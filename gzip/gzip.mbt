@@ -11,7 +11,12 @@
 ///   level - optional deflate compression level (falls back to encoder default).
 /// Produces standard 10-byte header (no extra/name/comment) + deflate stream + CRC32 + ISIZE.
 /// Limitations: no support yet for original filename, extra fields, OS-specific metadata.
-pub fn compress(data : Bytes, level? : @deflate.DeflateLevel) -> Bytes raise {
+pub fn compress(
+  data_view : BytesView,
+  level? : @deflate.DeflateLevel,
+) -> Bytes raise {
+  // Materialize view (needed for CRC & size; single allocation) – mirrors deflate.inflate pattern
+  let data = data_view.to_bytes()
   // --- Header (10 bytes) ---
   let header = FixedArray::make(10, b'\x00')
   header[0] = b'\x1f' // ID1
@@ -50,8 +55,8 @@ pub fn compress(data : Bytes, level? : @deflate.DeflateLevel) -> Bytes raise {
 ///|
 /// Backwards-compatible helper retaining old signature with default level.
 /// Backwards-compatible one-arg helper (equivalent to compress(data)).
-pub fn compress_default(data : Bytes) -> Bytes raise {
-  compress(data)
+pub fn compress_default(data_view : BytesView) -> Bytes raise {
+  compress(data_view)
 }
 
 ///|
@@ -65,7 +70,9 @@ pub fn compress_default(data : Bytes) -> Bytes raise {
 /// Simple gzip decompression.
 /// Validates magic, method, and CRC32. Assumes no optional header fields.
 /// TODO: support FLG flags (FNAME, FCOMMENT, FEXTRA) and ISIZE validation for >4GB wrap.
-pub fn decompress(data : Bytes) -> Bytes raise {
+pub fn decompress(data_view : BytesView) -> Bytes raise {
+  // Materialize once for header/footer validation & slicing
+  let data = data_view.to_bytes()
   if data.length() < 18 {
     abort("Invalid gzip data: too short")
   }

@@ -4,13 +4,13 @@
 /// Test basic compression and decompression
 test "basic_round_trip" {
   let input = "Hello, World!".to_bytes()
-  let compressed = @gzip.compress(input)
+  let compressed = @gzip.compress(input[:])
   // Basic structural checks (magic/method, footer length)
   inspect(compressed.length() > 18, content="true")
   inspect(compressed[0].to_int() == 0x1f, content="true")
   inspect(compressed[1].to_int() == 0x8b, content="true")
   inspect(compressed[2].to_int() == 0x08, content="true")
-  let decompressed = @gzip.decompress(compressed)
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == input, content="true")
 }
 
@@ -18,8 +18,8 @@ test "basic_round_trip" {
 /// Test empty data
 test "empty_data" {
   let input = "".to_bytes()
-  let compressed = @gzip.compress(input)
-  let decompressed = @gzip.decompress(compressed)
+  let compressed = @gzip.compress(input[:])
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == input, content="true")
 }
 
@@ -31,8 +31,8 @@ test "large_data" {
     input_str = input_str + "A"
   }
   let input = input_str.to_bytes()
-  let compressed = @gzip.compress(input)
-  let decompressed = @gzip.decompress(compressed)
+  let compressed = @gzip.compress(input[:])
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == input, content="true")
 }
 
@@ -40,7 +40,7 @@ test "large_data" {
 /// Test cross-compatibility features
 test "cross_compatibility" {
   let test_data = "Hello from MoonBit!".to_bytes()
-  let compressed = @gzip.compress(test_data)
+  let compressed = @gzip.compress(test_data[:])
 
   // Verify basic gzip structure
   inspect(compressed.length() > 18, content="true") // Header (10) + footer (8) minimum
@@ -49,7 +49,7 @@ test "cross_compatibility" {
   inspect(compressed[2].to_int() == 0x08, content="true") // Deflate method
 
   // Test round trip
-  let decompressed = @gzip.decompress(compressed)
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == test_data, content="true")
 }
 
@@ -59,7 +59,7 @@ test "cross_compatibility" {
 /// This tests that our gzip handles binary data correctly like Python
 test "binary_data_python_compat" {
   let binary_data = Bytes::from_array([0, 1, 2, 255, 254, 253])
-  let compressed = @gzip.compress(binary_data)
+  let compressed = @gzip.compress(binary_data[:])
 
   // Verify gzip header structure matches Python output
   inspect(compressed[0].to_int() == 0x1f, content="true") // Magic 1
@@ -70,7 +70,7 @@ test "binary_data_python_compat" {
   inspect(compressed[9].to_int() == 0xff, content="true") // OS unknown (matches Python default)
 
   // Test round trip preserves binary data exactly
-  let decompressed = @gzip.decompress(compressed)
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == binary_data, content="true")
   inspect(decompressed.length() == 6, content="true")
 }
@@ -81,7 +81,7 @@ test "binary_data_python_compat" {
 /// This verifies our implementation handles minimal data like Python
 test "single_byte_python_compat" {
   let single_byte = "A".to_bytes()
-  let compressed = @gzip.compress(single_byte)
+  let compressed = @gzip.compress(single_byte[:])
 
   // Should produce valid gzip structure
   inspect(compressed.length() >= 18, content="true") // At least header + footer
@@ -92,7 +92,7 @@ test "single_byte_python_compat" {
   inspect(compressed[2].to_int() == 0x08, content="true")
 
   // Test decompression matches original
-  let decompressed = @gzip.decompress(compressed)
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == single_byte, content="true")
 }
 
@@ -106,10 +106,10 @@ test "repetitive_data_python_compat" {
     repetitive = repetitive + "A"
   }
   let data = repetitive.to_bytes()
-  let compressed = @gzip.compress(data)
+  let compressed = @gzip.compress(data[:])
   // With real compression the payload should be smaller than original (header+footer overhead tolerated)
   inspect(compressed.length() < data.length() + 18, content="true")
-  let decompressed = @gzip.decompress(compressed)
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == data, content="true")
 }
 
@@ -120,14 +120,14 @@ test "repetitive_data_python_compat" {
 test "unicode_data_python_compat" {
   let unicode_text = "Hello 世界! 🌍"
   let utf8_bytes = unicode_text.to_bytes()
-  let compressed = @gzip.compress(utf8_bytes)
+  let compressed = @gzip.compress(utf8_bytes[:])
 
   // Verify gzip structure
   inspect(compressed[0].to_int() == 0x1f, content="true")
   inspect(compressed[1].to_int() == 0x8b, content="true")
 
   // Test round trip preserves UTF-8 encoding perfectly
-  let decompressed = @gzip.decompress(compressed)
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == utf8_bytes, content="true")
 }
 
@@ -141,11 +141,11 @@ test "large_block_python_compat" {
     large_data = large_data + "X"
   }
   let data = large_data.to_bytes()
-  let compressed = @gzip.compress(data)
+  let compressed = @gzip.compress(data[:])
   inspect(compressed.length() < data.length(), content="true")
   inspect(compressed[0].to_int() == 0x1f, content="true")
   inspect(compressed[1].to_int() == 0x8b, content="true")
-  let decompressed = @gzip.decompress(compressed)
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == data, content="true")
 }
 
@@ -155,7 +155,7 @@ test "large_block_python_compat" {
 /// This verifies our footer structure exactly matches Python's
 test "footer_structure_python_compat" {
   let test_data = "Test footer".to_bytes()
-  let compressed = @gzip.compress(test_data)
+  let compressed = @gzip.compress(test_data[:])
 
   // Extract footer (last 8 bytes)
   let footer_start = compressed.length() - 8
@@ -169,7 +169,7 @@ test "footer_structure_python_compat" {
   inspect(footer_size == size_bytes, content="true")
 
   // Test that decompression verifies CRC32 correctly
-  let decompressed = @gzip.decompress(compressed)
+  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
   inspect(decompressed == test_data, content="true")
 }
 
@@ -179,7 +179,7 @@ test "footer_structure_python_compat" {
 /// This ensures our implementation preserves all whitespace characters
 test "whitespace_data_python_compat" {
   let whitespace_data = "\n\r\t   ".to_bytes()
-  let compressed = @gzip.compress(whitespace_data)
+  let compressed = @gzip.compress(whitespace_data[:])
 
   // Verify gzip format
   inspect(compressed[0].to_int() == 0x1f, content="true")
@@ -204,22 +204,22 @@ test "compression_levels_effect" {
     repetitive = repetitive + "A"
   }
   let data = repetitive.to_bytes()
-  let stored = @gzip.compress(data, level=@deflate.DeflateLevel::None)
-  let best = @gzip.compress(data, level=@deflate.DeflateLevel::Best)
+  let stored = @gzip.compress(data[:], level=@deflate.DeflateLevel::None)
+  let best = @gzip.compress(data[:], level=@deflate.DeflateLevel::Best)
   // Stored should be larger or equal to Best
   inspect(stored.length() >= best.length(), content="true")
   // Round trip both
-  inspect(@gzip.decompress(stored) == data, content="true")
-  inspect(@gzip.decompress(best) == data, content="true")
+  inspect(@gzip.decompress(stored[0:stored.length()]) == data, content="true")
+  inspect(@gzip.decompress(best[0:best.length()]) == data, content="true")
 }
 
 ///|
 /// Ensure compress_default delegates correctly.
 test "compress_default_delegation" {
   let data = "Default delegation".to_bytes()
-  let a = @gzip.compress(data)
-  let b = @gzip.compress_default(data)
+  let a = @gzip.compress(data[:])
+  let b = @gzip.compress_default(data[:])
   // Outputs may differ if default chooses dynamic trees differently on separate runs; ensure both decompress.
-  inspect(@gzip.decompress(a) == data, content="true")
-  inspect(@gzip.decompress(b) == data, content="true")
+  inspect(@gzip.decompress(a[0:a.length()]) == data, content="true")
+  inspect(@gzip.decompress(b[0:b.length()]) == data, content="true")
 }
