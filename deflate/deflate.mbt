@@ -4,7 +4,7 @@
 // Re-export dependencies
 
 ///|
-typealias @buffer.ByteBuf
+typealias @bytebuf.ByteBuf
 
 ///|
 typealias @bitstream.BitWriter
@@ -187,8 +187,8 @@ fn InflateDecoder::new(
 ) -> InflateDecoder {
   let src_max = start + len - 1
   let dst = match decompressed_size {
-    Some(size) => @buffer.new(size_hint=size, fixed=true)
-    None => @buffer.new(size_hint=len * 3)
+    Some(size) => @bytebuf.new(size_hint=size, fixed=true)
+    None => @bytebuf.new(size_hint=len * 3)
   }
   {
     src,
@@ -521,7 +521,7 @@ pub fn deflate_stored(data : BytesView) -> Bytes raise {
   }
   // Single block (always final)
   let result_size = 1 + 4 + len
-  let buffer = @buffer.new(size_hint=result_size)
+  let buffer = @bytebuf.new(size_hint=result_size)
   buffer.write_byte((0b00000001).to_byte()) // BFINAL=1, BTYPE=00
   // LEN (little-endian)
   buffer.write_byte((len & 0xFF).to_byte())
@@ -953,7 +953,7 @@ fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
 //   len : Int,
 //   is_final : Bool,
 // ) -> Bytes {
-//   let output = @buffer.new(len * 2, false)
+//   let output = @bytebuf.new(len * 2, false)
 //   let writer = @bitstream.BitWriter::new(output)
 //   let header = if is_final { 0b011 } else { 0b010 }
 //   writer.write_bits(header, 3)
@@ -1008,7 +1008,7 @@ pub fn deflate_fixed(
 ) -> Bytes {
   let len = data.length()
   if len == 0 {
-    let output = @buffer.new(size_hint=10)
+    let output = @bytebuf.new(size_hint=10)
     let header = if is_final { 0b011 } else { 0b010 }
     let writer = @bitstream.BitWriter::new(output)
     writer
@@ -1021,7 +1021,7 @@ pub fn deflate_fixed(
   }
   let hash_head = Array::make(@lz77.hash_size, @lz77.no_pos)
   let hash_prev = Array::make(@lz77.window_size, 0)
-  let output = @buffer.new(size_hint=len * 2)
+  let output = @bytebuf.new(size_hint=len * 2)
   let writer = @bitstream.BitWriter::new(output)
   let header = if is_final { 0b011 } else { 0b010 }
   writer.write_bits(header, 3)
@@ -1177,7 +1177,7 @@ pub fn deflate_dynamic(
   /// Returns: A complete DEFLATE block (header + compressed payload).
   let len = data.length()
   if len == 0 {
-    let output = @buffer.new(size_hint=10)
+    let output = @bytebuf.new(size_hint=10)
     let writer = @bitstream.BitWriter::new(output)
     // For empty input we emit a (possibly final) *fixed* Huffman block (BTYPE=01).
     // Rationale: avoids building dynamic trees & keeps a canonical minimal representation.
@@ -1324,7 +1324,7 @@ pub fn deflate_dynamic(
   let codelen_encoder = build_canonical_huffman(codelen_lengths, 18)
 
   // Step 5: Write dynamic block
-  let output = @buffer.new(size_hint=len * 2)
+  let output = @bytebuf.new(size_hint=len * 2)
   let writer = @bitstream.BitWriter::new(output)
   let header = if is_final { 0b101 } else { 0b100 }
   writer.write_bits(header, 3)
@@ -1486,7 +1486,7 @@ pub fn zlib_compress(data : BytesView, level? : DeflateLevel) -> (UInt, Bytes) {
     Some(DeflateLevel::Default) | None => (8, 1024, 2)
     Some(DeflateLevel::Best) => (32, 4096, 3)
   }
-  let output = @buffer.new(size_hint=len + 100)
+  let output = @bytebuf.new(size_hint=len + 100)
 
   // Write CMF (Compression Method and Flags)
   // Bits 0-3: CM (compression method) = 8 for deflate

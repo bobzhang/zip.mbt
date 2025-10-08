@@ -57,7 +57,7 @@ If there are partial bits (< 8), pads with zeros to reach a byte boundary.
 ```moonbit
 ///|
 test {
-  let output = @buffer.new(size_hint=100)
+  let output = @bytebuf.new(size_hint=100)
   let writer = @bitstream.BitWriter::new(output)
 
   // Write a 3-bit value

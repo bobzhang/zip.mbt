@@ -1,7 +1,7 @@
 {
   "is-main": false,
   "import": [
-    "bobzhang/zip/deflate/internal/buffer",
+  "bobzhang/zip/deflate/internal/bytebuf",
     "bobzhang/zip/deflate/internal/bitstream",
     "bobzhang/zip/deflate/internal/huffman",
     "bobzhang/zip/deflate/internal/lz77",

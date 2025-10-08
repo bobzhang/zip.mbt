@@ -2,6 +2,6 @@
   "is-main": false,
   "import": [],
   "test-import": [
-    "bobzhang/zip/deflate/internal/buffer"
+    "bobzhang/zip/deflate/internal/bytebuf"
   ]
 }

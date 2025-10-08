@@ -202,7 +202,7 @@ test "deflate_stored_small" {
 ///|
 /// Test deflate_stored for maximum single block (65535 bytes)
 test "deflate_stored_max_block" {
-  let buf = @buffer.new(size_hint=65535)
+  let buf = @bytebuf.new(size_hint=65535)
   for i = 0; i < 65535; i = i + 1 {
     buf.write_byte((i % 256).to_byte())
   }
@@ -256,7 +256,7 @@ test "deflate_fixed_boundary_conditions" {
 ///|
 /// Test deflate_dynamic with highly repetitive data
 test "deflate_dynamic_high_repetition" {
-  let buf = @buffer.new(size_hint=1000)
+  let buf = @bytebuf.new(size_hint=1000)
   for i = 0; i < 250; i = i + 1 {
     buf.write_bytesview(b"test"[0:4])
   }
@@ -325,7 +325,7 @@ test "rfc1951_example_hello" {
 ///|
 /// Test long distance back-references (> 1024 bytes)
 test "deflate_long_distance_backref" {
-  let buf = @buffer.new(size_hint=3000)
+  let buf = @bytebuf.new(size_hint=3000)
   // Add a pattern at the start
   buf.write_bytesview(b"pattern"[0:7])
   // Add 2000 bytes of different data
@@ -351,7 +351,7 @@ test "deflate_long_distance_backref" {
 ///|
 /// Test all literal bytes (0-255)
 test "deflate_all_byte_values" {
-  let buf = @buffer.new(size_hint=256)
+  let buf = @bytebuf.new(size_hint=256)
   for i = 0; i < 256; i = i + 1 {
     buf.write_byte(i.to_byte())
   }
@@ -375,7 +375,7 @@ test "deflate_all_byte_values" {
 ///|
 /// Test maximum match length (258 bytes)
 test "deflate_max_match_length" {
-  let buf = @buffer.new(size_hint=600)
+  let buf = @bytebuf.new(size_hint=600)
   // Create a repeating pattern longer than max match
   for i = 0; i < 300; i = i + 1 {
     buf.write_byte(b'A')
