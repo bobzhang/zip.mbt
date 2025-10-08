@@ -16,7 +16,7 @@ let crc32_poly : UInt = 0xedb88320
 
 ///|
 /// CRC-32 lookup table (256 entries)
-/// Pre-computed for fast table-driven CRC calculation
+/// Pre-computed for fast table-driven CRC calculation. Also used as tables[0] for slice-by-8.
 let crc32_table : Array[UInt] = {
   let table : Array[UInt] = Array::make(256, 0)
   for i = 0; i < 256; i = i + 1 {
@@ -27,6 +27,26 @@ let crc32_table : Array[UInt] = {
     table[i] = c
   }
   table
+}
+
+///|
+/// Slice-by-8 tables for high-throughput CRC (8KB total)
+/// tables[0] is identical to `crc32_table`; tables[1..7] derived from it.
+let crc32_tables : Array[Array[UInt]] = {
+  // Initialize all slots referencing base table (will overwrite 1..7)
+  let tables : Array[Array[UInt]] = Array::make(8, crc32_table)
+  for n = 1; n < 8; n = n + 1 {
+    let prev_tbl = tables[n - 1]
+    let tbl : Array[UInt] = Array::make(256, 0)
+    for i = 0; i < 256; i = i + 1 {
+      let prev = prev_tbl[i]
+      let shifted = prev >> 8
+      let low_index = (prev & 0xFF).reinterpret_as_int()
+      tbl[i] = shifted ^ crc32_table[low_index]
+    }
+    tables[n] = tbl
+  }
+  tables
 }
 
 ///|
@@ -62,11 +82,57 @@ pub fn Crc32::update_byte(self : Crc32, byte : Int) -> Crc32 {
 /// Returns a new Crc32 state with all bytes incorporated
 /// Bulk update over bytes[start .. start+len). No bounds checking beyond caller guarantees.
 pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
-  let mut crc = self
-  for i = 0; i < data.length(); i = i + 1 {
-    crc = crc.update_byte(data[i].to_int())
+  let len = data.length()
+  if len == 0 {
+    return self
   }
-  crc
+  let tables = crc32_tables
+  let t0 = tables[0]
+  let t1 = tables[1]
+  let t2 = tables[2]
+  let t3 = tables[3]
+  let t4 = tables[4]
+  let t5 = tables[5]
+  let t6 = tables[6]
+  let t7 = tables[7]
+  let Crc32(value0) = self
+  let mut v = value0
+  let mut i = 0
+  // Bulk slice-by-8 loop (process 8 bytes at a time)
+  let bulk_end = len - len % 8
+  while i < bulk_end {
+    let b0 = data[i].to_int().reinterpret_as_uint()
+    let b1 = data[i + 1].to_int().reinterpret_as_uint()
+    let b2 = data[i + 2].to_int().reinterpret_as_uint()
+    let b3 = data[i + 3].to_int().reinterpret_as_uint()
+    let b4 = data[i + 4].to_int().reinterpret_as_uint()
+    let b5 = data[i + 5].to_int().reinterpret_as_uint()
+    let b6 = data[i + 6].to_int().reinterpret_as_uint()
+    let b7 = data[i + 7].to_int().reinterpret_as_uint()
+    let word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+    let c = v ^ word
+    // Standard reflected slice-by-8 combination order:
+    // v' = T7[c0] ^ T6[c1] ^ T5[c2] ^ T4[c3] ^ T3[b4] ^ T2[b5] ^ T1[b6] ^ T0[b7]
+    v = t7[(c & 0xFF).reinterpret_as_int()] ^
+      t6[((c >> 8) & 0xFF).reinterpret_as_int()] ^
+      t5[((c >> 16) & 0xFF).reinterpret_as_int()] ^
+      t4[((c >> 24) & 0xFF).reinterpret_as_int()] ^
+      t3[(b4 & 0xFF).reinterpret_as_int()] ^
+      t2[(b5 & 0xFF).reinterpret_as_int()] ^
+      t1[(b6 & 0xFF).reinterpret_as_int()] ^
+      t0[(b7 & 0xFF).reinterpret_as_int()]
+    i = i + 8
+  }
+  if i < len {
+    let base = crc32_table
+    while i < len {
+      let byte_u = data[i].to_int().reinterpret_as_uint()
+      let idx = ((v ^ byte_u) & 0xFF).reinterpret_as_int()
+      v = base[idx] ^ (v >> 8)
+      i = i + 1
+    }
+  }
+  Crc32(v)
 }
 
 ///|
