@@ -3,7 +3,7 @@
 /// Similar to OCaml's Buffer but with self-blit support for LZ77 back-references
 /// FIXME(upstream): rename to Buffer does not work global wise
 struct ByteBuf {
-  mut buffer : Array[Byte]
+  mut buffer : FixedArray[Byte]
   mut length : Int
   fixed : Bool // If true, buffer cannot grow (size is known)
 }
@@ -14,7 +14,7 @@ struct ByteBuf {
 #callsite(migration(size_hint, allow_positional=true))
 pub fn ByteBuf::new(size_hint~ : Int, fixed? : Bool = false) -> ByteBuf {
   let actual_size = if size_hint == 0 && not(fixed) { 1024 } else { size_hint }
-  { buffer: Array::make(actual_size, b'\x00'), length: 0, fixed }
+  { buffer: FixedArray::make(actual_size, b'\x00'), length: 0, fixed }
 }
 
 ///|
@@ -42,10 +42,8 @@ fn ByteBuf::grow(self : ByteBuf, ensure : Int) -> Unit {
   while new_len < ensure {
     new_len = new_len * 2
   }
-  let new_buffer = Array::make(new_len, b'\x00')
-  for i = 0; i < self.length; i = i + 1 {
-    new_buffer[i] = self.buffer[i]
-  }
+  let new_buffer = FixedArray::make(new_len, b'\x00')
+  self.buffer.blit_to(new_buffer, len=self.length)
   self.buffer = new_buffer
 }
 
