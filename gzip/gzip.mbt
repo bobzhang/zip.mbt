@@ -70,56 +70,33 @@ pub fn compress_default(data_view : BytesView) -> Bytes raise {
 /// Simple gzip decompression.
 /// Validates magic, method, and CRC32. Assumes no optional header fields.
 /// TODO: support FLG flags (FNAME, FCOMMENT, FEXTRA) and ISIZE validation for >4GB wrap.
-pub fn decompress(data_view : BytesView) -> Bytes raise {
+pub fn decompress(data : BytesView) -> Bytes raise {
   // Materialize once for header/footer validation & slicing
-  let data = data_view.to_bytes()
-  if data.length() < 18 {
-    abort("Invalid gzip data: too short")
-  }
-
-  // Check magic
-  if data[0] != b'\x1f' || data[1] != b'\x8b' {
-    abort("Invalid gzip magic number")
-  }
-
-  // Check method
-  if data[2] != b'\x08' {
-    abort("Unsupported compression method")
-  }
-
   // For simplicity, assume minimal header (no extra fields, filename, comment)
+  // header is 10 bytes, footer is 8 bytes    
+  guard data.length() >= 18 else { fail("Invalid gzip data: too short") }
+  guard data is [b'\x1f', b'\x8b', b'\x08', ..] else {
+    fail("Invalid gzip magic number or unsupported compression method")
+  }
   let header_size = 10
   let footer_size = 8
-  let compressed_size = data.length() - header_size - footer_size
-  if compressed_size <= 0 {
-    abort("Invalid gzip data: no compressed data")
-  }
 
   // Extract deflate-coded payload slice
   let deflate_start = header_size
   let deflate_end = data.length() - footer_size
-  if deflate_end < deflate_start {
-    abort("Invalid gzip data: corrupt lengths")
-  }
   let comp_len = deflate_end - deflate_start
   let comp_slice_view = data[deflate_start:deflate_start + comp_len]
-  // Materialize view into Bytes (allocate fixed array then convert)
-  // let tmp = FixedArray::make(comp_len, b'\x00')
-  // for i = 0; i < comp_len; i = i + 1 {
-  //   tmp[i] = comp_slice_view[i]
-  // }
-  // let comp_slice = Bytes::from_fixedarray(tmp)
   let decompressed = @deflate.inflate(comp_slice_view, None)
 
   // Verify CRC32
-  let crc_offset = data.length() - 8
-  let expected_crc32 = data[crc_offset].to_int().reinterpret_as_uint() |
-    (data[crc_offset + 1].to_int().reinterpret_as_uint() << 8) |
-    (data[crc_offset + 2].to_int().reinterpret_as_uint() << 16) |
-    (data[crc_offset + 3].to_int().reinterpret_as_uint() << 24)
-  let computed_crc32 = @crc32.bytes_crc32(decompressed[:])
-  if computed_crc32 != expected_crc32 {
-    abort("CRC32 mismatch")
+  match data[-8:] {
+    [u32le(expected_crc32), ..] => {
+      let computed_crc32 = @crc32.bytes_crc32(decompressed[:])
+      if computed_crc32 != expected_crc32 {
+        fail("CRC32 mismatch")
+      }
+    }
+    _ => abort("Invalid gzip data: too short for footer")
   }
   decompressed
 }
