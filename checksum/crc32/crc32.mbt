@@ -99,17 +99,7 @@ pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
   let mut v = value0
   let mut i = 0
   // Bulk slice-by-8 loop (process 8 bytes at a time)
-  let bulk_end = len - len % 8
-  while i < bulk_end {
-    let b0 = data[i].to_int().reinterpret_as_uint()
-    let b1 = data[i + 1].to_int().reinterpret_as_uint()
-    let b2 = data[i + 2].to_int().reinterpret_as_uint()
-    let b3 = data[i + 3].to_int().reinterpret_as_uint()
-    let b4 = data[i + 4].to_int().reinterpret_as_uint()
-    let b5 = data[i + 5].to_int().reinterpret_as_uint()
-    let b6 = data[i + 6].to_int().reinterpret_as_uint()
-    let b7 = data[i + 7].to_int().reinterpret_as_uint()
-    let word = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+  while data[i:] is [u32le(word), b4, b5, b6, b7, ..] {
     let c = v ^ word
     // Standard reflected slice-by-8 combination order:
     // v' = T7[c0] ^ T6[c1] ^ T5[c2] ^ T4[c3] ^ T3[b4] ^ T2[b5] ^ T1[b6] ^ T0[b7]
@@ -117,16 +107,16 @@ pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
       t6[((c >> 8) & 0xFF).reinterpret_as_int()] ^
       t5[((c >> 16) & 0xFF).reinterpret_as_int()] ^
       t4[((c >> 24) & 0xFF).reinterpret_as_int()] ^
-      t3[(b4 & 0xFF).reinterpret_as_int()] ^
-      t2[(b5 & 0xFF).reinterpret_as_int()] ^
-      t1[(b6 & 0xFF).reinterpret_as_int()] ^
-      t0[(b7 & 0xFF).reinterpret_as_int()]
+      t3[(b4 & 0xFF).to_int()] ^
+      t2[(b5 & 0xFF).to_int()] ^
+      t1[(b6 & 0xFF).to_int()] ^
+      t0[(b7 & 0xFF).to_int()]
     i = i + 8
   }
   if i < len {
     let base = crc32_table
     while i < len {
-      let byte_u = data[i].to_int().reinterpret_as_uint()
+      let byte_u = data[i].to_uint()
       let idx = ((v ^ byte_u) & 0xFF).reinterpret_as_int()
       v = base[idx] ^ (v >> 8)
       i = i + 1
