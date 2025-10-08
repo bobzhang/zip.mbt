@@ -184,12 +184,7 @@ test "inflate_dynamic_missing_eob" {
 /// Test DeflateLevel::None (stored blocks)
 test "deflate_level_none" {
   let data = b"uncompressed data storage"
-  let compressed = @deflate.deflate(
-    data,
-    0,
-    data.length(),
-    level=@deflate.DeflateLevel::None,
-  )
+  let compressed = @deflate.deflate(data[0:data.length()])
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -203,12 +198,7 @@ test "deflate_level_none" {
 /// Test DeflateLevel::Best (maximum compression)
 test "deflate_level_best" {
   let data = b"aaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmmnnnnoooopppp"
-  let compressed = @deflate.deflate(
-    data,
-    0,
-    data.length(),
-    level=@deflate.DeflateLevel::Best,
-  )
+  let compressed = @deflate.deflate(data[0:data.length()])
   let decompressed = @deflate.inflate(
     compressed,
     0,
@@ -256,12 +246,7 @@ test "deflate_stored_max_block" {
 /// Test zlib_compress with DeflateLevel::None
 test "zlib_compress_level_none" {
   let data = b"zlib with no compression"
-  let (adler, compressed) = @deflate.zlib_compress(
-    data,
-    0,
-    data.length(),
-    level=@deflate.DeflateLevel::None,
-  )
+  let (adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
   @json.inspect(adler != 0U, content=true)
   let (decompressed, _) = @deflate.zlib_decompress(
     compressed,
@@ -275,12 +260,7 @@ test "zlib_compress_level_none" {
 /// Test zlib_compress with DeflateLevel::Best
 test "zlib_compress_level_best" {
   let data = b"aaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllll"
-  let (adler, compressed) = @deflate.zlib_compress(
-    data,
-    0,
-    data.length(),
-    level=@deflate.DeflateLevel::Best,
-  )
+  let (adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
   @json.inspect(adler != 0U, content=true)
   let (decompressed, _) = @deflate.zlib_decompress(
     compressed,
@@ -459,7 +439,7 @@ test "deflate_max_match_length" {
 /// Test error propagation in crc32_and_deflate
 test "crc32_and_deflate_error_handling" {
   let data = b"test data for crc32"
-  let (crc, compressed) = @deflate.crc32_and_deflate(data, 0, data.length())
+  let (crc, compressed) = @deflate.crc32_and_deflate(data[0:data.length()])
   @json.inspect(crc != 0U, content=true)
   @json.inspect(compressed.length() > 0, content=true)
 }
@@ -468,7 +448,7 @@ test "crc32_and_deflate_error_handling" {
 /// Test error propagation in adler32_and_deflate
 test "adler32_and_deflate_error_handling" {
   let data = b"test data for adler32"
-  let (adler, compressed) = @deflate.adler32_and_deflate(data, 0, data.length())
+  let (adler, compressed) = @deflate.adler32_and_deflate(data[0:data.length()])
   @json.inspect(adler != 0U, content=true)
   @json.inspect(compressed.length() > 0, content=true)
 }

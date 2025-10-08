@@ -1425,9 +1425,7 @@ pub(all) enum DeflateLevel {
 /// - `Best`: Dynamic Huffman with maximum LZ77 search effort
 /// 
 /// ## Parameters
-/// - `bytes`: input data buffer
-/// - `start`: starting offset in buffer
-/// - `len`: number of bytes to compress
+/// - `data`: input slice (`BytesView`) to compress
 /// - `level`: optional compression level (defaults to `Default`)
 /// 
 /// ## Returns
@@ -1437,28 +1435,21 @@ pub(all) enum DeflateLevel {
 /// - Single block output only (no streaming segmentation)
 /// - Maximum effective input size: ~65KB for stored, unlimited for compressed
 /// - No preset dictionary support
-pub fn deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level? : DeflateLevel,
-) -> Bytes raise {
+pub fn deflate(data : BytesView, level? : DeflateLevel) -> Bytes raise {
+  let len = data.length()
   let (good_match, max_chain, use_dynamic) = match level {
     Some(DeflateLevel::None) =>
-      // No compression, use stored blocks
-      return deflate_stored(bytes, start, len)
+      // No compression: stored block requires full Bytes; avoid copy if already full slice
+      return deflate_stored(data.to_bytes(), 0, len)
     Some(DeflateLevel::Fast) => (4, 128, false) // Fast: fixed Huffman only
     Some(DeflateLevel::Default) | None => (8, 1024, true) // Default: dynamic Huffman
     Some(DeflateLevel::Best) => (32, 4096, true) // Best: dynamic Huffman with max effort
   }
-
-  // Choose between Fixed and Dynamic Huffman based on size and level
-  let compressed = if use_dynamic && len >= 256 {
-    deflate_dynamic(bytes[start:start + len], true, good_match, max_chain)
+  if use_dynamic && len >= 256 {
+    deflate_dynamic(data, true, good_match, max_chain)
   } else {
-    deflate_fixed(bytes[start:start + len], true, good_match, max_chain)
+    deflate_fixed(data, true, good_match, max_chain)
   }
-  compressed
 }
 
 ///|
@@ -1479,9 +1470,7 @@ pub fn deflate(
 /// - **zlib Format**: Includes Adler-32 (similar concept, different algorithm)
 /// 
 /// ## Parameters
-/// - `bytes`: input data buffer
-/// - `start`: starting offset in buffer
-/// - `len`: number of bytes to process
+/// - `data`: input slice (`BytesView`) to process
 /// - `level`: optional compression level (defaults to `Default`)
 /// 
 /// ## Returns
@@ -1491,14 +1480,12 @@ pub fn deflate(
 /// CRC-32 calculation adds minimal overhead (~1-2% of compression time)
 /// since it's a simple linear pass over the input data.
 pub fn crc32_and_deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
+  data : BytesView,
   level? : DeflateLevel,
 ) -> (UInt, Bytes) raise {
-  let crc = @crc32.bytes_crc32(bytes, start, len)
-  // Convert Option to explicit match for labeled optional parameter
-  let result = deflate(bytes, start, len, level?)
+  let len = data.length()
+  let crc = @crc32.bytes_crc32(data.to_bytes(), 0, len)
+  let result = deflate(data, level?)
   (crc, result)
 }
 
@@ -1507,13 +1494,12 @@ pub fn crc32_and_deflate(
 /// Returns (Adler-32 checksum, compressed bytes)
 /// Compute Adler-32 of input then compress (checksum over original data).
 pub fn adler32_and_deflate(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
+  data : BytesView,
   level? : DeflateLevel,
 ) -> (UInt, Bytes) raise {
-  let adler = @adler32.bytes_adler32(bytes, start, len)
-  let compressed = deflate(bytes, start, len, level?)
+  let len = data.length()
+  let adler = @adler32.bytes_adler32(data.to_bytes(), 0, len)
+  let compressed = deflate(data, level?)
   (adler, compressed)
 }
 
@@ -1531,12 +1517,8 @@ pub fn adler32_and_deflate(
 /// - 4 bytes: Adler-32 checksum (big-endian)
 /// Produce a zlib (RFC 1950) wrapped deflate stream.
 /// Returns (adler32, bytes) where checksum is of original data.
-pub fn zlib_compress(
-  bytes : Bytes,
-  start : Int,
-  len : Int,
-  level? : DeflateLevel,
-) -> (UInt, Bytes) {
+pub fn zlib_compress(data : BytesView, level? : DeflateLevel) -> (UInt, Bytes) {
+  let len = data.length()
   // Determine compression parameters
   let (good_match, max_chain, flevel) = match level {
     Some(DeflateLevel::None) => (4, 128, 0)
@@ -1563,18 +1545,12 @@ pub fn zlib_compress(
   output.write_byte(flg.to_byte())
 
   // Write deflate compressed data
-  let compressed = deflate_fixed(
-    bytes[start:start + len],
-    true,
-    good_match,
-    max_chain,
-  )
+  let compressed = deflate_fixed(data, true, good_match, max_chain)
   for i = 0; i < compressed.length(); i = i + 1 {
     output.write_byte(compressed[i])
   }
-
   // Compute Adler-32 checksum of uncompressed data
-  let adler = @adler32.bytes_adler32(bytes, start, len)
+  let adler = @adler32.bytes_adler32(data.to_bytes(), 0, len)
 
   // Write Adler-32 checksum (big-endian, 4 bytes)
   let a32 = adler.reinterpret_as_int()

@@ -2,11 +2,11 @@
 package "bobzhang/zip/deflate"
 
 // Values
-fn adler32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> (UInt, Bytes) raise
+fn adler32_and_deflate(BytesView, level? : DeflateLevel) -> (UInt, Bytes) raise
 
-fn crc32_and_deflate(Bytes, Int, Int, level? : DeflateLevel) -> (UInt, Bytes) raise
+fn crc32_and_deflate(BytesView, level? : DeflateLevel) -> (UInt, Bytes) raise
 
-fn deflate(Bytes, Int, Int, level? : DeflateLevel) -> Bytes raise
+fn deflate(BytesView, level? : DeflateLevel) -> Bytes raise
 
 fn deflate_dynamic(BytesView, Bool, Int, Int) -> Bytes
 
@@ -20,7 +20,7 @@ fn inflate_and_adler32(Bytes, Int, Int, Int?) -> (Bytes, UInt) raise
 
 fn inflate_and_crc32(Bytes, Int, Int, Int?) -> (Bytes, UInt) raise
 
-fn zlib_compress(Bytes, Int, Int, level? : DeflateLevel) -> (UInt, Bytes)
+fn zlib_compress(BytesView, level? : DeflateLevel) -> (UInt, Bytes)
 
 fn zlib_decompress(Bytes, Int, Int) -> (Bytes, UInt) raise
 

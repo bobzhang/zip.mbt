@@ -23,7 +23,7 @@ Successfully migrated error handling in the zip.mbt project from uncatchable `ab
 - `inflate_and_adler32(...) -> (Bytes, UInt) raise`
 - `zlib_decompress(bytes, start, len) -> (Bytes, UInt) raise`
 - `deflate_stored(bytes, start, len) -> Bytes raise`
-- `deflate(bytes, start, len, level?) -> Bytes raise`
+- `deflate(data : BytesView, level?) -> Bytes raise`
 - `crc32_and_deflate(...) -> (UInt, Bytes) raise`
 - `adler32_and_deflate(...) -> (UInt, Bytes) raise`
 
@@ -67,14 +67,14 @@ Successfully migrated error handling in the zip.mbt project from uncatchable `ab
 ### Before (Result-based)
 ```moonbit
 fn inflate(src, start, len, size) -> Result[Bytes, String]
-fn deflate(bytes, start, len, level?) -> Result[Bytes, String]
+fn deflate(data : BytesView, level?) -> Result[Bytes, String]
 fn zlib_decompress(bytes, start, len) -> Result[(Bytes, UInt), String]
 ```
 
 ### After (raise-based)
 ```moonbit
 fn inflate(src, start, len, size) -> Bytes raise
-fn deflate(bytes, start, len, level?) -> Bytes raise
+fn deflate(data : BytesView, level?) -> Bytes raise
 fn zlib_decompress(bytes, start, len) -> (Bytes, UInt) raise
 ```
 

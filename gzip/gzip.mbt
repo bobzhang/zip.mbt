@@ -25,8 +25,8 @@ pub fn compress(data : Bytes, level? : @deflate.DeflateLevel) -> Bytes raise {
 
   // --- Deflate compressed payload ---
   let comp = match level {
-    Some(lv) => @deflate.deflate(data, 0, data.length(), level=lv) // named optional level
-    None => @deflate.deflate(data, 0, data.length())
+    Some(lv) => @deflate.deflate(data[0:data.length()], level=lv)
+    None => @deflate.deflate(data[0:data.length()])
   }
 
   // --- Footer (CRC32 + ISIZE) ---

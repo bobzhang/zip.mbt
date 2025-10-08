@@ -3,7 +3,7 @@
 ///|
 test "@deflate.zlib_compress_basic" {
   let data = b"Hello, zlib!"
-  let (adler, compressed) = @deflate.zlib_compress(data, 0, data.length())
+  let (adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
 
   // Check header
   let cmf = compressed[0].to_int()
@@ -29,7 +29,7 @@ test "@deflate.zlib_compress_basic" {
 ///|
 test "zlib_roundtrip_simple" {
   let data = b"Test data for zlib compression"
-  let (adler, compressed) = @deflate.zlib_compress(data, 0, data.length())
+  let (adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
 
   // Decompress
   let (decompressed, computed_adler) = @deflate.zlib_decompress(
@@ -54,7 +54,7 @@ test "zlib_roundtrip_simple" {
 ///|
 test "zlib_roundtrip_empty" {
   let data = b""
-  let (_adler, compressed) = @deflate.zlib_compress(data, 0, 0)
+  let (_adler, compressed) = @deflate.zlib_compress(data[0:0])
   let (decompressed, _) = @deflate.zlib_decompress(
     compressed,
     0,
@@ -71,7 +71,7 @@ test "zlib_roundtrip_repetitive" {
     buf.write_byte(b'a')
   }
   let data = buf.contents()
-  let (_adler, compressed) = @deflate.zlib_compress(data, 0, data.length())
+  let (_adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
 
   // Should achieve good compression
   let ratio = compressed.length() < 30
@@ -90,7 +90,7 @@ test "zlib_roundtrip_repetitive" {
 test "zlib_roundtrip_binary" {
   // Test with various byte values
   let data = b"\x00\x01\x7f\x80\xff\x00\x01\x7f\x80\xff"
-  let (_, compressed) = @deflate.zlib_compress(data, 0, data.length())
+  let (_, compressed) = @deflate.zlib_compress(data[0:data.length()])
   let (decompressed, _) = @deflate.zlib_decompress(
     compressed,
     0,
@@ -112,7 +112,7 @@ test "@deflate.zlib_compression_levels" {
   let data = b"Test data with some repetition: test test test"
 
   // Try different compression levels (avoid constructing variants directly)
-  let (_, default) = @deflate.zlib_compress(data, 0, data.length())
+  let (_, default) = @deflate.zlib_compress(data[0:data.length()])
 
   // All should decompress correctly
   let (d, _) = @deflate.zlib_decompress(default, 0, default.length())
@@ -145,7 +145,7 @@ test "zlib_too_short" {
 test "zlib_bad_checksum" {
   // Create valid zlib data, then corrupt checksum
   let data = b"test"
-  let (_, compressed) = @deflate.zlib_compress(data, 0, data.length())
+  let (_, compressed) = @deflate.zlib_compress(data[0:data.length()])
 
   // Corrupt last byte of Adler-32
   let buf = @buffer.new(size_hint=compressed.length())

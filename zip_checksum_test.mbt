@@ -125,7 +125,7 @@ test "e2e_adler32_known_value" {
 ///|
 test "@deflate.crc32_and_deflate_api" {
   let data = b"test data"
-  let (crc, compressed) = @deflate.crc32_and_deflate(data, 0, data.length())
+  let (crc, compressed) = @deflate.crc32_and_deflate(data[0:data.length()])
   // CRC should match direct calculation
   let expected_crc = @crc32.bytes_crc32(data, 0, data.length())
   @json.inspect(crc == expected_crc, content=true)
@@ -143,7 +143,7 @@ test "@deflate.crc32_and_deflate_api" {
 ///|
 test "@deflate.adler32_and_deflate_api" {
   let data = b"test data"
-  let (adler, compressed) = @deflate.adler32_and_deflate(data, 0, data.length())
+  let (adler, compressed) = @deflate.adler32_and_deflate(data[0:data.length()])
   // Adler-32 should match direct calculation
   let expected_adler = @adler32.bytes_adler32(data, 0, data.length())
   @json.inspect(adler == expected_adler, content=true)

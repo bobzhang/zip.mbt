@@ -94,9 +94,9 @@ This document tracks the port of zipc from OCaml to MoonBit. Based on analysis o
 **All convenience functions from OCaml zipc now implemented:**
 
 ### High-level deflate API: ✅ COMPLETE
-- [x] `deflate(bytes, start, len, level?)` - main compression function  
-- [x] `crc32_and_deflate(bytes, start, len, level?)` - compress + CRC-32
-- [x] `adler32_and_deflate(bytes, start, len, level?)` - compress + Adler-32
+- [x] `deflate(data : BytesView, level?)` - main compression function  
+- [x] `crc32_and_deflate(data : BytesView, level?)` - compress + CRC-32
+- [x] `adler32_and_deflate(data : BytesView, level?)` - compress + Adler-32
 
 **Note**: Core functionality was already complete in `File::deflate_of_bytes()` and `zlib_compress()`. These functions provide direct access to compressed bytes without ZIP wrapper for full OCaml compatibility.
 

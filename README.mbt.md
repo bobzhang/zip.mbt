@@ -225,9 +225,7 @@ test "direct_deflate_usage" {
 
   // Compress with DEFLATE
   let compressed = @deflate.deflate(
-    original,
-    0,
-    original.length(),
+    original[0:original.length()],
     level=@deflate.DeflateLevel::Default,
   )
 
