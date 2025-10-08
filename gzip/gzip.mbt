@@ -25,8 +25,8 @@ pub fn compress(data : Bytes, level? : @deflate.DeflateLevel) -> Bytes raise {
 
   // --- Deflate compressed payload ---
   let comp = match level {
-    Some(lv) => @deflate.deflate(data[0:data.length()], level=lv)
-    None => @deflate.deflate(data[0:data.length()])
+    Some(lv) => @deflate.deflate(data[:], level=lv)
+    None => @deflate.deflate(data[:])
   }
 
   // --- Footer (CRC32 + ISIZE) ---
@@ -59,7 +59,7 @@ pub fn compress_default(data : Bytes) -> Bytes raise {
 // Removed the manual 'create_uncompressed_deflate'; use @deflate.deflate or
 // @deflate.deflate_stored if a future optimization wants explicit 'stored'
 // blocks. Keeping a tiny shim (commented) for reference:
-// fn create_uncompressed_deflate(data: Bytes) -> Bytes raise { @deflate.deflate_stored(data, 0, data.length()) }
+// fn create_uncompressed_deflate(data: Bytes) -> Bytes raise { @deflate.deflate_stored(data[:]) }
 
 ///|
 /// Simple gzip decompression.
