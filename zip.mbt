@@ -38,6 +38,35 @@
 /// - Standard ZIP format (PKWARE specification)
 /// - UTF-8 filenames with proper encoding flags
 /// - DEFLATE compression (RFC 1951)
+/// - zlib/gzip parity for CRC32 and Adler32 integrity
+///
+/// ## Layered Architecture (Condensed)
+/// Level 0: checksum/{crc32, adler32} (no deps)
+/// Level 1: deflate/internal/{bytebuf, bitstream, huffman, lz77}
+/// Level 2: deflate (encoder + decoder unified) + zlib wrapper
+/// Level 3: types/{ptime,fpath} utilities
+/// Level 4: file (ZIP local file structure) & member (central directory abstraction)
+/// Level 5: archive (multi-entry orchestration)
+/// Level 6: top-level re‑exports (this module)
+///
+/// ## Feature Completion Snapshot
+/// - Compression: stored, fixed Huffman, dynamic Huffman (two‑pass LZ77 + tree build)
+/// - Decompression: all block types (stored/fixed/dynamic) + integrity checks
+/// - Checksums: CRC-32 (gzip/zip), Adler-32 (zlib)
+/// - ZIP: local headers, central directory, EOCD, UTF-8 flag, DOS time conversion
+/// - High-level API: `deflate()`, `inflate()`, `zlib_compress()`, `zlib_decompress()`, archive build & parse
+///
+/// ## Determinism
+/// Gzip wrapper emits deterministic headers (MTIME=0, XFL=0, OS=0xFF) to enable reproducible builds; tests assert
+/// Python parity via `gzip.compress(..., mtime=0)` for canonical fixtures.
+///
+/// ## Future Hooks
+/// - Optional gzip header parameters (mtime/xfl)
+/// - Streaming multi-block emission (current encoder emits a single final block)
+/// - Differential fuzzing harness for corpus evolution
+///
+/// This embedded summary replaces several historical planning/status markdown files to keep living documentation
+/// close to the code. For deep historical progression see `COMPRESSION_PROGRESS.md`.
 /// - CRC-32 integrity checking
 /// - DOS timestamp conversion
 /// 
