@@ -3,15 +3,28 @@
 ///|
 /// Test basic compression and decompression
 test "basic_round_trip" {
-  let input = "Hello, World!".to_bytes()
-  let compressed = @gzip.compress(input[:])
-  // Basic structural checks (magic/method, footer length)
-  inspect(compressed.length() > 18, content="true")
-  inspect(compressed[0].to_int() == 0x1f, content="true")
-  inspect(compressed[1].to_int() == 0x8b, content="true")
-  inspect(compressed[2].to_int() == 0x08, content="true")
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
-  inspect(decompressed == input, content="true")
+  let input = "Hello, World!".repeat(1) |> @encoding/utf8.encode
+  let compressed = @gzip.compress(input)
+  //
+  //   >>> gzip.compress(b"Hello, World!", compresslevel=6, mtime=0)
+  assert_eq(
+    compressed, b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xf3H\xcd\xc9\xc9\xd7Q\x08\xcf/\xcaIQ\x04\x00\xd0\xc3J\xec\r\x00\x00\x00",
+  )
+  let decompressed = @gzip.decompress(compressed)
+  assert_eq(decompressed, input)
+}
+
+///|
+test "unzip Python hello world * 3" {
+  let decompressed = @gzip.decompress(
+    b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\xc9\xa0=\x13\x00\x97\x85\xb8\xe8n\x00\x00\x00",
+  )
+  inspect(
+    decompressed,
+    content=(
+      #|b"hello worldhello worldhello worldhello worldhello worldhello worldhello worldhello worldhello worldhello world"
+    ),
+  )
 }
 
 ///|
