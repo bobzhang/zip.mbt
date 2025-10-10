@@ -65,6 +65,18 @@
 /// - Streaming multi-block emission (current encoder emits a single final block)
 /// - Differential fuzzing harness for corpus evolution
 ///
+/// ## Bonus Features vs Original Port
+/// - `Archive::to_array()` helper for indexed iteration
+/// - `Member::is_dir()` / `Member::is_file()` convenience predicates
+/// - Deterministic gzip output policy (reproducible builds)
+///
+/// ## Intentional Non-Features / Limitations
+/// - ZIP64 (size/count > 4GB / 65,535) not supported
+/// - Encryption (legacy PKWARE or AES) not implemented
+/// - Multi-part / spanned archives not supported
+/// - Only Stored + Deflate compression (no BZIP2/LZMA)
+/// These align with scope control and can be revisited if requirements evolve.
+///
 /// This embedded summary replaces several historical planning/status markdown files to keep living documentation
 /// close to the code. For deep historical progression see `COMPRESSION_PROGRESS.md`.
 /// - CRC-32 integrity checking
