@@ -3,6 +3,15 @@
 // approach was functional but ignored the existing deflate encoder/decoder in
 // the codebase. We now delegate to @deflate for real compression while still
 // constructing/validating the gzip container (RFC 1952).
+//
+// Compatibility Summary (inlined from removed GZIP_* docs):
+// - Header: ID1=1f, ID2=8b, CM=08, FLG=00, MTIME=00000000 (deterministic), XFL=00, OS=ff.
+// - Footer: CRC32 (little-endian) + ISIZE (little-endian) exactly per RFC 1952.
+// - Determinism: We fix MTIME=0 and XFL=0 so repeated builds are byte‑stable; Python parity via
+//   gzip.compress(data, mtime=0, compresslevel in 2..8).
+// - Interop: Can decompress Python outputs (compressed dynamic deflate) and vice versa.
+// - Non-features (yet): optional filename/comment fields, mtime passthrough, OS tagging diversity.
+// - Future: expose optional `mtime? : Int` & `emit_xfl_hint? : Bool` without breaking current reproducibility.
 
 ///|
 /// Compress data to gzip format (RFC 1952).
