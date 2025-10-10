@@ -1,6 +1,20 @@
 // Decoder verification against Python gzip outputs (mtime=0, level=6)
 // Generated with: gzip.compress(data, compresslevel=6, mtime=0) in CPython
 // Representative (raw, compressed) pairs ensure @gzip.decompress is correct.
+// Python version used to generate these vectors: 3.9.6
+// Reproduction snippet:
+//   python3 - <<'PY'
+//   import gzip, json
+//   cases = [b"", b"hello world", b"A", b"\x00\x01\x02\xff\xfe\xfd", b"\n\r\t   ", "Hello 世界".encode("utf-8")]
+//   out = []
+//   for data in cases:
+//       comp = gzip.compress(data, compresslevel=6, mtime=0)
+//       out.append((data, comp))
+//   for raw, comp in out:
+//       def esc(b):
+//           return ''.join(f"\\x{c:02x}" for c in b)
+//       print(f"(b\"{esc(raw)}\", b\"{esc(comp)}\"),")
+//   PY
 
 ///|
 test "python_gzip_decode_vectors" {
