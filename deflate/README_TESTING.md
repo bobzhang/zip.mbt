@@ -2,6 +2,10 @@
 
 This directory contains tools to verify the MoonBit DEFLATE implementation against Python's `zlib` module, which is a widely-used reference implementation of RFC 1951.
 
+In addition to the Python-powered compatibility checks, we now ship a structural validation test suite written purely in MoonBit (`deflate_validation_test.mbt`).
+
+This suite exercises MoonBit's encoder and decoder combinations directly and inspects low-level block metadata to ensure the encoder generates well-formed streams across levels and workloads.
+
 ## Python Scripts
 
 ### 1. `generate_test_data.py`
@@ -59,7 +63,7 @@ python3 deflate/verify_deflate.py --interactive
 
 ## Testing Workflow
 
-### 1. Generate Test Data
+### 1. Generate Test Data (optional)
 
 ```bash
 # Generate test cases from Python zlib
@@ -73,14 +77,30 @@ python3 deflate/generate_test_data.py
 ### 2. Run MoonBit Tests
 
 ```bash
-# Run all deflate tests
-moon test --target wasm-gc -p deflate
+# Run the full MoonBit test suite (recommended)
+moon test
 
-# Run only Python compatibility tests
-moon test --target wasm-gc -p deflate -f deflate_python_compat_test.mbt
+# (Optional) focus on Python compatibility scenarios once MoonBit adds per-package filtering
+# moon test --target wasm-gc -p deflate -f deflate_python_compat_test.mbt
+
+# (Optional) inspect a single test case interactively via snapshots
+# moon test --update --filter deflate_python_compat_test
 ```
 
-### 3. Verify Specific Cases
+### 3. Structural Validation Suite
+
+`deflate_validation_test.mbt` adds deterministic regression checks that:
+
+- Exercise a matrix of compression levels and diverse payloads, round-tripping the data and verifying block metadata (`BFINAL`, block type, stored length, and dynamic header ranges).
+- Ensure fixed-Huffman encoding is deterministic at the `Fast` level by comparing two compressions of the same payload.
+- Validate dynamic Huffman header ranges for highly compressible buffers, catching invalid `HLIT`, `HDIST`, or `HCLEN` values early.
+- Confirm that separately-compressed streams remain final blocks and can be concatenated without corrupting payload data.
+
+The suite uses lightweight `@json.inspect` snapshots for structural assertions, making deviations visible without depending on the Python reference scripts.
+
+Re-run `moon test` after modifying encoder code to automatically refresh these validations.
+
+### 4. Verify Specific Cases
 
 If a test fails, you can use the verification script to debug:
 
@@ -93,7 +113,7 @@ python3 deflate/verify_deflate.py --decompress "<compressed_hex>"
 python3 deflate/verify_deflate.py --compress "<input_hex>"
 ```
 
-### 4. Interactive Debugging
+### 5. Interactive Debugging
 
 ```bash
 python3 deflate/verify_deflate.py --interactive
