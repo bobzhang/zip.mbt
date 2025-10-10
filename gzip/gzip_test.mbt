@@ -227,12 +227,32 @@ test "compression_levels_effect" {
 }
 
 ///|
+fn test_roundtrip(sources : Array[Bytes]) -> Unit raise {
+  for i, data in sources {
+    let compressed = @gzip.compress(data)
+    let decompressed = @gzip.decompress(compressed)
+    if decompressed != data {
+      fail("Roundtrip failed at \{i}")
+    }
+  }
+}
+
+///|
 /// Ensure compress_default delegates correctly.
-test "compress_default_delegation" {
-  let data = "Default delegation".to_bytes()
-  let a = @gzip.compress(data[:])
-  let b = @gzip.compress_default(data[:])
-  // Outputs may differ if default chooses dynamic trees differently on separate runs; ensure both decompress.
-  inspect(@gzip.decompress(a[0:a.length()]) == data, content="true")
-  inspect(@gzip.decompress(b[0:b.length()]) == data, content="true")
+test "test_roundtrip" {
+  // Expanded corner cases: empty, single, binary with zeros/high bytes, whitespace, large repetitive,
+  // patterned, unicode (CJK), emoji (multi-byte UTF-8), existing delegation string.
+  [
+    b"", // empty
+    b"A", // single byte
+    b"Default delegation", // existing baseline
+    b"\x00", // single NUL
+    b"\x00\x01\x02\xfd\xfe\xff", // mixed low/high bytes including 0x00 and 0xFF
+    "\n\r\t   ".to_bytes(), // whitespace mix
+    "A".repeat(300).to_bytes(), // long repetitive triggers dynamic Huffman
+    "ABCD".repeat(70).to_bytes(), // patterned sequence (280 bytes)
+    "Hello 世界".to_bytes(), // ASCII + CJK
+    "😀😀😀😀".to_bytes(), // emoji (surrogate pairs in UTF-8 multi-byte)
+  ]
+  |> test_roundtrip
 }

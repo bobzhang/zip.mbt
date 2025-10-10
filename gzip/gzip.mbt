@@ -66,13 +66,6 @@ pub fn compress(
 }
 
 ///|
-/// Backwards-compatible helper retaining old signature with default level.
-/// Backwards-compatible one-arg helper (equivalent to compress(data)).
-pub fn compress_default(data_view : BytesView) -> Bytes raise {
-  compress(data_view)
-}
-
-///|
 /// Create uncompressed deflate block (RFC 1951, section 3.2.4)
 // Removed the manual 'create_uncompressed_deflate'; use @deflate.deflate or
 // @deflate.deflate_stored if a future optimization wants explicit 'stored'

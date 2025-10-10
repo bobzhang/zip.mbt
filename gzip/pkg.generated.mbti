@@ -8,8 +8,6 @@ import(
 // Values
 fn compress(BytesView, level? : @deflate.DeflateLevel) -> Bytes raise
 
-fn compress_default(BytesView) -> Bytes raise
-
 fn decompress(BytesView) -> Bytes raise
 
 // Errors
