@@ -24,41 +24,67 @@ pub fn compress(
   data : BytesView,
   level? : @deflate.DeflateLevel,
 ) -> Bytes raise {
-  // Materialize view (needed for CRC & size; single allocation) – mirrors deflate.inflate pattern
+  // Optimized assembly: single allocation FixedArray sized exactly to output.
+  // Steps: deflate payload (comp), compute CRC/ISIZE, then fill pre-sized array.
 
-  // --- Header (10 bytes) ---
-  let header = FixedArray::make(10, b'\x00')
-  header[0] = b'\x1f' // ID1
-  header[1] = b'\x8b' // ID2
-  header[2] = b'\x08' // CM = deflate
-  header[3] = b'\x00' // FLG (no extra/name/comment)
-  // MTIME (4 bytes zero)
-  header[8] = b'\x00' // XFL (0 = default)
-  header[9] = b'\xff' // OS = unknown
-  let header_bytes = Bytes::from_fixedarray(header)
-
-  // --- Deflate compressed payload ---
+  // 1. Deflate payload first so we know size
   let comp = match level {
     Some(lv) => @deflate.deflate(data[:], level=lv)
     None => @deflate.deflate(data[:])
   }
-
-  // --- Footer (CRC32 + ISIZE) ---
+  // 2. Metadata
   let crc32 = @crc32.bytes_crc32(data[:])
-  let size = data.length().reinterpret_as_uint()
-  let footer = FixedArray::make(8, b'\x00')
-  // CRC32 little-endian
-  footer[0] = (crc32 & 0xFF).reinterpret_as_int().to_byte()
-  footer[1] = ((crc32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
-  footer[2] = ((crc32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
-  footer[3] = ((crc32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
-  // ISIZE (input size modulo 2^32) little-endian
-  footer[4] = (size & 0xFF).reinterpret_as_int().to_byte()
-  footer[5] = ((size >> 8) & 0xFF).reinterpret_as_int().to_byte()
-  footer[6] = ((size >> 16) & 0xFF).reinterpret_as_int().to_byte()
-  footer[7] = ((size >> 24) & 0xFF).reinterpret_as_int().to_byte()
-  let footer_bytes = Bytes::from_fixedarray(footer)
-  header_bytes + comp + footer_bytes
+  let isize_u32 = data.length().reinterpret_as_uint()
+  // 3. Allocate final buffer (10 header + comp + 8 footer)
+  let total = 10 + comp.length() + 8
+  let out = FixedArray::make(total, b'\x00')
+  let mut i = 0
+  // Header
+  out[i] = b'\x1f'
+  i = i + 1
+  out[i] = b'\x8b'
+  i = i + 1
+  out[i] = b'\x08'
+  i = i + 1
+  out[i] = b'\x00' // FLG
+  i = i + 1
+  // MTIME 4 bytes zero
+  out[i] = b'\x00'
+  i = i + 1
+  out[i] = b'\x00'
+  i = i + 1
+  out[i] = b'\x00'
+  i = i + 1
+  out[i] = b'\x00'
+  i = i + 1
+  out[i] = b'\x00' // XFL
+  i = i + 1
+  out[i] = b'\xff' // OS
+  i = i + 1
+  // Payload
+  for j = 0; j < comp.length(); j = j + 1 {
+    out[i + j] = comp[j]
+  }
+  i = i + comp.length()
+  // Footer CRC32
+  out[i] = (crc32 & 0xFF).reinterpret_as_int().to_byte()
+  i = i + 1
+  out[i] = ((crc32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
+  i = i + 1
+  out[i] = ((crc32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
+  i = i + 1
+  out[i] = ((crc32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
+  i = i + 1
+  // ISIZE
+  out[i] = (isize_u32 & 0xFF).reinterpret_as_int().to_byte()
+  i = i + 1
+  out[i] = ((isize_u32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
+  i = i + 1
+  out[i] = ((isize_u32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
+  i = i + 1
+  out[i] = ((isize_u32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
+  i = i + 1
+  @bytes.from_fixedarray(out, len=total)
 }
 
 ///|
