@@ -1,4 +1,27 @@
 // Enhanced validation-focused tests for the deflate package
+//
+// This file is the single source of truth for the structural validation suite.
+// It documents the goals of each helper and test, so the implementation and its
+// rationale stay together:
+// - `BitReader` offers just enough functionality to peek at block metadata
+//   without re-implementing the full decoder.
+// - `inspect_first_block` reports the bits we care about when validating the
+//   encoder (BFINAL flag, block type, stored length, and dynamic header fields).
+// - `repeat_slice`, `make_incrementing`, and `make_mixed` generate datasets with
+//   distinct compression characteristics for matrix testing.
+//
+// Test overview:
+// - `deflate_roundtrip_parameter_matrix` exercises multiple compression levels
+//   against varied payloads, validating both round-trips and block metadata.
+// - `deflate_fixed_deterministic` ensures the fixed-Huffman encoder remains
+//   deterministic at the `Fast` level.
+// - `deflate_dynamic_header_ranges` checks dynamic header fields stay inside
+//   spec-defined ranges for compressible inputs.
+// - `deflate_concatenation_roundtrip` proves individually compressed members can
+//   still act as standalone final blocks when decoded back-to-back.
+//
+// Update this commentary whenever you change the tests so downstream readers
+// know exactly what safety net they provide.
 
 ///|
 struct BitReader {
@@ -149,6 +172,8 @@ fn make_mixed(len : Int) -> Bytes {
 }
 
 ///|
+// Exercise a matrix of payloads and levels, verifying both data round-trips and
+// the first block's structural metadata.
 test "deflate_roundtrip_parameter_matrix" {
   let dataset_len = 6
   let inputs = Array::make(dataset_len, b"")
@@ -207,6 +232,7 @@ test "deflate_roundtrip_parameter_matrix" {
 }
 
 ///|
+// Confirm fixed-Huffman encoding remains deterministic for repeated payloads.
 test "deflate_fixed_deterministic" {
   let data = repeat_slice(
     b"Lorem ipsum dolor sit amet, consectetur adipiscing elit. ", 8,
@@ -223,6 +249,7 @@ test "deflate_fixed_deterministic" {
 }
 
 ///|
+// Validate that the dynamic header stays within HLIT/HDIST/HCLEN limits.
 test "deflate_dynamic_header_ranges" {
   let data = repeat_slice(
     b"Dynamic Huffman blocks like repetition and variation across the buffer.\n",
@@ -243,6 +270,7 @@ test "deflate_dynamic_header_ranges" {
 }
 
 ///|
+// Ensure separately compressed streams remain valid final blocks when combined.
 test "deflate_concatenation_roundtrip" {
   let part_a = repeat_slice(b"AAAAABBBBB", 40)
   let part_b = make_incrementing(256)

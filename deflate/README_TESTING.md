@@ -89,16 +89,9 @@ moon test
 
 ### 3. Structural Validation Suite
 
-`deflate_validation_test.mbt` adds deterministic regression checks that:
+`deflate_validation_test.mbt` now contains both the implementation and detailed inline commentary describing each helper and test. Refer to that file for the authoritative documentation so code and rationale stay synchronized.
 
-- Exercise a matrix of compression levels and diverse payloads, round-tripping the data and verifying block metadata (`BFINAL`, block type, stored length, and dynamic header ranges).
-- Ensure fixed-Huffman encoding is deterministic at the `Fast` level by comparing two compressions of the same payload.
-- Validate dynamic Huffman header ranges for highly compressible buffers, catching invalid `HLIT`, `HDIST`, or `HCLEN` values early.
-- Confirm that separately-compressed streams remain final blocks and can be concatenated without corrupting payload data.
-
-The suite uses lightweight `@json.inspect` snapshots for structural assertions, making deviations visible without depending on the Python reference scripts.
-
-Re-run `moon test` after modifying encoder code to automatically refresh these validations.
+Re-run `moon test` whenever encoder changes might affect these behaviors to refresh the snapshots captured via `@json.inspect`.
 
 ### 4. Verify Specific Cases
 
