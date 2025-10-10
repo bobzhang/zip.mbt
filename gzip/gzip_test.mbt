@@ -248,11 +248,11 @@ test "test_roundtrip" {
     b"Default delegation", // existing baseline
     b"\x00", // single NUL
     b"\x00\x01\x02\xfd\xfe\xff", // mixed low/high bytes including 0x00 and 0xFF
-    "\n\r\t   ".to_bytes(), // whitespace mix
-    "A".repeat(300).to_bytes(), // long repetitive triggers dynamic Huffman
-    "ABCD".repeat(70).to_bytes(), // patterned sequence (280 bytes)
-    "Hello 世界".to_bytes(), // ASCII + CJK
-    "😀😀😀😀".to_bytes(), // emoji (surrogate pairs in UTF-8 multi-byte)
+    b"\n\r\t   ", // whitespace mix
+    "A".repeat(300) |> @encoding/utf8.encode, // long repetitive triggers dynamic Huffman
+    "ABCD".repeat(70) |> @encoding/utf8.encode, // patterned sequence (280 bytes)
+    "Hello 世界" |> @encoding/utf8.encode, // ASCII + CJK
+    "😀😀😀😀" |> @encoding/utf8.encode, // emoji (surrogate pairs in UTF-8 multi-byte)
   ]
   |> test_roundtrip
 }
