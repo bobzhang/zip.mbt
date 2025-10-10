@@ -28,62 +28,40 @@ pub fn compress(
   // Steps: deflate payload (comp), compute CRC/ISIZE, then fill pre-sized array.
 
   // 1. Deflate payload first so we know size
-  let comp = match level {
-    Some(lv) => @deflate.deflate(data[:], level=lv)
-    None => @deflate.deflate(data[:])
-  }
+  let comp = @deflate.deflate(data, level?)
+
   // 2. Metadata
-  let crc32 = @crc32.bytes_crc32(data[:])
+  let crc32 = @crc32.bytes_crc32(data)
   let isize_u32 = data.length().reinterpret_as_uint()
   // 3. Allocate final buffer (10 header + comp + 8 footer)
   let total = 10 + comp.length() + 8
   let out = FixedArray::make(total, b'\x00')
-  let mut i = 0
+
   // Header
-  out[i] = b'\x1f'
-  i = i + 1
-  out[i] = b'\x8b'
-  i = i + 1
-  out[i] = b'\x08'
-  i = i + 1
-  out[i] = b'\x00' // FLG
-  i = i + 1
+  out[0] = b'\x1f'
+  out[1] = b'\x8b'
+  out[2] = b'\x08'
+  out[3] = b'\x00' // FLG
   // MTIME 4 bytes zero
-  out[i] = b'\x00'
-  i = i + 1
-  out[i] = b'\x00'
-  i = i + 1
-  out[i] = b'\x00'
-  i = i + 1
-  out[i] = b'\x00'
-  i = i + 1
-  out[i] = b'\x00' // XFL
-  i = i + 1
-  out[i] = b'\xff' // OS
-  i = i + 1
+  out[4] = b'\x00'
+  out[5] = b'\x00'
+  out[6] = b'\x00'
+  out[7] = b'\x00'
+  out[8] = b'\x00' // XFL
+  out[9] = b'\xff' // OS
   // Payload
-  for j = 0; j < comp.length(); j = j + 1 {
-    out[i + j] = comp[j]
-  }
-  i = i + comp.length()
+
+  out.blit_from_bytes(10, comp, 0, comp.length())
+  let i = 10 + comp.length()
   // Footer CRC32
   out[i] = (crc32 & 0xFF).reinterpret_as_int().to_byte()
-  i = i + 1
-  out[i] = ((crc32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
-  i = i + 1
-  out[i] = ((crc32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
-  i = i + 1
-  out[i] = ((crc32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
-  i = i + 1
-  // ISIZE
-  out[i] = (isize_u32 & 0xFF).reinterpret_as_int().to_byte()
-  i = i + 1
-  out[i] = ((isize_u32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
-  i = i + 1
-  out[i] = ((isize_u32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
-  i = i + 1
-  out[i] = ((isize_u32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
-  i = i + 1
+  out[i + 1] = ((crc32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
+  out[i + 2] = ((crc32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
+  out[i + 3] = ((crc32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
+  out[i + 4] = (isize_u32 & 0xFF).reinterpret_as_int().to_byte()
+  out[i + 5] = ((isize_u32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
+  out[i + 6] = ((isize_u32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
+  out[i + 7] = ((isize_u32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
   @bytes.from_fixedarray(out, len=total)
 }
 
