@@ -37,18 +37,30 @@ pub(all) enum Compression {
   Zstd
   Other(Int)
 }
+fn Compression::equal(Self, Self) -> Bool // from trait `Eq`
 #as_free_fn(compression)
 fn Compression::from_int(Int) -> Self
+fn Compression::op_equal(Self, Self) -> Bool // from trait `Eq`
+fn Compression::output(Self, &Logger) -> Unit // from trait `Show`
 fn Compression::to_int(Self) -> Int
 fn Compression::to_string(Self) -> String
 impl Eq for Compression
 impl Show for Compression
 
 pub(all) struct FileMode(Int)
+fn FileMode::compare(Self, Self) -> Int // from trait `Compare`
+fn FileMode::equal(Self, Self) -> Bool // from trait `Eq`
 fn FileMode::from_int(Int) -> Self
+fn FileMode::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError // from trait `@json.FromJson`
+fn FileMode::hash(Self) -> Int // from trait `Hash`
+fn FileMode::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
 #deprecated
 fn FileMode::inner(Self) -> Int
+fn FileMode::op_equal(Self, Self) -> Bool // from trait `Eq`
+fn FileMode::output(Self, &Logger) -> Unit // from trait `Show`
 fn FileMode::to_int(Self) -> Int
+fn FileMode::to_json(Self) -> Json // from trait `ToJson`
+fn FileMode::to_string(Self) -> String // from trait `Show`
 impl Compare for FileMode
 impl Eq for FileMode
 impl Hash for FileMode
@@ -57,8 +69,15 @@ impl ToJson for FileMode
 impl @json.FromJson for FileMode
 
 pub(all) struct Ptime(Int)
+fn Ptime::compare(Self, Self) -> Int // from trait `Compare`
+fn Ptime::equal(Self, Self) -> Bool // from trait `Eq`
+fn Ptime::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError // from trait `@json.FromJson`
+fn Ptime::hash(Self) -> Int // from trait `Hash`
+fn Ptime::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
 #deprecated
 fn Ptime::inner(Self) -> Int
+fn Ptime::op_equal(Self, Self) -> Bool // from trait `Eq`
+fn Ptime::to_json(Self) -> Json // from trait `ToJson`
 impl Compare for Ptime
 impl Eq for Ptime
 impl Hash for Ptime

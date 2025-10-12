@@ -8,8 +8,12 @@ fn bytes_adler32(BytesView) -> UInt
 
 // Types and methods
 type Adler32
+fn Adler32::equal(Self, Self) -> Bool // from trait `Eq`
 fn Adler32::finish(Self) -> UInt
 fn Adler32::init() -> Self
+fn Adler32::op_equal(Self, Self) -> Bool // from trait `Eq`
+fn Adler32::output(Self, &Logger) -> Unit // from trait `Show`
+fn Adler32::to_string(Self) -> String // from trait `Show`
 fn Adler32::update_bytes(Self, BytesView) -> Self
 impl Eq for Adler32
 impl Show for Adler32

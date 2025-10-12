@@ -25,6 +25,7 @@ fn Archive::of_map(Map[@fpath.Fpath, @member.Member]) -> Self
 fn Archive::remove(Self, @fpath.Fpath) -> Unit
 fn Archive::to_array(Self) -> Array[@member.Member]
 fn Archive::to_bytes(Self, first? : @fpath.Fpath) -> Bytes raise
+fn Archive::to_json(Self) -> Json // from trait `ToJson`
 fn Archive::to_map(Self) -> Map[@fpath.Fpath, @member.Member]
 impl ToJson for Archive
 

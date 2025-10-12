@@ -16,12 +16,23 @@ fn sanitize(Fpath) -> Fpath
 
 // Types and methods
 pub(all) struct Fpath(String)
+fn Fpath::add(Self, Self) -> Self // from trait `Add`
 #alias("_[_]")
 fn Fpath::at(Self, Int) -> Int
+fn Fpath::compare(Self, Self) -> Int // from trait `Compare`
+fn Fpath::equal(Self, Self) -> Bool // from trait `Eq`
+fn Fpath::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError // from trait `@json.FromJson`
+fn Fpath::hash(Self) -> Int // from trait `Hash`
+fn Fpath::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
 #deprecated
 fn Fpath::inner(Self) -> String
 fn Fpath::is_empty(Self) -> Bool
 fn Fpath::length(Self) -> Int
+fn Fpath::op_add(Self, Self) -> Self // from trait `Add`
+fn Fpath::op_equal(Self, Self) -> Bool // from trait `Eq`
+fn Fpath::output(Self, &Logger) -> Unit // from trait `Show`
+fn Fpath::to_json(Self) -> Json // from trait `ToJson`
+fn Fpath::to_string(Self) -> String // from trait `Show`
 impl Add for Fpath
 impl Compare for Fpath
 impl Eq for Fpath
