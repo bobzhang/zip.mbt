@@ -76,12 +76,11 @@ pub fn Crc32::update_byte(self : Crc32, byte : Int) -> Crc32 {
 /// Returns a new Crc32 state with all bytes incorporated
 /// Bulk update over bytes[start .. start+len). No bounds checking beyond caller guarantees.
 pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
-  let len = data.length()
-  if len == 0 {
+  if data.length() == 0 {
     return self
   }
   let tables = crc32_tables
-  let t0 = tables[0]
+  let t0 = crc32_table
   let t1 = tables[1]
   let t2 = tables[2]
   let t3 = tables[3]
@@ -91,9 +90,8 @@ pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
   let t7 = tables[7]
   let Crc32(value0) = self
   let mut v = value0
-  let mut i = 0
   // Bulk slice-by-8 loop (process 8 bytes at a time)
-  while data[i:] is [u32le(word), b4, b5, b6, b7, ..] {
+  let remain = for slice = data; slice is [u32le(word), b4, b5, b6, b7, .. next]; {
     let c = v ^ word
     // Standard reflected slice-by-8 combination order:
     // v' = T7[c0] ^ T6[c1] ^ T5[c2] ^ T4[c3] ^ T3[b4] ^ T2[b5] ^ T1[b6] ^ T0[b7]
@@ -105,16 +103,16 @@ pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
       t2[(b5 & 0xFF).to_int()] ^
       t1[(b6 & 0xFF).to_int()] ^
       t0[(b7 & 0xFF).to_int()]
-    i = i + 8
+    continue next
+  } else {
+    slice
   }
-  if i < len {
-    let base = crc32_table
-    while i < len {
-      let byte_u = data[i].to_uint()
-      let idx = ((v ^ byte_u) & 0xFF).reinterpret_as_int()
-      v = base[idx] ^ (v >> 8)
-      i = i + 1
-    }
+
+  // Tail processing for leftover bytes (< 8)
+  for byte in remain {
+    let byte_u = byte.to_uint()
+    let idx = ((v ^ byte_u) & 0xFF).reinterpret_as_int()
+    v = t0[idx] ^ (v >> 8)
   }
   Crc32(v)
 }

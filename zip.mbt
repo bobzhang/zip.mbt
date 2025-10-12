@@ -456,6 +456,7 @@ fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
       // Calculate next position
 
       // Determine if directory (path ends with /)
+      // TODO(upstream): add String::last
       let is_dir = path.length() > 0 && path[path.length() - 1] == '/'
 
       // Extract file mode from external attributes (Unix: high 16 bits)
