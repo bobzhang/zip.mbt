@@ -111,12 +111,9 @@ test "e2e_single_file_roundtrip" {
 test "e2e_multiple_files_with_compression_levels" {
 
   // Test data with different characteristics
-  let text_data = "The quick brown fox jumps over the lazy dog. ".repeat(10)
-    |> @encoding/utf8.encode
-  // FIXME(upstream): add Bytes::repeat
-  let repetitive_data = "AAAAAAAAAA".repeat(100) |> @encoding/utf8.encode
-  let mixed_data = "Test123!@#$%^&*()_+-=[]{}|;:',.<>?/~`".repeat(20)
-    |> @encoding/utf8.encode
+  let text_data = b"The quick brown fox jumps over the lazy dog. ".repeat(10)
+  let repetitive_data = b"AAAAAAAAAA".repeat(100)
+  let mixed_data = b"Test123!@#$%^&*()_+-=[]{}|;:',.<>?/~`".repeat(20)
 
   // Create files with different compression levels  
   let file1 = @file.File::deflate_of_bytes(text_data, 0, text_data.length())

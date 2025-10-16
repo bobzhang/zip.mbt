@@ -63,7 +63,7 @@ fn make_repetitive_tar() -> Bytes {
     big = big + "A"
   }
   let archive = @tar.TarArchive::empty()
-  archive.add(@tar.TarEntry::file("repetitive.txt", big.to_bytes()))
+  archive.add(@tar.TarEntry::file("repetitive.txt", @encoding/utf8.encode(big)))
   archive.to_bytes()
 }
 

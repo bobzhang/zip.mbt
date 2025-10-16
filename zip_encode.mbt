@@ -11,16 +11,6 @@
 /// - Central Directory File Header (archive index)
 /// - End of Central Directory Record (terminator + metadata)
 
-///|
-/// Helper to write 16-bit little-endian integer to buffer.
-/// 
-/// Note: MoonBit's stdlib Buffer doesn't have write_uint16_le, so we provide
-/// this extension method for ZIP format compliance (ZIP uses little-endian).
-fn @buffer.Buffer::write_uint16_le(self : Self, value : UInt16) -> Unit {
-  self.write_byte((value & 0xFF).to_byte())
-  self.write_byte(((value >> 8) & 0xFF).to_byte())
-}
-
 // ZIP file format constants for header sizes (per PKWARE specification)
 
 ///|

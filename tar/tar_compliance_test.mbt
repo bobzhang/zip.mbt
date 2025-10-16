@@ -54,7 +54,7 @@ test "tar_format_compliance" {
   @json.inspect(single_file_size, content=10240) // Still minimum for this size
 
   // Test 3: Large file that exceeds minimum
-  let large_data = "x".repeat(8000).to_bytes() // Much larger to exceed 10240 minimum
+  let large_data = b"x".repeat(8000) // Much larger to exceed 10240 minimum
   let large_file = @tar.TarEntry::file("large.txt", large_data)
   archive.add(large_file)
   let large_archive_size = archive.to_bytes().length()

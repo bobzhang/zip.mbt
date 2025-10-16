@@ -90,7 +90,7 @@ test "tar_roundtrip_large_file" {
   let original = @tar.TarArchive::empty()
 
   // Create a large file that spans multiple 512-byte blocks
-  let large_data = "X".repeat(2000).to_bytes()
+  let large_data = b"X".repeat(4000)
   let large_file = @tar.TarEntry::file("large.dat", large_data)
   original.add(large_file)
   let tar_bytes = original.to_bytes()

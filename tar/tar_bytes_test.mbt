@@ -14,7 +14,7 @@ test "tar_bytes_vs_string_handling" {
   archive.add(file_entry)
 
   // Create file with Unicode content (encoded as UTF-8 in TAR)
-  let unicode_data = "Hello 世界 🌍".to_bytes()
+  let unicode_data = @encoding/utf8.encode("Hello 世界 🌍")
   let unicode_file = @tar.TarEntry::file("unicode.txt", unicode_data)
   archive.add(unicode_file)
 
@@ -88,8 +88,8 @@ test "tar_format_structure_verification" {
   let archive = @tar.TarArchive::empty()
   let small_file = @tar.TarEntry::file("small.txt", b"Hi")
   // Encode as UTF-8 to ensure 1 byte per character (avoid UTF-16 doubling)
-  let medium_data = @encoding/utf8.encode("x".repeat(600))
-  let large_data = @encoding/utf8.encode("y".repeat(1500))
+  let medium_data = b"x".repeat(600)
+  let large_data = b"y".repeat(1500)
   let medium_file = @tar.TarEntry::file("medium.txt", medium_data)
   let large_file = @tar.TarEntry::file("large.txt", large_data)
   archive.add(small_file)

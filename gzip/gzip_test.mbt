@@ -30,7 +30,7 @@ test "unzip Python hello world * 3" {
 ///|
 /// Test empty data
 test "empty_data" {
-  let input = "".to_bytes()
+  let input = @encoding/utf8.encode("")
   let compressed = @gzip.compress(input[:])
   let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == input, content="true")
@@ -43,7 +43,7 @@ test "large_data" {
   for i = 0; i < 1000; i = i + 1 {
     input_str = input_str + "A"
   }
-  let input = input_str.to_bytes()
+  let input = @encoding/utf8.encode(input_str)
   let compressed = @gzip.compress(input[:])
   let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == input, content="true")
@@ -52,7 +52,7 @@ test "large_data" {
 ///|
 /// Test cross-compatibility features
 test "cross_compatibility" {
-  let test_data = "Hello from MoonBit!".to_bytes()
+  let test_data = @encoding/utf8.encode("Hello from MoonBit!")
   let compressed = @gzip.compress(test_data[:])
 
   // Verify basic gzip structure
@@ -93,7 +93,7 @@ test "binary_data_python_compat" {
 /// Python: gzip.compress(b'A') produces valid gzip
 /// This verifies our implementation handles minimal data like Python
 test "single_byte_python_compat" {
-  let single_byte = "A".to_bytes()
+  let single_byte = @encoding/utf8.encode("A")
   let compressed = @gzip.compress(single_byte[:])
 
   // Should produce valid gzip structure
@@ -118,7 +118,7 @@ test "repetitive_data_python_compat" {
   for i = 0; i < 100; i = i + 1 {
     repetitive = repetitive + "A"
   }
-  let data = repetitive.to_bytes()
+  let data = @encoding/utf8.encode(repetitive)
   let compressed = @gzip.compress(data[:])
   // With real compression the payload should be smaller than original (header+footer overhead tolerated)
   inspect(compressed.length() < data.length() + 18, content="true")
@@ -132,7 +132,7 @@ test "repetitive_data_python_compat" {
 /// This tests Unicode handling matches Python's behavior
 test "unicode_data_python_compat" {
   let unicode_text = "Hello 世界! 🌍"
-  let utf8_bytes = unicode_text.to_bytes()
+  let utf8_bytes = @encoding/utf8.encode(unicode_text)
   let compressed = @gzip.compress(utf8_bytes[:])
 
   // Verify gzip structure
@@ -153,7 +153,7 @@ test "large_block_python_compat" {
   for i = 0; i < 1024; i = i + 1 {
     large_data = large_data + "X"
   }
-  let data = large_data.to_bytes()
+  let data = @encoding/utf8.encode(large_data)
   let compressed = @gzip.compress(data[:])
   inspect(compressed.length() < data.length(), content="true")
   inspect(compressed[0].to_int() == 0x1f, content="true")
@@ -167,7 +167,7 @@ test "large_block_python_compat" {
 /// Python gzip format: header + deflate_data + CRC32(4 bytes) + SIZE(4 bytes)
 /// This verifies our footer structure exactly matches Python's
 test "footer_structure_python_compat" {
-  let test_data = "Test footer".to_bytes()
+  let test_data = @encoding/utf8.encode("Test footer")
   let compressed = @gzip.compress(test_data[:])
 
   // Extract footer (last 8 bytes)
@@ -191,7 +191,7 @@ test "footer_structure_python_compat" {
 /// Python: gzip.compress(b'\n\r\t   ') handles whitespace correctly
 /// This ensures our implementation preserves all whitespace characters
 test "whitespace_data_python_compat" {
-  let whitespace_data = "\n\r\t   ".to_bytes()
+  let whitespace_data = @encoding/utf8.encode("\n\r\t   ")
   let compressed = @gzip.compress(whitespace_data[:])
 
   // Verify gzip format
@@ -216,7 +216,7 @@ test "compression_levels_effect" {
   for i = 0; i < 256; i = i + 1 {
     repetitive = repetitive + "A"
   }
-  let data = repetitive.to_bytes()
+  let data = @encoding/utf8.encode(repetitive)
   let stored = @gzip.compress(data[:], level=@deflate.DeflateLevel::None)
   let best = @gzip.compress(data[:], level=@deflate.DeflateLevel::Best)
   // Stored should be larger or equal to Best

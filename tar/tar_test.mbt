@@ -101,7 +101,7 @@ test "tar_size_calculation" {
 
   // Add several more files to exceed minimum
   for i = 0; i < 10; i = i + 1 {
-    let data = ("Content " + i.to_string()).to_bytes()
+    let data = @encoding/utf8.encode("Content " + i.to_string())
     let entry = @tar.TarEntry::file("file" + i.to_string() + ".txt", data)
     archive.add(entry)
   }
