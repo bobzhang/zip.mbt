@@ -188,7 +188,7 @@ test "deflate_roundtrip_parameter_matrix" {
   let mut attempted = 0
   for i = 0; i < dataset_len; i = i + 1 {
     let input = inputs[i]
-    let view = input[0:input.length()]
+    let view = input
     for j = 0; j < level_count; j = j + 1 {
       if j == 0 && input.length() > 65535 {
         continue
@@ -200,9 +200,9 @@ test "deflate_roundtrip_parameter_matrix" {
         _ => Some(@deflate.DeflateLevel::Best)
       }
       let compressed = @deflate.deflate(view, level?)
-      let decoded = @deflate.inflate(compressed[0:compressed.length()])
+      let decoded = @deflate.inflate(compressed)
       assert_eq(decoded, input)
-      let meta = inspect_first_block(compressed[0:compressed.length()])
+      let meta = inspect_first_block(compressed)
       @json.inspect(meta.is_final, content=true)
       match level {
         Some(@deflate.DeflateLevel::None) => {
@@ -237,13 +237,13 @@ test "deflate_fixed_deterministic" {
   let data = repeat_slice(
     b"Lorem ipsum dolor sit amet, consectetur adipiscing elit. ", 8,
   )
-  let view = data[0:data.length()]
+  let view = data
   let first = @deflate.deflate(view, level?=Some(@deflate.DeflateLevel::Fast))
   let second = @deflate.deflate(view, level?=Some(@deflate.DeflateLevel::Fast))
   assert_eq(first, second)
-  let decoded = @deflate.inflate(first[0:first.length()])
+  let decoded = @deflate.inflate(first)
   assert_eq(decoded, data)
-  let meta = inspect_first_block(first[0:first.length()])
+  let meta = inspect_first_block(first)
   @json.inspect(meta.block_type, content=1)
   @json.inspect(meta.is_final, content=true)
 }
@@ -255,14 +255,14 @@ test "deflate_dynamic_header_ranges" {
     b"Dynamic Huffman blocks like repetition and variation across the buffer.\n",
     64,
   )
-  let view = data[0:data.length()]
+  let view = data
   let compressed = @deflate.deflate(
     view,
     level?=Some(@deflate.DeflateLevel::Best),
   )
-  let decoded = @deflate.inflate(compressed[0:compressed.length()])
+  let decoded = @deflate.inflate(compressed)
   assert_eq(decoded, data)
-  let meta = inspect_first_block(compressed[0:compressed.length()])
+  let meta = inspect_first_block(compressed)
   @json.inspect(meta.block_type, content=2)
   @json.inspect(meta.hlit >= 257 && meta.hlit <= 286, content=true)
   @json.inspect(meta.hdist >= 1 && meta.hdist <= 30, content=true)
@@ -275,32 +275,32 @@ test "deflate_concatenation_roundtrip" {
   let part_a = repeat_slice(b"AAAAABBBBB", 40)
   let part_b = make_incrementing(256)
   let comp_a = @deflate.deflate(
-    part_a[0:part_a.length()],
+    part_a,
     level?=Some(@deflate.DeflateLevel::Default),
   )
   let comp_b = @deflate.deflate(
-    part_b[0:part_b.length()],
+    part_b,
     level?=Some(@deflate.DeflateLevel::Default),
   )
-  let dec_a = @deflate.inflate(comp_a[0:comp_a.length()])
-  let dec_b = @deflate.inflate(comp_b[0:comp_b.length()])
+  let dec_a = @deflate.inflate(comp_a)
+  let dec_b = @deflate.inflate(comp_b)
   assert_eq(dec_a, part_a)
   assert_eq(dec_b, part_b)
   let combined = {
     let buf = @bytebuf.new(size_hint=part_a.length() + part_b.length())
-    buf.write_bytesview(part_a[0:part_a.length()])
-    buf.write_bytesview(part_b[0:part_b.length()])
+    buf.write_bytesview(part_a)
+    buf.write_bytesview(part_b)
     buf.contents()
   }
   let merged_decoded = {
     let buf = @bytebuf.new(size_hint=dec_a.length() + dec_b.length())
-    buf.write_bytesview(dec_a[0:dec_a.length()])
-    buf.write_bytesview(dec_b[0:dec_b.length()])
+    buf.write_bytesview(dec_a)
+    buf.write_bytesview(dec_b)
     buf.contents()
   }
   assert_eq(merged_decoded, combined)
-  let meta_a = inspect_first_block(comp_a[0:comp_a.length()])
-  let meta_b = inspect_first_block(comp_b[0:comp_b.length()])
+  let meta_a = inspect_first_block(comp_a)
+  let meta_b = inspect_first_block(comp_b)
   @json.inspect(meta_a.block_type, content=2)
   @json.inspect(meta_b.block_type, content=2)
   @json.inspect(meta_a.is_final, content=true)

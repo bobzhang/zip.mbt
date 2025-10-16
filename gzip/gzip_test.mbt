@@ -32,7 +32,7 @@ test "unzip Python hello world * 3" {
 test "empty_data" {
   let input = "".to_bytes()
   let compressed = @gzip.compress(input[:])
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == input, content="true")
 }
 
@@ -45,7 +45,7 @@ test "large_data" {
   }
   let input = input_str.to_bytes()
   let compressed = @gzip.compress(input[:])
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == input, content="true")
 }
 
@@ -62,7 +62,7 @@ test "cross_compatibility" {
   inspect(compressed[2].to_int() == 0x08, content="true") // Deflate method
 
   // Test round trip
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == test_data, content="true")
 }
 
@@ -83,7 +83,7 @@ test "binary_data_python_compat" {
   inspect(compressed[9].to_int() == 0xff, content="true") // OS unknown (matches Python default)
 
   // Test round trip preserves binary data exactly
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == binary_data, content="true")
   inspect(decompressed.length() == 6, content="true")
 }
@@ -105,7 +105,7 @@ test "single_byte_python_compat" {
   inspect(compressed[2].to_int() == 0x08, content="true")
 
   // Test decompression matches original
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == single_byte, content="true")
 }
 
@@ -122,7 +122,7 @@ test "repetitive_data_python_compat" {
   let compressed = @gzip.compress(data[:])
   // With real compression the payload should be smaller than original (header+footer overhead tolerated)
   inspect(compressed.length() < data.length() + 18, content="true")
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == data, content="true")
 }
 
@@ -140,7 +140,7 @@ test "unicode_data_python_compat" {
   inspect(compressed[1].to_int() == 0x8b, content="true")
 
   // Test round trip preserves UTF-8 encoding perfectly
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == utf8_bytes, content="true")
 }
 
@@ -158,7 +158,7 @@ test "large_block_python_compat" {
   inspect(compressed.length() < data.length(), content="true")
   inspect(compressed[0].to_int() == 0x1f, content="true")
   inspect(compressed[1].to_int() == 0x8b, content="true")
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == data, content="true")
 }
 
@@ -182,7 +182,7 @@ test "footer_structure_python_compat" {
   inspect(footer_size == size_bytes, content="true")
 
   // Test that decompression verifies CRC32 correctly
-  let decompressed = @gzip.decompress(compressed[0:compressed.length()])
+  let decompressed = @gzip.decompress(compressed)
   inspect(decompressed == test_data, content="true")
 }
 
@@ -222,8 +222,8 @@ test "compression_levels_effect" {
   // Stored should be larger or equal to Best
   inspect(stored.length() >= best.length(), content="true")
   // Round trip both
-  inspect(@gzip.decompress(stored[0:stored.length()]) == data, content="true")
-  inspect(@gzip.decompress(best[0:best.length()]) == data, content="true")
+  inspect(@gzip.decompress(stored) == data, content="true")
+  inspect(@gzip.decompress(best) == data, content="true")
 }
 
 ///|

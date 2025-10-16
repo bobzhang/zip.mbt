@@ -11,6 +11,7 @@ type Adler32
 fn Adler32::equal(Self, Self) -> Bool // from trait `Eq`
 fn Adler32::finish(Self) -> UInt
 fn Adler32::init() -> Self
+#deprecated
 fn Adler32::op_equal(Self, Self) -> Bool // from trait `Eq`
 fn Adler32::output(Self, &Logger) -> Unit // from trait `Show`
 fn Adler32::to_string(Self) -> String // from trait `Show`

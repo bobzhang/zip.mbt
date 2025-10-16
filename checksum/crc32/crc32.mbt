@@ -81,13 +81,7 @@ pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
   }
   let tables = crc32_tables
   let t0 = crc32_table
-  let t1 = tables[1]
-  let t2 = tables[2]
-  let t3 = tables[3]
-  let t4 = tables[4]
-  let t5 = tables[5]
-  let t6 = tables[6]
-  let t7 = tables[7]
+  guard tables is [_, t1, t2, t3, t4, t5, t6, t7]
   let Crc32(value0) = self
   let mut v = value0
   // Bulk slice-by-8 loop (process 8 bytes at a time)

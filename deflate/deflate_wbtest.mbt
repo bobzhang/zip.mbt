@@ -5,10 +5,7 @@
 test "deflate_stored_basic" {
   let data = b"hello"
   let compressed = deflate_stored(data[:])
-  let decompressed = inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=data.length(),
-  )
+  let decompressed = inflate(compressed, decompressed_size=data.length())
   @json.inspect((decompressed.length(), decompressed[0].to_int()), content=[
     5, 104,
   ]) // 'h'
@@ -41,11 +38,8 @@ test "deflate_stored_basic" {
 ///|
 test "deflate_fixed_simple" {
   let data = b"hello"
-  let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
-  let decompressed = inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=data.length(),
-  )
+  let compressed = deflate_fixed(data, true, 4, 4096)
+  let decompressed = inflate(compressed, decompressed_size=data.length())
   @json.inspect((decompressed.length(), decompressed[0].to_int()), content=[
     5, 104,
   ]) // 'h'
@@ -54,11 +48,8 @@ test "deflate_fixed_simple" {
 ///|
 test "deflate_fixed_with_repetition" {
   let data = b"abcabcabcabc"
-  let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
-  let decompressed = inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=data.length(),
-  )
+  let compressed = deflate_fixed(data, true, 4, 4096)
+  let decompressed = inflate(compressed, decompressed_size=data.length())
   @json.inspect(
     (
       decompressed.length(),
@@ -76,11 +67,8 @@ test "deflate_fixed_all_same" {
     buf.write_byte(b'a')
   }
   let data = buf.contents()
-  let compressed = deflate_fixed(data[0:data.length()], true, 4, 4096)
-  let decompressed = inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=data.length(),
-  )
+  let compressed = deflate_fixed(data, true, 4, 4096)
+  let decompressed = inflate(compressed, decompressed_size=data.length())
   @json.inspect((decompressed.length(), compressed.length() < 20), content=[
     100, true,
   ])
@@ -89,11 +77,8 @@ test "deflate_fixed_all_same" {
 ///|
 test "deflate_dynamic_simple" {
   let data = b"hello"
-  let compressed = deflate_dynamic(data[0:data.length()], true, 4, 4096)
-  let decompressed = inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=data.length(),
-  )
+  let compressed = deflate_dynamic(data, true, 4, 4096)
+  let decompressed = inflate(compressed, decompressed_size=data.length())
   @json.inspect((decompressed.length(), decompressed[0].to_int()), content=[
     5, 104,
   ]) // 'h'
@@ -102,11 +87,8 @@ test "deflate_dynamic_simple" {
 ///|
 test "deflate_dynamic_with_repetition" {
   let data = b"abcabcabcabcabcabcabcabc"
-  let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
-  let decompressed = inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=data.length(),
-  )
+  let compressed = deflate_dynamic(data, true, 8, 1024)
+  let decompressed = inflate(compressed, decompressed_size=data.length())
   @json.inspect(
     (
       decompressed.length(),
@@ -124,11 +106,8 @@ test "deflate_dynamic_highly_compressible" {
     buf.write_byte(b'a')
   }
   let data = buf.contents()
-  let compressed = deflate_dynamic(data[0:data.length()], true, 8, 1024)
-  let decompressed = inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=data.length(),
-  )
+  let compressed = deflate_dynamic(data, true, 8, 1024)
+  let decompressed = inflate(compressed, decompressed_size=data.length())
   @json.inspect((decompressed.length(), compressed.length() < 30), content=[
     200, true,
   ])

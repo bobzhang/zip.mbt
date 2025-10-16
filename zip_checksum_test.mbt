@@ -78,7 +78,7 @@ test "inflate_with_crc32" {
      252, 255, // ~length
      0x41, 0x42, 0x43, // "ABC"
   ])
-  let result = @deflate.inflate(compressed[0:compressed.length()])
+  let result = @deflate.inflate(compressed)
   let crc = @crc32.bytes_crc32(result[:])
   // Verify data and that CRC is computed
   @json.inspect(
@@ -122,11 +122,11 @@ test "e2e_adler32_known_value" {
 test "@deflate.crc32_and_deflate_api" {
   let data = b"test data"
   let crc = @crc32.bytes_crc32(data[:])
-  let compressed = @deflate.deflate(data[0:data.length()])
+  let compressed = @deflate.deflate(data)
   let expected_crc = @crc32.bytes_crc32(data[:])
   @json.inspect(crc == expected_crc, content=true)
   let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
+    compressed,
     decompressed_size=data.length(),
   )
   @json.inspect(decompressed.length(), content=9)
@@ -136,11 +136,11 @@ test "@deflate.crc32_and_deflate_api" {
 test "@deflate.adler32_and_deflate_api" {
   let data = b"test data"
   let adler = @adler32.bytes_adler32(data[:])
-  let compressed = @deflate.deflate(data[0:data.length()])
+  let compressed = @deflate.deflate(data)
   let expected_adler = @adler32.bytes_adler32(data[:])
   @json.inspect(adler == expected_adler, content=true)
   let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
+    compressed,
     decompressed_size=data.length(),
   )
   @json.inspect(decompressed.length(), content=9)
@@ -154,11 +154,8 @@ test "@deflate.adler32_and_deflate_api" {
 /// Test inflate + explicit Adler-32 (replacement for removed inflate_and_adler32 helper)
 test "coverage_inflate_adler32" {
   let data = b"Inflate with Adler-32"
-  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 128)
-  let dec = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=data.length(),
-  )
+  let compressed = @deflate.deflate_fixed(data, true, 8, 128)
+  let dec = @deflate.inflate(compressed, decompressed_size=data.length())
   let adler = @adler32.bytes_adler32(dec[:])
   @json.inspect((dec == data, adler == @adler32.bytes_adler32(data[:])), content=[
     true, true,

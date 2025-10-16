@@ -32,9 +32,7 @@ test "zlib_roundtrip_simple" {
   let (adler, compressed) = @deflate.zlib_compress(data[:])
 
   // Decompress
-  let (decompressed, computed_adler) = @deflate.zlib_decompress(
-    compressed[0:compressed.length()],
-  )
+  let (decompressed, computed_adler) = @deflate.zlib_decompress(compressed)
   // Verify data matches
   @json.inspect(
     (
@@ -53,9 +51,7 @@ test "zlib_roundtrip_simple" {
 test "zlib_roundtrip_empty" {
   let data = b""
   let (_adler, compressed) = @deflate.zlib_compress(data[:])
-  let (decompressed, _) = @deflate.zlib_decompress(
-    compressed[0:compressed.length()],
-  )
+  let (decompressed, _) = @deflate.zlib_decompress(compressed)
   @json.inspect(decompressed.length(), content=0)
 }
 
@@ -74,9 +70,7 @@ test "zlib_roundtrip_repetitive" {
   @json.inspect(ratio, content=true)
 
   // Should decompress correctly
-  let (decompressed, _) = @deflate.zlib_decompress(
-    compressed[0:compressed.length()],
-  )
+  let (decompressed, _) = @deflate.zlib_decompress(compressed)
   @json.inspect(decompressed.length(), content=100)
 }
 
@@ -85,9 +79,7 @@ test "zlib_roundtrip_binary" {
   // Test with various byte values
   let data = b"\x00\x01\x7f\x80\xff\x00\x01\x7f\x80\xff"
   let (_, compressed) = @deflate.zlib_compress(data[:])
-  let (decompressed, _) = @deflate.zlib_decompress(
-    compressed[0:compressed.length()],
-  )
+  let (decompressed, _) = @deflate.zlib_decompress(compressed)
   @json.inspect(
     (
       decompressed.length(),
@@ -107,7 +99,7 @@ test "@deflate.zlib_compression_levels" {
   let (_, default) = @deflate.zlib_compress(data[:])
 
   // All should decompress correctly
-  let (d, _) = @deflate.zlib_decompress(default[0:default.length()])
+  let (d, _) = @deflate.zlib_decompress(default)
   let default_ok = d.length() == data.length()
   @json.inspect(default_ok, content=true)
 }
@@ -116,7 +108,7 @@ test "@deflate.zlib_compression_levels" {
 test "zlib_invalid_header" {
   // Invalid compression method (not deflate)
   let data = b"\x00\x00\x00\x00\x00\x00"
-  let result = try? @deflate.zlib_decompress(data[0:data.length()])
+  let result = try? @deflate.zlib_decompress(data)
   guard result is Err(_) else {
     fail("zlib_decompress should fail with invalid header")
   }
@@ -126,7 +118,7 @@ test "zlib_invalid_header" {
 ///|
 test "zlib_too_short" {
   let data = b"\x78\x9c" // Just header, no data
-  let result = try? @deflate.zlib_decompress(data[0:data.length()])
+  let result = try? @deflate.zlib_decompress(data)
   guard result is Err(_) else {
     fail("zlib_decompress should fail with too short data")
   }
@@ -146,7 +138,7 @@ test "zlib_bad_checksum" {
   }
   buf.write_byte(b'\xFF') // Wrong checksum byte
   let corrupted = buf.contents()
-  let result = try? @deflate.zlib_decompress(corrupted[0:corrupted.length()])
+  let result = try? @deflate.zlib_decompress(corrupted)
   match result {
     Ok(_) => @json.inspect("should fail", content="error")
     Err(_) => @json.inspect("error", content="error")
@@ -161,7 +153,7 @@ test "zlib_bad_checksum" {
 /// Test zlib decompression with too short data
 test "coverage_zlib_too_short" {
   let data = b"short"
-  guard (try? @deflate.zlib_decompress(data[0:data.length()])) is Err(msg) else {
+  guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with too short data")
   }
   @json.inspect(msg.to_string().contains("too short"), content=true)
@@ -174,7 +166,7 @@ test "coverage_zlib_invalid_method" {
   buf[0] = b'\x79' // CM=9 (invalid)
   buf[1] = b'\x9C'
   let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
-  guard (try? @deflate.zlib_decompress(data[0:data.length()])) is Err(msg) else {
+  guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with invalid compression method")
   }
   @json.inspect(msg.to_string().contains("compression method"), content=true)
@@ -187,7 +179,7 @@ test "coverage_zlib_bad_window" {
   buf[0] = b'\x88' // CINFO=8 (too large)
   buf[1] = b'\x1E'
   let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
-  guard (try? @deflate.zlib_decompress(data[0:data.length()])) is Err(msg) else {
+  guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with invalid window size")
   }
   @json.inspect(msg.to_string().contains("window size"), content=true)
@@ -200,7 +192,7 @@ test "coverage_zlib_bad_checksum" {
   buf[0] = b'\x78'
   buf[1] = b'\x00' // Wrong checksum
   let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
-  guard (try? @deflate.zlib_decompress(data[0:data.length()])) is Err(msg) else {
+  guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with bad header checksum")
   }
   @json.inspect(msg.to_string().contains("header checksum"), content=true)
@@ -213,7 +205,7 @@ test "coverage_zlib_dict" {
   buf[0] = b'\x78'
   buf[1] = b'\xBB' // FDICT=1
   let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
-  guard (try? @deflate.zlib_decompress(data[0:data.length()])) is Err(msg) else {
+  guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with preset dictionary")
   }
   @json.inspect(msg.to_string().contains("dictionary"), content=true)

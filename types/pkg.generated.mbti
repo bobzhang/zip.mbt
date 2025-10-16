@@ -40,6 +40,7 @@ pub(all) enum Compression {
 fn Compression::equal(Self, Self) -> Bool // from trait `Eq`
 #as_free_fn(compression)
 fn Compression::from_int(Int) -> Self
+#deprecated
 fn Compression::op_equal(Self, Self) -> Bool // from trait `Eq`
 fn Compression::output(Self, &Logger) -> Unit // from trait `Show`
 fn Compression::to_int(Self) -> Int
@@ -56,6 +57,7 @@ fn FileMode::hash(Self) -> Int // from trait `Hash`
 fn FileMode::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
 #deprecated
 fn FileMode::inner(Self) -> Int
+#deprecated
 fn FileMode::op_equal(Self, Self) -> Bool // from trait `Eq`
 fn FileMode::output(Self, &Logger) -> Unit // from trait `Show`
 fn FileMode::to_int(Self) -> Int
@@ -76,6 +78,7 @@ fn Ptime::hash(Self) -> Int // from trait `Hash`
 fn Ptime::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
 #deprecated
 fn Ptime::inner(Self) -> Int
+#deprecated
 fn Ptime::op_equal(Self, Self) -> Bool // from trait `Eq`
 fn Ptime::to_json(Self) -> Json // from trait `ToJson`
 impl Compare for Ptime

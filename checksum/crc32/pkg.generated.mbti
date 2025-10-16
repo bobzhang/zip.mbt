@@ -11,6 +11,7 @@ type Crc32
 fn Crc32::equal(Self, Self) -> Bool // from trait `Eq`
 fn Crc32::finish(Self) -> UInt
 fn Crc32::init() -> Self
+#deprecated
 fn Crc32::op_equal(Self, Self) -> Bool // from trait `Eq`
 fn Crc32::output(Self, &Logger) -> Unit // from trait `Show`
 fn Crc32::to_string(Self) -> String // from trait `Show`

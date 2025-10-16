@@ -28,7 +28,9 @@ fn Fpath::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
 fn Fpath::inner(Self) -> String
 fn Fpath::is_empty(Self) -> Bool
 fn Fpath::length(Self) -> Int
+#deprecated
 fn Fpath::op_add(Self, Self) -> Self // from trait `Add`
+#deprecated
 fn Fpath::op_equal(Self, Self) -> Bool // from trait `Eq`
 fn Fpath::output(Self, &Logger) -> Unit // from trait `Show`
 fn Fpath::to_json(Self) -> Json // from trait `ToJson`

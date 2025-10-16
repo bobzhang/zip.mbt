@@ -42,6 +42,7 @@ pub enum TarType {
   Directory
 }
 fn TarType::equal(Self, Self) -> Bool // from trait `Eq`
+#deprecated
 fn TarType::op_equal(Self, Self) -> Bool // from trait `Eq`
 fn TarType::output(Self, &Logger) -> Unit // from trait `Show`
 fn TarType::to_string(Self) -> String // from trait `Show`

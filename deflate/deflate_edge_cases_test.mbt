@@ -14,11 +14,8 @@ test "inflate_invalid_litlen_symbol" {
   // This would require crafting a Huffman-encoded stream with invalid symbol
   // For now, test that valid symbols work
   let data = b"test"
-  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=4,
-  )
+  let compressed = @deflate.deflate_fixed(data, true, 4, 128)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=4)
   @json.inspect(decompressed.length(), content=4)
 }
 
@@ -28,11 +25,8 @@ test "inflate_invalid_distance_symbol" {
   // This would require crafting a stream with distance > 29
   // For now, test that valid distances work
   let data = b"aaaaaaaaaa" // Highly repetitive for back-references
-  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=10,
-  )
+  let compressed = @deflate.deflate_fixed(data, true, 4, 128)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=10)
   @json.inspect(decompressed.length(), content=10)
 }
 
@@ -42,11 +36,8 @@ test "inflate_distance_too_large" {
   // Would require crafting a stream with dist > output_pos
   // Testing normal back-reference behavior
   let data = b"abcdefghijklmnop" // 16 bytes
-  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=16,
-  )
+  let compressed = @deflate.deflate_fixed(data, true, 4, 128)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=16)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -56,16 +47,8 @@ test "inflate_dynamic_invalid_hlit" {
   // BFINAL=1, BTYPE=10 (dynamic), HLIT=30 (257+30=287 > 286 max)
   // This is very complex to craft manually
   let data = b"test data"
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=9,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=9)
   @json.inspect(decompressed.length(), content=9)
 }
 
@@ -75,14 +58,9 @@ test "inflate_dynamic_empty_codelen" {
   // Would require all code length codes to be 0
   // Testing normal dynamic huffman
   let data = b"The quick brown fox jumps over the lazy dog"
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
   let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
+    compressed,
     decompressed_size=data.length(),
   )
   @json.inspect(decompressed == data, content=true)
@@ -93,16 +71,8 @@ test "inflate_dynamic_empty_codelen" {
 test "inflate_dynamic_invalid_codelen_symbol" {
   // Testing normal code length encoding
   let data = b"abcdefghijklmnopqrstuvwxyz0123456789"
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=36,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=36)
   @json.inspect(decompressed.length(), content=36)
 }
 
@@ -112,16 +82,8 @@ test "inflate_dynamic_repeat_no_previous" {
   // Symbol 16 (repeat previous) used at start
   // This requires crafting a specific bit pattern
   let data = b"compression test data"
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=21,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=21)
   @json.inspect(decompressed.length(), content=21)
 }
 
@@ -130,16 +92,8 @@ test "inflate_dynamic_repeat_no_previous" {
 test "inflate_dynamic_repeat_overflow" {
   // Repeat count would exceed total
   let data = b"testing deflate compression algorithm implementation"
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=52,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=52)
   @json.inspect(decompressed.length(), content=52)
 }
 
@@ -149,14 +103,9 @@ test "inflate_dynamic_missing_eob" {
   // Length 256 (end-of-block) has length 0
   // Very complex to craft, testing normal case
   let data = b"DEFLATE RFC 1951 compliance testing"
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
   let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
+    compressed,
     decompressed_size=data.length(),
   )
   @json.inspect(decompressed == data, content=true)
@@ -166,11 +115,8 @@ test "inflate_dynamic_missing_eob" {
 /// Test DeflateLevel::None (stored blocks)
 test "deflate_level_none" {
   let data = b"uncompressed data storage"
-  let compressed = @deflate.deflate(data[0:data.length()])
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=25,
-  )
+  let compressed = @deflate.deflate(data)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=25)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -178,11 +124,8 @@ test "deflate_level_none" {
 /// Test DeflateLevel::Best (maximum compression)
 test "deflate_level_best" {
   let data = b"aaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmmnnnnoooopppp"
-  let compressed = @deflate.deflate(data[0:data.length()])
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=64,
-  )
+  let compressed = @deflate.deflate(data)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=64)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -192,10 +135,7 @@ test "deflate_stored_small" {
   let data = b"x"
   let compressed = @deflate.deflate_stored(data[:])
   @json.inspect(compressed.length(), content=6) // 1 header + 4 length + 1 data
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=1,
-  )
+  let decompressed = @deflate.inflate(compressed, decompressed_size=1)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -209,10 +149,7 @@ test "deflate_stored_max_block" {
   let data = buf.contents()
   let compressed = @deflate.deflate_stored(data[:])
   @json.inspect(compressed.length(), content=65540) // 1 + 4 + 65535
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=65535,
-  )
+  let decompressed = @deflate.inflate(compressed, decompressed_size=65535)
   @json.inspect(decompressed.length(), content=65535)
 }
 
@@ -220,11 +157,9 @@ test "deflate_stored_max_block" {
 /// Test zlib_compress with DeflateLevel::None
 test "zlib_compress_level_none" {
   let data = b"zlib with no compression"
-  let (adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
+  let (adler, compressed) = @deflate.zlib_compress(data)
   @json.inspect(adler != 0U, content=true)
-  let (decompressed, _) = @deflate.zlib_decompress(
-    compressed[0:compressed.length()],
-  )
+  let (decompressed, _) = @deflate.zlib_decompress(compressed)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -232,11 +167,9 @@ test "zlib_compress_level_none" {
 /// Test zlib_compress with DeflateLevel::Best
 test "zlib_compress_level_best" {
   let data = b"aaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllll"
-  let (adler, compressed) = @deflate.zlib_compress(data[0:data.length()])
+  let (adler, compressed) = @deflate.zlib_compress(data)
   @json.inspect(adler != 0U, content=true)
-  let (decompressed, _) = @deflate.zlib_decompress(
-    compressed[0:compressed.length()],
-  )
+  let (decompressed, _) = @deflate.zlib_decompress(compressed)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -245,11 +178,8 @@ test "zlib_compress_level_best" {
 test "deflate_fixed_boundary_conditions" {
   // Test with data that triggers lazy matching at boundaries
   let data = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 8, 1024)
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=52,
-  )
+  let compressed = @deflate.deflate_fixed(data, true, 8, 1024)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=52)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -261,16 +191,8 @@ test "deflate_dynamic_high_repetition" {
     buf.write_bytesview(b"test"[0:4])
   }
   let data = buf.contents()
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=1000,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=1000)
   @json.inspect(decompressed.length(), content=1000)
 }
 
@@ -279,16 +201,8 @@ test "deflate_dynamic_high_repetition" {
 test "deflate_dynamic_lazy_matching" {
   // Create data that exercises lazy matching logic
   let data = b"abcabcdefabcdefghabcdefghijabcdefghijkl"
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=39,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=39)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -298,10 +212,7 @@ test "deflate_empty_data" {
   let data = b""
   let compressed = @deflate.deflate_fixed(data[0:0], true, 4, 128)
   @json.inspect(compressed.length() > 0, content=true) // Should have header + EOB
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=0,
-  )
+  let decompressed = @deflate.inflate(compressed, decompressed_size=0)
   @json.inspect(decompressed.length(), content=0)
 }
 
@@ -309,16 +220,8 @@ test "deflate_empty_data" {
 /// Test RFC 1951 Example: "hello" string
 test "rfc1951_example_hello" {
   let data = b"hello"
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    8,
-    1024,
-  )
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=5,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 8, 1024)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=5)
   @json.inspect(decompressed == data, content=true)
 }
 
@@ -335,16 +238,8 @@ test "deflate_long_distance_backref" {
   // Repeat the pattern (distance > 2000)
   buf.write_bytesview(b"pattern"[0:7])
   let data = buf.contents()
-  let compressed = @deflate.deflate_dynamic(
-    data[0:data.length()],
-    true,
-    32,
-    4096,
-  )
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=2014,
-  )
+  let compressed = @deflate.deflate_dynamic(data, true, 32, 4096)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=2014)
   @json.inspect(decompressed.length(), content=2014)
 }
 
@@ -356,11 +251,8 @@ test "deflate_all_byte_values" {
     buf.write_byte(i.to_byte())
   }
   let data = buf.contents()
-  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=256,
-  )
+  let compressed = @deflate.deflate_fixed(data, true, 4, 128)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=256)
   @json.inspect(decompressed.length(), content=256)
   // Verify all bytes match
   let mut all_match = true
@@ -381,11 +273,8 @@ test "deflate_max_match_length" {
     buf.write_byte(b'A')
   }
   let data = buf.contents()
-  let compressed = @deflate.deflate_fixed(data[0:data.length()], true, 4, 128)
-  let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
-    decompressed_size=300,
-  )
+  let compressed = @deflate.deflate_fixed(data, true, 4, 128)
+  let decompressed = @deflate.inflate(compressed, decompressed_size=300)
   @json.inspect(decompressed.length(), content=300)
 }
 
@@ -393,11 +282,11 @@ test "deflate_max_match_length" {
 /// Test error propagation in crc32_and_deflate
 test "crc32_and_deflate_error_handling" {
   let data = b"test data for crc32"
-  let compressed = @deflate.deflate(data[0:data.length()])
+  let compressed = @deflate.deflate(data)
   // Just ensure compression produced bytes and round-trip works
   @json.inspect(compressed.length() > 0, content=true)
   let decompressed = @deflate.inflate(
-    compressed[0:compressed.length()],
+    compressed,
     decompressed_size=data.length(),
   )
   @json.inspect(decompressed == data, content=true)
@@ -408,7 +297,7 @@ test "crc32_and_deflate_error_handling" {
 test "adler32_and_deflate_error_handling" {
   let data = b"test data for adler32"
   let adler = @adler32.bytes_adler32(data[:])
-  let compressed = @deflate.deflate(data[0:data.length()])
+  let compressed = @deflate.deflate(data)
   @json.inspect(adler != 0U, content=true)
   @json.inspect(compressed.length() > 0, content=true)
 }

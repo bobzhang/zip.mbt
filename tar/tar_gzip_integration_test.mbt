@@ -14,7 +14,7 @@ test "tar_gzip_round_trip_programmatic" {
   archive.add(@tar.TarEntry::file("dir/b.txt", b"BBB"))
   let tar_bytes = archive.to_bytes()
   let gz = @gzip.compress(tar_bytes[:])
-  let ungz = @gzip.decompress(gz[0:gz.length()])
+  let ungz = @gzip.decompress(gz)
   let parsed = @tar.TarArchive::of_bytes(ungz)
   assert_eq(parsed.length(), 2)
   assert_eq(parsed.entries[0].name, "a.txt")
@@ -42,7 +42,7 @@ test "embedded_tar_gzip_round_trip" {
   for i = 0; i < cases.length(); i = i + 1 {
     let (label, tar_bytes) = cases[i]
     let gz = @gzip.compress(tar_bytes[:])
-    let ungz = @gzip.decompress(gz[0:gz.length()])
+    let ungz = @gzip.decompress(gz)
     inspect(ungz == tar_bytes, content="true")
     let parsed = @tar.TarArchive::of_bytes(ungz)
     match label {
@@ -73,6 +73,6 @@ test "tar_gzip_compression_levels" {
   let stored = @gzip.compress(tar_bytes[:], level=@deflate.DeflateLevel::None)
   let best = @gzip.compress(tar_bytes[:], level=@deflate.DeflateLevel::Best)
   inspect(stored.length() >= best.length(), content="true")
-  let ungz_best = @gzip.decompress(best[0:best.length()])
+  let ungz_best = @gzip.decompress(best)
   inspect(ungz_best == tar_bytes, content="true")
 }
