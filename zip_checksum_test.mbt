@@ -72,7 +72,7 @@ test "crc32_check_failure" {
 /// Test inflate with CRC-32 computation
 test "inflate_with_crc32" {
   // Same uncompressed block as above
-  let compressed = Bytes::from_fixedarray([
+  let compressed = Bytes::from_array([
     0b00000001, // final=1, type=00 (uncompressed)
      3, 0, // length = 3
      252, 255, // ~length

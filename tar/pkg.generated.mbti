@@ -9,17 +9,14 @@ package "bobzhang/zip/tar"
 pub struct TarArchive {
   entries : Array[TarEntry]
 }
-fn TarArchive::add(Self, TarEntry) -> Unit
-fn TarArchive::empty() -> Self
-fn TarArchive::find(Self, String) -> TarEntry?
-fn TarArchive::length(Self) -> Int
-fn TarArchive::of_bytes(Bytes) -> Self
-fn TarArchive::output(Self, &Logger) -> Unit // from trait `Show`
-fn TarArchive::to_bytes(Self) -> Bytes
-fn TarArchive::to_json(Self) -> Json // from trait `ToJson`
-fn TarArchive::to_string(Self) -> String // from trait `Show`
-impl Show for TarArchive
-impl ToJson for TarArchive
+pub fn TarArchive::add(Self, TarEntry) -> Unit
+pub fn TarArchive::empty() -> Self
+pub fn TarArchive::find(Self, String) -> TarEntry?
+pub fn TarArchive::length(Self) -> Int
+pub fn TarArchive::of_bytes(Bytes) -> Self
+pub fn TarArchive::to_bytes(Self) -> Bytes
+pub impl Show for TarArchive
+pub impl ToJson for TarArchive
 
 pub struct TarEntry {
   name : String
@@ -31,23 +28,16 @@ pub struct TarEntry {
   gid : Int
   mtime : Int
 }
-fn TarEntry::directory(String) -> Self
-fn TarEntry::file(String, Bytes) -> Self
-fn TarEntry::output(Self, &Logger) -> Unit // from trait `Show`
-fn TarEntry::to_string(Self) -> String // from trait `Show`
-impl Show for TarEntry
+pub fn TarEntry::directory(String) -> Self
+pub fn TarEntry::file(String, Bytes) -> Self
+pub impl Show for TarEntry
 
 pub enum TarType {
   RegularFile
   Directory
 }
-fn TarType::equal(Self, Self) -> Bool // from trait `Eq`
-#deprecated
-fn TarType::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn TarType::output(Self, &Logger) -> Unit // from trait `Show`
-fn TarType::to_string(Self) -> String // from trait `Show`
-impl Eq for TarType
-impl Show for TarType
+pub impl Eq for TarType
+pub impl Show for TarType
 
 // Type aliases
 

@@ -6,7 +6,7 @@ test "inflate_uncompressed_block" {
   // Create a simple uncompressed deflate stream
   // Format: final_bit(1) + type(00) + padding + length + ~length + data
   // Data: "ABC" (3 bytes)
-  let compressed = Bytes::from_fixedarray([
+  let compressed = Bytes::from_array([
     0b00000001, // final=1, type=00 (uncompressed)
      3, 0, // length = 3 (little-endian)
      252, 255, // ~length = 0xFFFC (complement of 3)
@@ -395,9 +395,7 @@ test "dynamic_huffman_binary" {
   for i = 0; i < 256; i = i + 1 {
     data[i] = i.to_byte()
   }
-  let data_bytes = Bytes::from_fixedarray(
-    FixedArray::from_iter(data[0:].iter()),
-  )
+  let data_bytes = Bytes::from_array(FixedArray::from_iter(data[0:].iter()))
   let compressed = @deflate.deflate_dynamic(data_bytes[0:256], true, 8, 128)
   let decompressed = @deflate.inflate(compressed)
   @json.inspect(
@@ -452,9 +450,7 @@ test "compression_level_large_data_integration" {
   for i = 200; i < 300; i = i + 1 {
     data[i] = b'C'
   }
-  let data_bytes = Bytes::from_fixedarray(
-    FixedArray::from_iter(data[0:].iter()),
-  )
+  let data_bytes = Bytes::from_array(FixedArray::from_iter(data[0:].iter()))
   let file = @file.File::deflate_of_bytes(data_bytes, 0, 300)
   // Decompress and verify  
   let decompressed = @deflate.inflate(
@@ -521,7 +517,7 @@ test "coverage_large_data_dynamic" {
   for i = 0; i < 300; i = i + 1 {
     buf[i] = (65 + i.mod(26)).to_byte()
   }
-  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  let data = Bytes::from_array(FixedArray::from_iter(buf.iter()))
   let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let dec = file.to_bytes()
   @json.inspect((dec.length(), dec == data), content=[300, true])

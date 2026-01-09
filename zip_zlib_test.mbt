@@ -165,7 +165,7 @@ test "coverage_zlib_invalid_method" {
   let buf = Array::make(10, b'\x00')
   buf[0] = b'\x79' // CM=9 (invalid)
   buf[1] = b'\x9C'
-  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  let data = Bytes::from_array(FixedArray::from_iter(buf.iter()))
   guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with invalid compression method")
   }
@@ -178,7 +178,7 @@ test "coverage_zlib_bad_window" {
   let buf = Array::make(10, b'\x00')
   buf[0] = b'\x88' // CINFO=8 (too large)
   buf[1] = b'\x1E'
-  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  let data = Bytes::from_array(FixedArray::from_iter(buf.iter()))
   guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with invalid window size")
   }
@@ -191,7 +191,7 @@ test "coverage_zlib_bad_checksum" {
   let buf = Array::make(10, b'\x00')
   buf[0] = b'\x78'
   buf[1] = b'\x00' // Wrong checksum
-  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  let data = Bytes::from_array(FixedArray::from_iter(buf.iter()))
   guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with bad header checksum")
   }
@@ -204,7 +204,7 @@ test "coverage_zlib_dict" {
   let buf = Array::make(10, b'\x00')
   buf[0] = b'\x78'
   buf[1] = b'\xBB' // FDICT=1
-  let data = Bytes::from_fixedarray(FixedArray::from_iter(buf.iter()))
+  let data = Bytes::from_array(FixedArray::from_iter(buf.iter()))
   guard (try? @deflate.zlib_decompress(data)) is Err(msg) else {
     fail("zlib_decompress should fail with preset dictionary")
   }

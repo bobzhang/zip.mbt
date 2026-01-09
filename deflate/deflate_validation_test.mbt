@@ -238,8 +238,8 @@ test "deflate_fixed_deterministic" {
     b"Lorem ipsum dolor sit amet, consectetur adipiscing elit. ", 8,
   )
   let view = data
-  let first = @deflate.deflate(view, level?=Some(@deflate.DeflateLevel::Fast))
-  let second = @deflate.deflate(view, level?=Some(@deflate.DeflateLevel::Fast))
+  let first = @deflate.deflate(view, level=@deflate.DeflateLevel::Fast)
+  let second = @deflate.deflate(view, level=@deflate.DeflateLevel::Fast)
   assert_eq(first, second)
   let decoded = @deflate.inflate(first)
   assert_eq(decoded, data)
@@ -256,10 +256,7 @@ test "deflate_dynamic_header_ranges" {
     64,
   )
   let view = data
-  let compressed = @deflate.deflate(
-    view,
-    level?=Some(@deflate.DeflateLevel::Best),
-  )
+  let compressed = @deflate.deflate(view, level=@deflate.DeflateLevel::Best)
   let decoded = @deflate.inflate(compressed)
   assert_eq(decoded, data)
   let meta = inspect_first_block(compressed)
@@ -274,14 +271,8 @@ test "deflate_dynamic_header_ranges" {
 test "deflate_concatenation_roundtrip" {
   let part_a = repeat_slice(b"AAAAABBBBB", 40)
   let part_b = make_incrementing(256)
-  let comp_a = @deflate.deflate(
-    part_a,
-    level?=Some(@deflate.DeflateLevel::Default),
-  )
-  let comp_b = @deflate.deflate(
-    part_b,
-    level?=Some(@deflate.DeflateLevel::Default),
-  )
+  let comp_a = @deflate.deflate(part_a, level=@deflate.DeflateLevel::Default)
+  let comp_b = @deflate.deflate(part_b, level=@deflate.DeflateLevel::Default)
   let dec_a = @deflate.inflate(comp_a)
   let dec_b = @deflate.inflate(comp_b)
   assert_eq(dec_a, part_a)

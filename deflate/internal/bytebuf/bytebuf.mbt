@@ -25,7 +25,7 @@ pub fn ByteBuf::length(self : ByteBuf) -> Int {
 ///|
 /// Get contents as Bytes
 pub fn ByteBuf::contents(self : ByteBuf) -> Bytes {
-  @bytes.from_fixedarray(self.buffer, len=self.length)
+  Bytes::from_array(self.buffer[0:self.length])
 }
 
 ///|

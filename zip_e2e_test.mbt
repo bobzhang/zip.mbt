@@ -737,7 +737,7 @@ test "e2e_metadata_preservation" {
 test "e2e_read_real_zip_file" {
   // Read the zip file created by external zip tool
   // This tests compatibility with real ZIP files
-  let zip_data = Bytes::from_fixedarray([
+  let zip_data = Bytes::from_array([
     // PK\x03\x04 (local file header signature)
     0x50, 0x4B, 0x03, 0x04,
     // Version needed to extract (10 = PKZIP 1.0)

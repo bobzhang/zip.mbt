@@ -7,14 +7,14 @@ package "bobzhang/zip/deflate/internal/bytebuf"
 
 // Types and methods
 type ByteBuf
-fn ByteBuf::contents(Self) -> Bytes
-fn ByteBuf::length(Self) -> Int
+pub fn ByteBuf::contents(Self) -> Bytes
+pub fn ByteBuf::length(Self) -> Int
 #as_free_fn
-fn ByteBuf::new(size_hint~ : Int, fixed? : Bool) -> Self
-fn ByteBuf::recopy(Self, Int, Int) -> Unit
-fn ByteBuf::write_byte(Self, Byte) -> Unit
-fn ByteBuf::write_bytes(Self, Bytes) -> Unit
-fn ByteBuf::write_bytesview(Self, BytesView) -> Unit
+pub fn ByteBuf::new(size_hint~ : Int, fixed? : Bool) -> Self
+pub fn ByteBuf::recopy(Self, Int, Int) -> Unit
+pub fn ByteBuf::write_byte(Self, Byte) -> Unit
+pub fn ByteBuf::write_bytes(Self, Bytes) -> Unit
+pub fn ByteBuf::write_bytesview(Self, BytesView) -> Unit
 
 // Type aliases
 

@@ -2,43 +2,46 @@
 package "bobzhang/zip/deflate/internal/huffman"
 
 // Values
-let fixed_dist_decoder : HuffmanDecoder
+pub let fixed_dist_decoder : HuffmanDecoder
 
-let fixed_dist_encoder : HuffmanEncoder
+pub let fixed_dist_encoder : HuffmanEncoder
 
-let fixed_litlen_decoder : HuffmanDecoder
+pub let fixed_litlen_decoder : HuffmanDecoder
 
-let fixed_litlen_encoder : HuffmanEncoder
+pub let fixed_litlen_encoder : HuffmanEncoder
 
-fn reverse_bits(Int, Int) -> Int
+pub fn reverse_bits(Int, Int) -> Int
 
-fn sym_info_code(Int) -> Int
+pub fn sym_info_code(SymInfo) -> Int
 
-fn sym_info_code_length(Int) -> Int
+pub fn sym_info_code_length(SymInfo) -> Int
 
-fn sym_info_make(Int, Int) -> Int
+pub fn sym_info_make(Int, Int) -> SymInfo
 
 // Errors
 
 // Types and methods
 type HuffmanDecoder
-fn HuffmanDecoder::count(Self, Int) -> Int
-fn HuffmanDecoder::counts_length(Self) -> Int
-fn HuffmanDecoder::init_from_lengths(Self, Array[Int], Int, Int) -> Unit
-fn HuffmanDecoder::max_sym(Self) -> Int
-fn HuffmanDecoder::new() -> Self
-fn HuffmanDecoder::symbol(Self, Int) -> Int
-fn HuffmanDecoder::symbols_length(Self) -> Int
+pub fn HuffmanDecoder::count(Self, Int) -> Int
+pub fn HuffmanDecoder::counts_length(Self) -> Int
+pub fn HuffmanDecoder::init_from_lengths(Self, Array[Int], Int, Int) -> Unit
+pub fn HuffmanDecoder::max_sym(Self) -> Int
+pub fn HuffmanDecoder::new() -> Self
+pub fn HuffmanDecoder::symbol(Self, Int) -> Int
+pub fn HuffmanDecoder::symbols_length(Self) -> Int
 
 type HuffmanEncoder
-fn HuffmanEncoder::codes_length(Self) -> Int
-fn HuffmanEncoder::get(Self, Int) -> Int
-fn HuffmanEncoder::max_sym(Self) -> Int
-fn HuffmanEncoder::new() -> Self
-fn HuffmanEncoder::set(Self, Int, Int) -> Unit
+pub fn HuffmanEncoder::codes_length(Self) -> Int
+pub fn HuffmanEncoder::get(Self, Int) -> SymInfo
+pub fn HuffmanEncoder::max_sym(Self) -> Int
+pub fn HuffmanEncoder::new() -> Self
+pub fn HuffmanEncoder::set(Self, Int, SymInfo) -> Unit
+
+pub struct SymInfo(Int)
+#deprecated
+pub fn SymInfo::inner(Self) -> Int
 
 // Type aliases
-pub typealias Int as SymInfo
 
 // Traits
 

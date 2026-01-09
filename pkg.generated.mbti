@@ -2,6 +2,7 @@
 package "bobzhang/zip"
 
 import(
+  "bobzhang/zip/file"
   "bobzhang/zip/member"
   "bobzhang/zip/types/fpath"
 )
@@ -12,24 +13,28 @@ import(
 
 // Types and methods
 type Archive
-fn Archive::add(Self, @member.Member) -> Unit
-fn Archive::empty() -> Self
-fn Archive::encoding_size(Self) -> Int
-fn Archive::find(Self, @fpath.Fpath) -> @member.Member?
-fn[T] Archive::fold(Self, (@member.Member, T) -> T, T) -> T
-fn Archive::is_empty(Self) -> Bool
-fn Archive::mem(Self, @fpath.Fpath) -> Bool
-fn Archive::member_count(Self) -> Int
-fn Archive::of_bytes(Bytes) -> Self raise
-fn Archive::of_map(Map[@fpath.Fpath, @member.Member]) -> Self
-fn Archive::remove(Self, @fpath.Fpath) -> Unit
-fn Archive::to_array(Self) -> Array[@member.Member]
-fn Archive::to_bytes(Self, first? : @fpath.Fpath) -> Bytes raise
-fn Archive::to_json(Self) -> Json // from trait `ToJson`
-fn Archive::to_map(Self) -> Map[@fpath.Fpath, @member.Member]
-impl ToJson for Archive
+pub fn Archive::add(Self, @member.Member) -> Unit
+pub fn Archive::empty() -> Self
+pub fn Archive::encoding_size(Self) -> Int
+pub fn Archive::find(Self, @fpath.Fpath) -> @member.Member?
+pub fn[T] Archive::fold(Self, (@member.Member, T) -> T, T) -> T
+pub fn Archive::is_empty(Self) -> Bool
+pub fn Archive::mem(Self, @fpath.Fpath) -> Bool
+pub fn Archive::member_count(Self) -> Int
+pub fn Archive::of_bytes(Bytes) -> Self raise
+pub fn Archive::of_map(Map[@fpath.Fpath, @member.Member]) -> Self
+pub fn Archive::remove(Self, @fpath.Fpath) -> Unit
+pub fn Archive::to_array(Self) -> Array[@member.Member]
+pub fn Archive::to_bytes(Self, first? : @fpath.Fpath) -> Bytes raise
+pub fn Archive::to_map(Self) -> Map[@fpath.Fpath, @member.Member]
+pub impl ToJson for Archive
 
 // Type aliases
+pub using @file {type File}
+
+pub using @fpath {type Fpath}
+
+pub using @member {type Member}
 
 // Traits
 

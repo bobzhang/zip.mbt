@@ -147,7 +147,7 @@ test "build_optimal_code_lengths_two" {
 }
 
 ///|
-test "distance_to_symbol_basic" {
+test "distance_to_symbol_ranges" {
   @json.inspect(
     (distance_to_symbol(1), distance_to_symbol(10), distance_to_symbol(32768)),
     content=[0, 6, 29],

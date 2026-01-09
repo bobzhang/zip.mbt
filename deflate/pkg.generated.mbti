@@ -1,20 +1,26 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/deflate"
 
+import(
+  "bobzhang/zip/deflate/internal/bitstream"
+  "bobzhang/zip/deflate/internal/bytebuf"
+  "bobzhang/zip/deflate/internal/huffman"
+)
+
 // Values
-fn deflate(BytesView, level? : DeflateLevel) -> Bytes raise
+pub fn deflate(BytesView, level? : DeflateLevel) -> Bytes raise
 
-fn deflate_dynamic(BytesView, Bool, Int, Int) -> Bytes
+pub fn deflate_dynamic(BytesView, Bool, Int, Int) -> Bytes
 
-fn deflate_fixed(BytesView, Bool, Int, Int) -> Bytes
+pub fn deflate_fixed(BytesView, Bool, Int, Int) -> Bytes
 
-fn deflate_stored(BytesView) -> Bytes raise
+pub fn deflate_stored(BytesView) -> Bytes raise
 
-fn inflate(BytesView, decompressed_size? : Int) -> Bytes raise
+pub fn inflate(BytesView, decompressed_size? : Int) -> Bytes raise
 
-fn zlib_compress(BytesView, level? : DeflateLevel) -> (UInt, Bytes)
+pub fn zlib_compress(BytesView, level? : DeflateLevel) -> (UInt, Bytes)
 
-fn zlib_decompress(BytesView) -> (Bytes, UInt) raise
+pub fn zlib_decompress(BytesView) -> (Bytes, UInt) raise
 
 // Errors
 
@@ -25,15 +31,17 @@ pub(all) enum DeflateLevel {
   Default
   Best
 }
-fn DeflateLevel::equal(Self, Self) -> Bool // from trait `Eq`
-#deprecated
-fn DeflateLevel::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn DeflateLevel::output(Self, &Logger) -> Unit // from trait `Show`
-fn DeflateLevel::to_string(Self) -> String // from trait `Show`
-impl Eq for DeflateLevel
-impl Show for DeflateLevel
+pub impl Eq for DeflateLevel
+pub impl Show for DeflateLevel
 
 // Type aliases
+pub using @bitstream {type BitWriter}
+
+pub using @bytebuf {type ByteBuf}
+
+pub using @huffman {type HuffmanDecoder}
+
+pub using @huffman {type HuffmanEncoder}
 
 // Traits
 

@@ -6,9 +6,9 @@ import(
 )
 
 // Values
-fn compress(BytesView, level? : @deflate.DeflateLevel) -> Bytes raise
+pub fn compress(BytesView, level? : @deflate.DeflateLevel) -> Bytes raise
 
-fn decompress(BytesView) -> Bytes raise
+pub fn decompress(BytesView) -> Bytes raise
 
 // Errors
 

@@ -2,14 +2,14 @@
 /// ZIP magic detection tests
 test "zip_magic_local_file_header" {
   // PK\x03\x04
-  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x03, 0x04, 0x00, 0x00])
+  let data = Bytes::from_array([0x50, 0x4B, 0x03, 0x04, 0x00, 0x00])
   @json.inspect(bytes_has_zip_magic(data), content=true)
 }
 
 ///|
 test "zip_magic_eocd" {
   // PK\x05\x06 (empty archive)
-  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x05, 0x06, 0x00, 0x00])
+  let data = Bytes::from_array([0x50, 0x4B, 0x05, 0x06, 0x00, 0x00])
   @json.inspect(bytes_has_zip_magic(data), content=true)
 }
 
@@ -21,7 +21,7 @@ test "zip_magic_invalid" {
 
 ///|
 test "zip_magic_too_short" {
-  let data = Bytes::from_fixedarray([0x50, 0x4B])
+  let data = Bytes::from_array([0x50, 0x4B])
   @json.inspect(bytes_has_zip_magic(data), content=false)
 }
 

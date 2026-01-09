@@ -327,7 +327,7 @@ fn extract_string(data : Bytes, start : Int, max_len : Int) -> String {
 fn parse_octal(s : String) -> Int {
   let mut value = 0
   for i = 0; i < s.length(); i = i + 1 {
-    let c = s[i]
+    let c = s[i].to_int()
     if c == 0 || c == 32 {
       break
     } // NUL or space

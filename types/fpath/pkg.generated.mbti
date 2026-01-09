@@ -6,42 +6,29 @@ import(
 )
 
 // Values
-fn ensure_directoryness(Fpath) -> Fpath
+pub fn ensure_directoryness(Fpath) -> Fpath
 
-fn ensure_unix(Fpath) -> Fpath
+pub fn ensure_unix(Fpath) -> Fpath
 
-fn sanitize(Fpath) -> Fpath
+pub fn sanitize(Fpath) -> Fpath
 
 // Errors
 
 // Types and methods
 pub(all) struct Fpath(String)
-fn Fpath::add(Self, Self) -> Self // from trait `Add`
 #alias("_[_]")
-fn Fpath::at(Self, Int) -> Int
-fn Fpath::compare(Self, Self) -> Int // from trait `Compare`
-fn Fpath::equal(Self, Self) -> Bool // from trait `Eq`
-fn Fpath::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError // from trait `@json.FromJson`
-fn Fpath::hash(Self) -> Int // from trait `Hash`
-fn Fpath::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
+pub fn Fpath::at(Self, Int) -> Int
 #deprecated
-fn Fpath::inner(Self) -> String
-fn Fpath::is_empty(Self) -> Bool
-fn Fpath::length(Self) -> Int
-#deprecated
-fn Fpath::op_add(Self, Self) -> Self // from trait `Add`
-#deprecated
-fn Fpath::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn Fpath::output(Self, &Logger) -> Unit // from trait `Show`
-fn Fpath::to_json(Self) -> Json // from trait `ToJson`
-fn Fpath::to_string(Self) -> String // from trait `Show`
-impl Add for Fpath
-impl Compare for Fpath
-impl Eq for Fpath
-impl Hash for Fpath
-impl Show for Fpath
-impl ToJson for Fpath
-impl @json.FromJson for Fpath
+pub fn Fpath::inner(Self) -> String
+pub fn Fpath::is_empty(Self) -> Bool
+pub fn Fpath::length(Self) -> Int
+pub impl Add for Fpath
+pub impl Compare for Fpath
+pub impl Eq for Fpath
+pub impl Hash for Fpath
+pub impl Show for Fpath
+pub impl ToJson for Fpath
+pub impl @json.FromJson for Fpath
 
 // Type aliases
 

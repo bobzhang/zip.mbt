@@ -7,17 +7,17 @@ import(
 )
 
 // Values
-let gp_flag_default : UInt16
+pub let gp_flag_default : UInt16
 
-let gp_flag_encrypted : UInt16
+pub let gp_flag_encrypted : UInt16
 
-let gp_flag_utf8 : UInt16
+pub let gp_flag_utf8 : UInt16
 
-let max_file_size : Int64
+pub let max_file_size : Int64
 
-let version_made_by_default : UInt16
+pub let version_made_by_default : UInt16
 
-let version_needed_default : UInt16
+pub let version_needed_default : UInt16
 
 // Errors
 
@@ -33,25 +33,26 @@ pub struct File {
   decompressed_size : Int
   decompressed_crc32 : UInt
 }
-fn File::can_extract(Self) -> Bool
-fn File::compressed_bytes(Self) -> Bytes
-fn File::compressed_bytes_to_bytes(Self) -> Bytes
-fn File::compressed_size(Self) -> Int
-fn File::compression(Self) -> @types.Compression
-fn File::decompressed_crc32(Self) -> UInt
-fn File::decompressed_size(Self) -> Int
-fn File::deflate_of_bytes(Bytes, Int, Int, level? : @deflate.DeflateLevel) -> Self raise
-fn File::gp_flags(Self) -> UInt16
-fn File::is_encrypted(Self) -> Bool
-fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, version_made_by? : UInt16, version_needed? : UInt16, gp_flags? : UInt16) -> Self raise
-fn File::start(Self) -> Int
-fn File::stored_of_bytes(Bytes, Int, Int) -> Self raise
-fn File::to_bytes(Self) -> Bytes raise
-fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt) raise
-fn File::version_made_by(Self) -> UInt16
-fn File::version_needed_to_extract(Self) -> UInt16
+pub fn File::can_extract(Self) -> Bool
+pub fn File::compressed_bytes(Self) -> Bytes
+pub fn File::compressed_bytes_to_bytes(Self) -> Bytes
+pub fn File::compressed_size(Self) -> Int
+pub fn File::compression(Self) -> @types.Compression
+pub fn File::decompressed_crc32(Self) -> UInt
+pub fn File::decompressed_size(Self) -> Int
+pub fn File::deflate_of_bytes(Bytes, Int, Int, level? : @deflate.DeflateLevel) -> Self raise
+pub fn File::gp_flags(Self) -> UInt16
+pub fn File::is_encrypted(Self) -> Bool
+pub fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, version_made_by? : UInt16, version_needed? : UInt16, gp_flags? : UInt16) -> Self raise
+pub fn File::start(Self) -> Int
+pub fn File::stored_of_bytes(Bytes, Int, Int) -> Self raise
+pub fn File::to_bytes(Self) -> Bytes raise
+pub fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt) raise
+pub fn File::version_made_by(Self) -> UInt16
+pub fn File::version_needed_to_extract(Self) -> UInt16
 
 // Type aliases
+pub using @types {type Compression}
 
 // Traits
 

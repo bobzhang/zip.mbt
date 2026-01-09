@@ -305,7 +305,7 @@ test "distance_value_table" {
 ///|
 /// File path type and utilities
 /// Re-exports from types/fpath package
-typealias @types.Fpath
+pub using @types {type Fpath}
 
 ///|
 /// Convert string to UTF-8 bytes for ZIP encoding
@@ -319,11 +319,11 @@ fn String::utf8(s : String) -> Bytes {
 // ============================================================================
 
 ///|
-typealias @file.File
+pub using @file {type File}
 
 ///|
 /// FIXME(upstream): find all references does not work
-typealias @member.Member
+pub using @member {type Member}
 
 ///|
 /// ZIP local file header (little endian) ("PK\x03\x04")

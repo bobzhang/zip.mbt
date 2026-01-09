@@ -62,7 +62,7 @@ pub fn compress(
   out[i + 5] = ((isize_u32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
   out[i + 6] = ((isize_u32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
   out[i + 7] = ((isize_u32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
-  @bytes.from_fixedarray(out, len=total)
+  Bytes::from_array(out)
 }
 
 ///|

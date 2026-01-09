@@ -1,7 +1,7 @@
 ///|
 /// Filepath type and utilities
 /// Re-exports from types/fpath package
-pub typealias @fpath.Fpath
+pub using @fpath {type Fpath}
 
 ///|
 /// Re-export: normalize separators to '/'.

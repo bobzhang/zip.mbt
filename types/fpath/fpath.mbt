@@ -19,7 +19,7 @@ pub fn Fpath::length(self : Fpath) -> Int {
 pub fn Fpath::at(self : Fpath, index : Int) -> Int {
   // FIXME(upstream): ("_[_]") + op_get 
   // would cause weird errors
-  self.0[index]
+  self.0[index].to_int()
 }
 
 ///|

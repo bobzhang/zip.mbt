@@ -2,7 +2,7 @@
 
 ///|
 test "inflate_uncompressed_block" {
-  let compressed = Bytes::from_fixedarray([
+  let compressed = Bytes::from_array([
     0b00000001, // final=1, type=00 (uncompressed)
      3, 0, // length = 3 (little-endian)
      252, 255, // ~length = 0xFFFC (complement of 3)
@@ -24,7 +24,7 @@ test "inflate_with_crc32" {
 
 ///|
 test "inflate_with_adler32" {
-  let compressed = Bytes::from_fixedarray([
+  let compressed = Bytes::from_array([
     0b00000001, 3, 0, 252, 255, 0x41, 0x42, 0x43,
   ])
   let result = @deflate.inflate(compressed)

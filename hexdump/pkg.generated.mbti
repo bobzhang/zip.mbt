@@ -2,7 +2,7 @@
 package "bobzhang/zip/hexdump"
 
 // Values
-fn hex_dump(Bytes) -> String
+pub fn hex_dump(Bytes) -> String
 
 // Errors
 

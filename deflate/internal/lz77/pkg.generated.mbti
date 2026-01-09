@@ -2,31 +2,31 @@
 package "bobzhang/zip/deflate/internal/lz77"
 
 // Values
-fn backref_dist(Int) -> Int
+pub fn backref_dist(Int) -> Int
 
-fn backref_len(Int) -> Int
+pub fn backref_len(Int) -> Int
 
-fn find_backref(BytesView, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> Int
+pub fn find_backref(BytesView, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> Int
 
-fn find_match_length(BytesView, Int, Int, Int, Int) -> Int
+pub fn find_match_length(BytesView, Int, Int, Int, Int) -> Int
 
-fn hash4(BytesView) -> Int
+pub fn hash4(BytesView) -> Int
 
-let hash_size : Int
+pub let hash_size : Int
 
-fn insert_hash(Array[Int], Array[Int], Int, Int) -> Unit
+pub fn insert_hash(Array[Int], Array[Int], Int, Int) -> Unit
 
-fn make_backref(Int, Int) -> Int
+pub fn make_backref(Int, Int) -> Int
 
-fn match_fwd(BytesView, Int, Int, Int, Int) -> Int
+pub fn match_fwd(BytesView, Int, Int, Int, Int) -> Int
 
-let max_match_len : Int
+pub let max_match_len : Int
 
-let min_match_len : Int
+pub let min_match_len : Int
 
-let no_pos : Int
+pub let no_pos : Int
 
-let window_size : Int
+pub let window_size : Int
 
 // Errors
 

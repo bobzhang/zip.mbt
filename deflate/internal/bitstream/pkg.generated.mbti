@@ -11,12 +11,12 @@ import(
 
 // Types and methods
 type BitWriter
-fn BitWriter::align_to_byte(Self) -> Unit
-fn BitWriter::flush(Self) -> Unit
-fn BitWriter::new(@bytebuf.ByteBuf) -> Self
-fn BitWriter::write_bits(Self, Int, Int) -> Unit
-fn BitWriter::write_byte(Self, Int) -> Unit
-fn BitWriter::write_uint16_le(Self, Int) -> Unit
+pub fn BitWriter::align_to_byte(Self) -> Unit
+pub fn BitWriter::flush(Self) -> Unit
+pub fn BitWriter::new(@bytebuf.ByteBuf) -> Self
+pub fn BitWriter::write_bits(Self, Int, Int) -> Unit
+pub fn BitWriter::write_byte(Self, Int) -> Unit
+pub fn BitWriter::write_uint16_le(Self, Int) -> Unit
 
 // Type aliases
 

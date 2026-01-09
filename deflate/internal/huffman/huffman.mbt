@@ -170,24 +170,24 @@ pub let fixed_dist_decoder : HuffmanDecoder = {
 /// Symbol info packs code and code length into a single Int
 /// Bits layout: code (upper bits) | code_length (lower 5 bits)
 /// This allows efficient storage and access
-pub typealias Int as SymInfo
+pub struct SymInfo(Int)
 
 ///|
 /// Create symbol info from code and code length
 pub fn sym_info_make(code : Int, code_length : Int) -> SymInfo {
-  (code << 5) | code_length
+  SymInfo((code << 5) | code_length)
 }
 
 ///|
 /// Extract code from symbol info
 pub fn sym_info_code(info : SymInfo) -> Int {
-  info >> 5
+  info.0 >> 5
 }
 
 ///|
 /// Extract code length from symbol info
 pub fn sym_info_code_length(info : SymInfo) -> Int {
-  info & 0x1F
+  info.0 & 0x1F
 }
 
 ///|

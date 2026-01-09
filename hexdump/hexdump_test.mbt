@@ -10,7 +10,7 @@ test "hex_dump_empty" {
 
 ///|
 test "hex_dump_single_byte" {
-  let data = Bytes::from_fixedarray([0x41]) // 'A'
+  let data = Bytes::from_array([0x41]) // 'A'
   let result = @hexdump.hex_dump(data)
   @json.inspect(
     result,
@@ -50,7 +50,7 @@ test "hex_dump_17_bytes" {
 
 ///|
 test "hex_dump_mixed_printable_nonprintable" {
-  let data = Bytes::from_fixedarray([
+  let data = Bytes::from_array([
     0x48, 0x65, 0x6c, 0x6c, 0x6f, // "Hello"
      0x00, 0x01, 0x02, 0x03, 0x04, // Non-printable bytes
      0x20, 0x21, 0x22, 0x23, 0x24, // Printable ASCII
@@ -66,7 +66,7 @@ test "hex_dump_mixed_printable_nonprintable" {
 ///|
 test "hex_dump_zip_magic_signature" {
   // Test with ZIP file magic signature "PK\x03\x04"
-  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x03, 0x04])
+  let data = Bytes::from_array([0x50, 0x4B, 0x03, 0x04])
   let result = @hexdump.hex_dump(data)
   @json.inspect(
     result,
@@ -77,7 +77,7 @@ test "hex_dump_zip_magic_signature" {
 ///|
 test "hex_dump_all_hex_digits" {
   // Test with all possible hex digit combinations
-  let data = Bytes::from_fixedarray([
+  let data = Bytes::from_array([
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
     0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
     0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
@@ -92,7 +92,7 @@ test "hex_dump_all_hex_digits" {
 ///|
 test "hex_dump_32_bytes_multiple_lines" {
   // Test with exactly 32 bytes to get 2 full lines
-  let data = Bytes::from_fixedarray([
+  let data = Bytes::from_array([
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d,
     0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a,
     0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
@@ -107,7 +107,7 @@ test "hex_dump_32_bytes_multiple_lines" {
 ///|
 test "hex_dump_real_zip_file_header" {
   // Test with actual ZIP file header from our test file
-  let data = Bytes::from_fixedarray([
+  let data = Bytes::from_array([
     0x50, 0x4B, 0x03, 0x04, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3D, 0x89, 0x41,
     0x5B, 0x54, 0x2A,
   ])

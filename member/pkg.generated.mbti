@@ -8,19 +8,19 @@ import(
 )
 
 // Values
-let dos_epoch : @types.Ptime
+pub let dos_epoch : @types.Ptime
 
-fn format_file_mode(@types.FileMode) -> String
+pub fn format_file_mode(@types.FileMode) -> String
 
-fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
+pub fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
 
-fn fpath_ensure_unix(@fpath.Fpath) -> @fpath.Fpath
+pub fn fpath_ensure_unix(@fpath.Fpath) -> @fpath.Fpath
 
-let max_member_count : Int
+pub let max_member_count : Int
 
-let max_path_length : Int
+pub let max_path_length : Int
 
-fn ptime_format(@types.Ptime) -> String
+pub fn ptime_format(@types.Ptime) -> String
 
 // Errors
 
@@ -31,16 +31,16 @@ pub struct Member {
   mode : @types.FileMode
   mtime : @types.Ptime
 }
-fn Member::format(Self) -> String
-fn Member::format_long(Self) -> String
-fn Member::is_dir(Self) -> Bool
-fn Member::is_file(Self) -> Bool
-fn Member::kind(Self) -> MemberKind
+pub fn Member::format(Self) -> String
+pub fn Member::format_long(Self) -> String
+pub fn Member::is_dir(Self) -> Bool
+pub fn Member::is_file(Self) -> Bool
+pub fn Member::kind(Self) -> MemberKind
 #as_free_fn
-fn Member::make(@fpath.Fpath, MemberKind, mode? : @types.FileMode, mtime? : @types.Ptime) -> Self raise
-fn Member::mode(Self) -> @types.FileMode
-fn Member::mtime(Self) -> @types.Ptime
-fn Member::path(Self) -> @fpath.Fpath
+pub fn Member::make(@fpath.Fpath, MemberKind, mode? : @types.FileMode, mtime? : @types.Ptime) -> Self raise
+pub fn Member::mode(Self) -> @types.FileMode
+pub fn Member::mtime(Self) -> @types.Ptime
+pub fn Member::path(Self) -> @fpath.Fpath
 
 pub(all) enum MemberKind {
   Dir
@@ -48,13 +48,13 @@ pub(all) enum MemberKind {
 }
 
 // Type aliases
-pub typealias @file.File as File
+pub using @file {type File}
 
-pub typealias @types.FileMode as FileMode
+pub using @types {type FileMode}
 
-pub typealias @fpath.Fpath as Fpath
+pub using @fpath {type Fpath}
 
-pub typealias @types.Ptime as Ptime
+pub using @types {type Ptime}
 
 // Traits
 
