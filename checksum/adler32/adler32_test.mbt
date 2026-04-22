@@ -12,7 +12,7 @@ test "adler32_empty" {
 test "adler32_simple" {
   let data = b"hello world"
   let adler = @adler32.bytes_adler32(data[:])
-  // Adler-32 of "hello world" should be 0x26e4023c (651924540 in decimal)
+  // Adler-32 of "hello world" should be 0x1a0b045d (436929629 in decimal)
   json_inspect(adler, content=436929629)
 }
 

@@ -12,7 +12,7 @@ test "crc32_empty" {
 test "crc32_simple" {
   let data = b"hello world"
   let crc = @crc32.bytes_crc32(data[:])
-  // CRC-32 of "hello world" should be 0x0d4a1185 (222957317 in decimal)
+  // CRC-32 of "hello world" should be 0x0d4a1185 (222957957 in decimal)
   json_inspect(crc, content=222957957)
 }
 
