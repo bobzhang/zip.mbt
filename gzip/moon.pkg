@@ -4,10 +4,11 @@ import {
   "moonbitlang/core/bytes",
 }
 
+import {
+  "bobzhang/zip/deflate",
+  "moonbitlang/core/encoding/utf8" @encoding/utf8,
+} for "test"
+
 options(
-  is_main: false,
-  test_import: [
-    "bobzhang/zip/deflate",
-    { "alias": "encoding/utf8", "path": "moonbitlang/core/encoding/utf8" },
-  ],
+  "is-main": false,
 )
