@@ -10,7 +10,7 @@ test "bitwriter_basic" {
   // Total: 8 bits = 0b11010101 = 0xD5 = 213
   writer.flush()
   let result = buf.contents()
-  @json.inspect((result.length(), result[0].to_int()), content=[1, 213])
+  json_inspect((result.length(), result[0].to_int()), content=[1, 213])
 }
 
 ///|
@@ -25,7 +25,7 @@ test "bitwriter_multi_byte" {
   writer.write_bits(0b101, 3)
   writer.flush()
   let result = buf.contents()
-  @json.inspect(
+  json_inspect(
     (
       result.length(),
       result[0].to_int(),
@@ -45,7 +45,7 @@ test "bitwriter_flush_partial" {
   writer.flush()
   let result = buf.contents()
   // Should pad with 3 zero bits: 0b00010101 = 0x15 = 21
-  @json.inspect((result.length(), result[0].to_int()), content=[1, 21])
+  json_inspect((result.length(), result[0].to_int()), content=[1, 21])
 }
 
 ///|
@@ -59,7 +59,7 @@ test "bitwriter_align_to_byte" {
   writer.flush()
   let result = buf.contents()
   // Should have: 0xFF, 0xAB (3 bits discarded)
-  @json.inspect((result.length(), result[0].to_int(), result[1].to_int()), content=[
+  json_inspect((result.length(), result[0].to_int(), result[1].to_int()), content=[
     2, 255, 171,
   ])
 }
@@ -73,7 +73,7 @@ test "bitwriter_write_byte_aligned" {
   writer.write_uint16_le(0x1234)
   writer.flush()
   let result = buf.contents()
-  @json.inspect(
+  json_inspect(
     (
       result.length(),
       result[0].to_int(),

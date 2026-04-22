@@ -9,7 +9,7 @@ test "e2e_debug_member_lookup" {
   let m = @member.make("simple.txt", File(file))
   let archive = @zip.Archive::empty()
   archive.add(m)
-  @json.inspect(archive, content={
+  json_inspect(archive, content={
     "length": 1,
     "members": [["simple.txt", "File"]],
   })
@@ -26,7 +26,7 @@ test "e2e_simple_stored_file" {
 
   // Verify we can decompress immediately
   let test_decompress = stored_file.to_bytes()
-  @json.inspect(test_decompress.length() == orig_len, content=true)
+  json_inspect(test_decompress.length() == orig_len, content=true)
 
   // Step 2: Create a member
   let m = @member.make(
@@ -38,7 +38,7 @@ test "e2e_simple_stored_file" {
   // Step 3: Create archive with single member
   let archive = @zip.Archive::empty()
   archive.add(m)
-  @json.inspect(archive, content={
+  json_inspect(archive, content={
     "length": 1,
     "members": [["test.txt", "File"]],
   })
@@ -48,7 +48,7 @@ test "e2e_simple_stored_file" {
 
   // Step 5: Decode from ZIP bytes
   let decoded_archive = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded_archive, content={
+  json_inspect(decoded_archive, content={
     "length": 1,
     "members": [["test.txt", "File"]],
   })
@@ -81,7 +81,7 @@ test "e2e_single_file_roundtrip" {
   // Step 3: Create archive and add member
   let archive = @zip.Archive::empty()
   archive.add(m)
-  @json.inspect(archive, content={
+  json_inspect(archive, content={
     "length": 1,
     "members": [["test.txt", "File"]],
   })
@@ -91,7 +91,7 @@ test "e2e_single_file_roundtrip" {
 
   // Step 5: Decode from ZIP bytes
   let decoded_archive = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded_archive, content={
+  json_inspect(decoded_archive, content={
     "length": 1,
     "members": [["test.txt", "File"]],
   })
@@ -138,7 +138,7 @@ test "e2e_multiple_files_with_compression_levels" {
   archive.add(m1)
   archive.add(m2)
   archive.add(m3)
-  @json.inspect(archive, content={
+  json_inspect(archive, content={
     "length": 3,
     "members": [
       ["text.txt", "File"],
@@ -154,7 +154,7 @@ test "e2e_multiple_files_with_compression_levels" {
 
   // Decode from ZIP
   let decoded = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 3,
     "members": [
       ["text.txt", "File"],
@@ -219,7 +219,7 @@ test "e2e_directory_structure_with_files" {
   archive.add(readme_m)
   archive.add(config_m)
   archive.add(code_m)
-  @json.inspect(archive, content={
+  json_inspect(archive, content={
     "length": 5,
     "members": [
       ["project/", "Dir"],
@@ -235,7 +235,7 @@ test "e2e_directory_structure_with_files" {
 
   // Decode from ZIP
   let decoded = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 5,
     "members": [
       ["project/", "Dir"],
@@ -281,7 +281,7 @@ test "e2e_large_file_compression" {
   }
   let large_data = Bytes::from_array(large_data_array)
   let original_size = large_data.length()
-  @json.inspect(original_size > 10000, content=true)
+  json_inspect(original_size > 10000, content=true)
 
   // Compress with default level
   let compressed_file = @file.File::deflate_of_bytes(
@@ -293,7 +293,7 @@ test "e2e_large_file_compression" {
   // Verify compression ratio
   let compressed_size = compressed_file.compressed_size()
   let ratio = compressed_size * 100 / original_size
-  @json.inspect(ratio < 80, content=true) // Should achieve at least 20% compression
+  json_inspect(ratio < 80, content=true) // Should achieve at least 20% compression
 
   // Create member and archive
   let m = @member.make(
@@ -471,7 +471,7 @@ test "e2e_archive_iteration" {
   let decoded = @zip.Archive::of_bytes(zip_bytes)
 
   // Verify structure
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 3,
     "members": [
       ["file1.txt", "File"],
@@ -531,7 +531,7 @@ test "e2e_simple_stored_zip" {
 
   // Verify we can read it back
   let decoded = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 1,
     "members": [["hello.txt", "File"]],
   })
@@ -560,7 +560,7 @@ test "e2e_zip_structure_verification" {
     (zip_bytes[1].to_int() << 8) |
     (zip_bytes[2].to_int() << 16) |
     (zip_bytes[3].to_int() << 24)
-  @json.inspect(local_sig, content=67324752) // 0x04034b50
+  json_inspect(local_sig, content=67324752) // 0x04034b50
 
   // Find EOCD signature at end (0x06054b50 = "PK\x05\x06")
   let len = zip_bytes.length()
@@ -568,7 +568,7 @@ test "e2e_zip_structure_verification" {
     (zip_bytes[len - 21].to_int() << 8) |
     (zip_bytes[len - 20].to_int() << 16) |
     (zip_bytes[len - 19].to_int() << 24)
-  @json.inspect(eocd_sig, content=101010256) // 0x06054b50
+  json_inspect(eocd_sig, content=101010256) // 0x06054b50
 }
 
 ///|
@@ -603,7 +603,7 @@ test "e2e_multi_file_deterministic" {
 
   // Verify roundtrip
   let decoded = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 3,
     "members": [["a.txt", "File"], ["b.txt", "File"], ["c.txt", "File"]],
   })
@@ -622,11 +622,11 @@ test "e2e_deflate_compatibility" {
   let file = @file.File::deflate_of_bytes(original, 0, original.length())
 
   // Verify it's marked as deflate
-  @json.inspect(file.compression() is Deflate, content=true)
+  json_inspect(file.compression() is Deflate, content=true)
 
   // Verify decompression works
   let decompressed = file.to_bytes()
-  @json.inspect(decompressed == original, content=true)
+  json_inspect(decompressed == original, content=true)
 
   // Verify in a ZIP archive
   let m = @member.make("data.bin", File(file))
@@ -649,18 +649,18 @@ test "e2e_empty_archive_exact_format" {
   // Empty archive should be exactly 22 bytes (EOCD only)
   let archive = @zip.Archive::empty()
   let zip_bytes = archive.to_bytes()
-  @json.inspect(zip_bytes.length(), content=22)
+  json_inspect(zip_bytes.length(), content=22)
 
   // Should start with EOCD signature
   let sig = zip_bytes[0].to_int() |
     (zip_bytes[1].to_int() << 8) |
     (zip_bytes[2].to_int() << 16) |
     (zip_bytes[3].to_int() << 24)
-  @json.inspect(sig, content=101010256) // PK\x05\x06
+  json_inspect(sig, content=101010256) // PK\x05\x06
 
   // Entry count should be 0
   let entry_count = zip_bytes[8].to_int() | (zip_bytes[9].to_int() << 8)
-  @json.inspect(entry_count, content=0)
+  json_inspect(entry_count, content=0)
 }
 
 ///|
@@ -687,7 +687,7 @@ test "e2e_directory_in_zip" {
 
   // Verify structure
   let decoded = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 2,
     "members": [["docs/", "Dir"], ["docs/README.md", "File"]],
   })
@@ -702,7 +702,7 @@ test "e2e_directory_in_zip" {
   }
   guard found.kind() is File(f) else { fail("docs/README.md should be a file") }
   let data = f.to_bytes()
-  @json.inspect(data == file_data, content=true)
+  json_inspect(data == file_data, content=true)
 }
 
 ///|
@@ -726,7 +726,7 @@ test "e2e_metadata_preservation" {
     fail("should find executable.sh")
   }
   // Mode and mtime should be preserved
-  @json.inspect((found.mode(), found.mtime()), content=[
+  json_inspect((found.mode(), found.mtime()), content=[
     ["FileMode", 493],
     ["Ptime", 315619200],
   ])
@@ -737,7 +737,7 @@ test "e2e_metadata_preservation" {
 test "e2e_read_real_zip_file" {
   // Read the zip file created by external zip tool
   // This tests compatibility with real ZIP files
-  let zip_data = Bytes::from_fixedarray([
+  let zip_data = Bytes::from_array([
     // PK\x03\x04 (local file header signature)
     0x50, 0x4B, 0x03, 0x04,
     // Version needed to extract (10 = PKZIP 1.0)
@@ -881,7 +881,7 @@ test "e2e_read_real_zip_file" {
   ])
   let archive = @zip.Archive::of_bytes(zip_data)
   // Verify archive structure
-  @json.inspect(archive.member_count(), content=2)
+  json_inspect(archive.member_count(), content=2)
 
   // Verify first file
   guard archive.find("ziptest/a.txt") is Some(m) else {
@@ -889,7 +889,7 @@ test "e2e_read_real_zip_file" {
   }
   guard m.kind() is File(file) else { fail("ziptest/a.txt should be a file") }
   let content = file.to_bytes()
-  @json.inspect(content == b"this is a.txt", content=true)
+  json_inspect(content == b"this is a.txt", content=true)
 
   // Verify second file
   guard archive.find("ziptest/b.txt") is Some(m) else {
@@ -897,7 +897,7 @@ test "e2e_read_real_zip_file" {
   }
   guard m.kind() is File(file) else { fail("ziptest/b.txt should be a file") }
   let content = file.to_bytes()
-  @json.inspect(content == b"this is b.txt", content=true)
+  json_inspect(content == b"this is b.txt", content=true)
 }
 
 ///|
@@ -913,11 +913,11 @@ test "e2e_create_and_read_ziptest_equivalent" {
   let zip_bytes = archive.to_bytes()
 
   // Verify it has ZIP magic
-  // @json.inspect(bytes_has_zip_magic(zip_bytes), content=true)
+  // json_inspect(bytes_has_zip_magic(zip_bytes), content=true)
 
   // Read it back and verify contents
   let decoded = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded.member_count(), content=2)
+  json_inspect(decoded.member_count(), content=2)
 
   // Verify both files exist and have correct content
   guard decoded.find("ziptest/a.txt") is Some(m) else {
@@ -925,13 +925,13 @@ test "e2e_create_and_read_ziptest_equivalent" {
   }
   guard m.kind() is File(file) else { fail("ziptest/a.txt should be a file") }
   let content = file.to_bytes()
-  @json.inspect(content == b"this is a.txt", content=true)
+  json_inspect(content == b"this is a.txt", content=true)
   guard decoded.find("ziptest/b.txt") is Some(m) else {
     fail("should find ziptest/b.txt")
   }
   guard m.kind() is File(file) else { fail("ziptest/b.txt should be a file") }
   let content = file.to_bytes()
-  @json.inspect(content == b"this is b.txt", content=true)
+  json_inspect(content == b"this is b.txt", content=true)
 }
 
 ///|
@@ -946,7 +946,7 @@ test "e2e_ziptest_roundtrip_compatibility" {
   archive.add(member2)
   let zip_bytes = archive.to_bytes()
   // FIXME:(upstream) use mulitple line instead
-  @json.inspect(@hexdump.hex_dump(zip_bytes).split("\n").to_array(), content=[
+  json_inspect(@hexdump.hex_dump(zip_bytes).split("\n").to_array(), content=[
     "00000000  50 4b 03 04 14 00 00 08  00 00 00 00 21 00 54 2a   |PK..........!.T*|",
     "00000010  30 fd 0d 00 00 00 0d 00  00 00 0d 00 00 00 7a 69   |0.............zi|",
     "00000020  70 74 65 73 74 2f 61 2e  74 78 74 74 68 69 73 20   |ptest/a.txtthis |",
@@ -971,7 +971,7 @@ test "e2e_ziptest_roundtrip_compatibility" {
     (zip_bytes[1].to_int() << 8) |
     (zip_bytes[2].to_int() << 16) |
     (zip_bytes[3].to_int() << 24)
-  @json.inspect(local_sig, content=67324752) // 0x04034b50
+  json_inspect(local_sig, content=67324752) // 0x04034b50
 
   // Check EOCD signature at end
   let len = zip_bytes.length()
@@ -979,9 +979,9 @@ test "e2e_ziptest_roundtrip_compatibility" {
     (zip_bytes[len - 21].to_int() << 8) |
     (zip_bytes[len - 20].to_int() << 16) |
     (zip_bytes[len - 19].to_int() << 24)
-  @json.inspect(eocd_sig, content=101010256) // 0x06054b50
+  json_inspect(eocd_sig, content=101010256) // 0x06054b50
 
   // Verify we can read our own output
   let decoded = @zip.Archive::of_bytes(zip_bytes)
-  @json.inspect(decoded.member_count(), content=2)
+  json_inspect(decoded.member_count(), content=2)
 }

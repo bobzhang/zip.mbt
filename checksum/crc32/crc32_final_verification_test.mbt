@@ -23,7 +23,7 @@ test "crc32_complete_python_verification" {
   let crc5 = @crc32.bytes_crc32(b"123456789"[0:9])
 
   // Verify all match Python exactly
-  @json.inspect([crc0, crc1, crc2, crc3, crc4, crc5], content=[
+  json_inspect([crc0, crc1, crc2, crc3, crc4, crc5], content=[
     0, 3904355907, 891568578, 907060870, 222957957, 3421780262,
   ])
 }
@@ -40,7 +40,7 @@ test "crc32_implementation_details" {
   // Python: zlib.crc32(b"\x00") = 0xd202ef8d (3523407757)
   // Python: zlib.crc32(b"\x01") = 0xa505df1b (2768625435) 
   // Python: zlib.crc32(b"\x02") = 0x3c0c8ea1 (1007455905)
-  @json.inspect([crc_0, crc_1, crc_2], content=[
+  json_inspect([crc_0, crc_1, crc_2], content=[
     3523407757, 2768625435, 1007455905,
   ])
 }
@@ -53,7 +53,7 @@ test "crc32_state_consistency" {
   let also_empty = @crc32.bytes_crc32(b""[:])
 
   // Both should give the same result (0)
-  @json.inspect((empty_result, also_empty, empty_result == also_empty), content=[
+  json_inspect((empty_result, also_empty, empty_result == also_empty), content=[
     0, 0, true,
   ])
 }
@@ -79,7 +79,7 @@ test "crc32_incremental_equivalence" {
     incr2 = incr2.update_byte(test_string[i].to_int())
   }
   let incr2_final = incr2.update_bytes(test_string[5:len]).finish()
-  @json.inspect(
+  json_inspect(
     (direct, incr1, incr2_final, direct == incr1 && incr1 == incr2_final),
     content=[1700084974, 1700084974, 1700084974, true],
   )

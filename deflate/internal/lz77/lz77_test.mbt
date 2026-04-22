@@ -8,7 +8,7 @@ test "hash4_basic" {
 
   // Hash should be in valid range [0, 32767]
   let valid = hash >= 0 && hash < 32768
-  @json.inspect(valid, content=true)
+  json_inspect(valid, content=true)
 }
 
 ///|
@@ -19,7 +19,7 @@ test "hash4_same_string_same_hash" {
   // Same 4 bytes should produce same hash
   let hash1 = @lz77.hash4(data1[0:4]) // "hell"
   let hash2 = @lz77.hash4(data2[1:5]) // "hell"
-  @json.inspect(hash1 == hash2, content=true)
+  json_inspect(hash1 == hash2, content=true)
 }
 
 ///|
@@ -30,7 +30,7 @@ test "hash4_different_string_likely_different_hash" {
 
   // Different strings should (usually) have different hashes
   // Not guaranteed but very likely with good hash function
-  @json.inspect(hash1 != hash2, content=true)
+  json_inspect(hash1 != hash2, content=true)
 }
 
 ///|
@@ -40,7 +40,7 @@ test "insert_hash_basic" {
 
   // Insert position 100 at hash 42
   @lz77.insert_hash(hash_head, hash_prev, 42, 100)
-  @json.inspect((hash_head[42], hash_prev[100 % 32768]), content=[100, -1])
+  json_inspect((hash_head[42], hash_prev[100 % 32768]), content=[100, -1])
 }
 
 ///|
@@ -54,7 +54,7 @@ test "insert_hash_chain" {
   @lz77.insert_hash(hash_head, hash_prev, 42, 300)
 
   // Should create a chain: 300 -> 200 -> 100 -> -1
-  @json.inspect(
+  json_inspect(
     (
       hash_head[42],
       hash_prev[300 % 32768],
@@ -71,7 +71,7 @@ test "match_fwd_identical" {
 
   // Match from position 0 ("hello") with position 12 ("hello")
   let len = @lz77.match_fwd(data, 0, 12, 0, 10)
-  @json.inspect(len, content=5) // "hello" = 5 chars
+  json_inspect(len, content=5) // "hello" = 5 chars
 }
 
 ///|
@@ -80,7 +80,7 @@ test "match_fwd_partial" {
 
   // Match from position 0 ("hello") with position 12 ("help")
   let len = @lz77.match_fwd(data, 0, 12, 0, 10)
-  @json.inspect(len, content=3) // "hel" = 3 chars
+  json_inspect(len, content=3) // "hel" = 3 chars
 }
 
 ///|
@@ -94,7 +94,7 @@ test "match_fwd_max_limit" {
 
   // Match should stop at max_match_len even if more matches exist
   let len = @lz77.match_fwd(data, 0, 1, 0, 10)
-  @json.inspect(len, content=10) // Limited to max_match_len
+  json_inspect(len, content=10) // Limited to max_match_len
 }
 
 ///|
@@ -105,7 +105,7 @@ test "find_match_length_basic" {
   let len = @lz77.find_match_length(data, 0, 12, 2, 20)
 
   // Should find full match "hello world" = 11 characters
-  @json.inspect(len, content=11)
+  json_inspect(len, content=11)
 }
 
 ///|
@@ -116,14 +116,14 @@ test "find_match_length_requires_longer" {
   // prev_match_len = 3, but match is only 3 chars
   // Should return 0 because we need STRICTLY longer than prev_match_len
   let len = @lz77.find_match_length(data, 0, 7, 3, 10)
-  @json.inspect(len, content=0)
+  json_inspect(len, content=0)
 }
 
 ///|
 test "backref_packing" {
   // Test backref encoding/decoding
   let bref = @lz77.make_backref(100, 5)
-  @json.inspect((@lz77.backref_dist(bref), @lz77.backref_len(bref)), content=[
+  json_inspect((@lz77.backref_dist(bref), @lz77.backref_len(bref)), content=[
     100, 5,
   ])
 }
@@ -132,7 +132,7 @@ test "backref_packing" {
 test "backref_large_values" {
   // Test with larger distance and length
   let bref = @lz77.make_backref(32768, 258)
-  @json.inspect((@lz77.backref_dist(bref), @lz77.backref_len(bref)), content=[
+  json_inspect((@lz77.backref_dist(bref), @lz77.backref_len(bref)), content=[
     32768, 258,
   ])
 }
@@ -161,7 +161,7 @@ test "find_backref_basic" {
   )
 
   // Should find match: distance=12, length=5 ("hello")
-  @json.inspect((@lz77.backref_dist(bref), @lz77.backref_len(bref)), content=[
+  json_inspect((@lz77.backref_dist(bref), @lz77.backref_len(bref)), content=[
     12, 5,
   ])
 }
@@ -181,7 +181,7 @@ test "find_backref_no_match" {
   let bref = @lz77.find_backref(
     data, hash_head, hash_prev, 6, hash6, 0, 10, 4, 4096,
   )
-  @json.inspect(bref, content=0) // No match
+  json_inspect(bref, content=0) // No match
 }
 
 ///|
@@ -202,5 +202,5 @@ test "find_backref_requires_min_length" {
   )
 
   // Should find no match because only 2 bytes match (< min 3)
-  @json.inspect(bref, content=0)
+  json_inspect(bref, content=0)
 }

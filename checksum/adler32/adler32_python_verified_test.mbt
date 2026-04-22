@@ -6,7 +6,7 @@
 test "adler32_empty_python_verified" {
   let adler = @adler32.bytes_adler32(b""[:])
   // Python: zlib.adler32(b"") = 0x00000001 (1)
-  @json.inspect(adler, content=1)
+  json_inspect(adler, content=1)
 }
 
 ///|
@@ -15,7 +15,7 @@ test "adler32_single_a_python_verified" {
   let data = b"a"
   let adler = @adler32.bytes_adler32(data[:])
   // Python: zlib.adler32(b"a") = 0x00620062 (6422626)
-  @json.inspect(adler, content=6422626)
+  json_inspect(adler, content=6422626)
 }
 
 ///|
@@ -24,7 +24,7 @@ test "adler32_single_x_python_verified" {
   let data = b"x"
   let adler = @adler32.bytes_adler32(data[:])
   // Python: zlib.adler32(b"x") = 0x00790079 (7929977)
-  @json.inspect(adler, content=7929977)
+  json_inspect(adler, content=7929977)
 }
 
 ///|
@@ -33,7 +33,7 @@ test "adler32_abc_python_verified" {
   let data = b"abc"
   let adler = @adler32.bytes_adler32(data[:])
   // Python: zlib.adler32(b"abc") = 0x024d0127 (38600999)
-  @json.inspect(adler, content=38600999)
+  json_inspect(adler, content=38600999)
 }
 
 ///|
@@ -42,7 +42,7 @@ test "adler32_hello_python_verified" {
   let data = b"hello"
   let adler = @adler32.bytes_adler32(data[:])
   // Python: zlib.adler32(b"hello") = 0x062c0215 (103547413)
-  @json.inspect(adler, content=103547413)
+  json_inspect(adler, content=103547413)
 }
 
 ///|
@@ -51,7 +51,7 @@ test "adler32_hello_world_python_verified" {
   let data = b"hello world"
   let adler = @adler32.bytes_adler32(data[:])
   // Python: zlib.adler32(b"hello world") = 0x1a0b045d (436929629)
-  @json.inspect(adler, content=436929629)
+  json_inspect(adler, content=436929629)
 }
 
 ///|
@@ -60,7 +60,7 @@ test "adler32_numbers_python_verified" {
   let data = b"123456789"
   let adler = @adler32.bytes_adler32(data[:])
   // Python: zlib.adler32(b"123456789") = 0x091e01de (152961502)
-  @json.inspect(adler, content=152961502)
+  json_inspect(adler, content=152961502)
 }
 
 ///|
@@ -69,7 +69,7 @@ test "adler32_quick_fox_python_verified" {
   let data = b"The quick brown fox jumps over the lazy dog"
   let adler = @adler32.bytes_adler32(data[:])
   // Python: zlib.adler32(b"The quick brown fox jumps over the lazy dog") = 0x5bdc0fda (1541148634)
-  @json.inspect(adler, content=1541148634)
+  json_inspect(adler, content=1541148634)
 }
 
 ///|
@@ -87,7 +87,7 @@ test "adler32_incremental_hello_world_python_verified" {
   let adler_direct = @adler32.bytes_adler32(data[:])
 
   // Both should match Python's result: 0x1a0b045d (436929629)
-  @json.inspect(
+  json_inspect(
     (adler_incremental, adler_direct, adler_incremental == adler_direct),
     content=[436929629, 436929629, true],
   )
@@ -108,7 +108,7 @@ test "adler32_incremental_abc_python_verified" {
   let adler_direct = @adler32.bytes_adler32(data[:])
 
   // Both should match Python's result: 0x024d0127 (38600999)
-  @json.inspect(
+  json_inspect(
     (adler_incremental, adler_direct, adler_incremental == adler_direct),
     content=[38600999, 38600999, true],
   )
@@ -120,7 +120,7 @@ test "adler32_binary_data_python_verified" {
   let data = b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
   let adler = @adler32.bytes_adler32(data[:])
   // Python: zlib.adler32(bytes([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15])) = 0x02b80079 (45613177)
-  @json.inspect(adler, content=45613177)
+  json_inspect(adler, content=45613177)
 }
 
 ///|
@@ -136,7 +136,7 @@ test "adler32_partial_data_python_verified" {
   let adler_world = @adler32.bytes_adler32(data[6:11])
   // Python: zlib.adler32(b"world") = 0x06a60229 (111542825)
 
-  @json.inspect((adler_hello, adler_world), content=[103547413, 111542825])
+  json_inspect((adler_hello, adler_world), content=[103547413, 111542825])
 }
 
 ///|
@@ -144,12 +144,12 @@ test "adler32_partial_data_python_verified" {
 test "adler32_init_finish_python_verified" {
   // Empty computation should give 1
   let adler_empty = @adler32.Adler32::init().finish()
-  @json.inspect(adler_empty, content=1)
+  json_inspect(adler_empty, content=1)
 
   // Single byte computation matches manual calculation
   let adler_a = @adler32.Adler32::init().update_bytes(b"a"[0:1]).finish()
   // Python: zlib.adler32(b"a") = 0x00620062 (6422626)
-  @json.inspect(adler_a, content=6422626)
+  json_inspect(adler_a, content=6422626)
 }
 
 ///|
@@ -163,7 +163,7 @@ test "adler32_large_repeated_python_verified" {
   let result = adler.finish()
 
   // Python: zlib.adler32(b"A" * 100) = 0x02e91965 (48830821)
-  @json.inspect(result, content=48830821)
+  json_inspect(result, content=48830821)
 }
 
 ///|
@@ -181,7 +181,7 @@ test "adler32_edge_cases_python_verified" {
   // zlib.adler32(b"ello") = 0x042301ad (69403053)
   // zlib.adler32(b" world") = 0x07670249 (124191305)
 
-  @json.inspect((adler_hell, adler_ello, adler_space_world), content=[
+  json_inspect((adler_hell, adler_ello, adler_space_world), content=[
     68616614, 69403053, 124191305,
   ])
 }

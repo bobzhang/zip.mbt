@@ -2,27 +2,27 @@
 /// ZIP magic detection tests
 test "zip_magic_local_file_header" {
   // PK\x03\x04
-  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x03, 0x04, 0x00, 0x00])
-  @json.inspect(bytes_has_zip_magic(data), content=true)
+  let data = Bytes::from_array([0x50, 0x4B, 0x03, 0x04, 0x00, 0x00])
+  json_inspect(bytes_has_zip_magic(data), content=true)
 }
 
 ///|
 test "zip_magic_eocd" {
   // PK\x05\x06 (empty archive)
-  let data = Bytes::from_fixedarray([0x50, 0x4B, 0x05, 0x06, 0x00, 0x00])
-  @json.inspect(bytes_has_zip_magic(data), content=true)
+  let data = Bytes::from_array([0x50, 0x4B, 0x05, 0x06, 0x00, 0x00])
+  json_inspect(bytes_has_zip_magic(data), content=true)
 }
 
 ///|
 test "zip_magic_invalid" {
   let data = b"not a zip file"
-  @json.inspect(bytes_has_zip_magic(data), content=false)
+  json_inspect(bytes_has_zip_magic(data), content=false)
 }
 
 ///|
 test "zip_magic_too_short" {
-  let data = Bytes::from_fixedarray([0x50, 0x4B])
-  @json.inspect(bytes_has_zip_magic(data), content=false)
+  let data = Bytes::from_array([0x50, 0x4B])
+  json_inspect(bytes_has_zip_magic(data), content=false)
 }
 
 ///|
@@ -30,7 +30,7 @@ test "archive_to_bytes_empty" {
   let archive = Archive::empty()
   let bytes = archive.to_bytes()
   // Empty archive: just EOCD (22 bytes)
-  @json.inspect((bytes.length(), bytes_has_zip_magic(bytes)), content=[22, true])
+  json_inspect((bytes.length(), bytes_has_zip_magic(bytes)), content=[22, true])
 }
 
 ///|
@@ -41,7 +41,7 @@ test "archive_to_bytes_single_file" {
   let archive = Archive::empty()
   archive.add(m)
   let bytes = archive.to_bytes()
-  @json.inspect((bytes.length() > 0, bytes_has_zip_magic(bytes)), content=[
+  json_inspect((bytes.length() > 0, bytes_has_zip_magic(bytes)), content=[
     true, true,
   ])
 }
@@ -52,7 +52,7 @@ test "archive_to_bytes_directory" {
   let archive = Archive::empty()
   archive.add(m)
   let bytes = archive.to_bytes()
-  @json.inspect(bytes_has_zip_magic(bytes), content=true)
+  json_inspect(bytes_has_zip_magic(bytes), content=true)
 }
 
 ///|
@@ -67,7 +67,7 @@ test "archive_to_bytes_multiple_files" {
   archive.add(m1)
   archive.add(m2)
   let bytes = archive.to_bytes()
-  @json.inspect(
+  json_inspect(
     (
       bytes.length() > 100,
       // 2 files

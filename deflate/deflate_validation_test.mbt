@@ -203,23 +203,23 @@ test "deflate_roundtrip_parameter_matrix" {
       let decoded = @deflate.inflate(compressed)
       assert_eq(decoded, input)
       let meta = inspect_first_block(compressed)
-      @json.inspect(meta.is_final, content=true)
+      json_inspect(meta.is_final, content=true)
       match level {
         Some(@deflate.DeflateLevel::None) => {
-          @json.inspect(meta.block_type, content=0)
-          @json.inspect(meta.stored_len == input.length(), content=true)
+          json_inspect(meta.block_type, content=0)
+          json_inspect(meta.stored_len == input.length(), content=true)
         }
         Some(@deflate.DeflateLevel::Fast) =>
-          @json.inspect(meta.block_type, content=1)
+          json_inspect(meta.block_type, content=1)
         Some(@deflate.DeflateLevel::Default) =>
           if input.length() >= 512 {
-            @json.inspect(meta.block_type, content=2)
-            @json.inspect(meta.hlit >= 257 && meta.hlit <= 286, content=true)
+            json_inspect(meta.block_type, content=2)
+            json_inspect(meta.hlit >= 257 && meta.hlit <= 286, content=true)
           }
         Some(@deflate.DeflateLevel::Best) =>
           if input.length() >= 512 {
-            @json.inspect(meta.block_type, content=2)
-            @json.inspect(meta.hdist >= 1 && meta.hdist <= 30, content=true)
+            json_inspect(meta.block_type, content=2)
+            json_inspect(meta.hdist >= 1 && meta.hdist <= 30, content=true)
           }
         None => ()
       }
@@ -227,8 +227,8 @@ test "deflate_roundtrip_parameter_matrix" {
       attempted = attempted + 1
     }
   }
-  @json.inspect(success_pairs == attempted, content=true)
-  @json.inspect(success_pairs > 0, content=true)
+  json_inspect(success_pairs == attempted, content=true)
+  json_inspect(success_pairs > 0, content=true)
 }
 
 ///|
@@ -244,8 +244,8 @@ test "deflate_fixed_deterministic" {
   let decoded = @deflate.inflate(first)
   assert_eq(decoded, data)
   let meta = inspect_first_block(first)
-  @json.inspect(meta.block_type, content=1)
-  @json.inspect(meta.is_final, content=true)
+  json_inspect(meta.block_type, content=1)
+  json_inspect(meta.is_final, content=true)
 }
 
 ///|
@@ -263,10 +263,10 @@ test "deflate_dynamic_header_ranges" {
   let decoded = @deflate.inflate(compressed)
   assert_eq(decoded, data)
   let meta = inspect_first_block(compressed)
-  @json.inspect(meta.block_type, content=2)
-  @json.inspect(meta.hlit >= 257 && meta.hlit <= 286, content=true)
-  @json.inspect(meta.hdist >= 1 && meta.hdist <= 30, content=true)
-  @json.inspect(meta.hclen >= 4 && meta.hclen <= 19, content=true)
+  json_inspect(meta.block_type, content=2)
+  json_inspect(meta.hlit >= 257 && meta.hlit <= 286, content=true)
+  json_inspect(meta.hdist >= 1 && meta.hdist <= 30, content=true)
+  json_inspect(meta.hclen >= 4 && meta.hclen <= 19, content=true)
 }
 
 ///|
@@ -301,8 +301,8 @@ test "deflate_concatenation_roundtrip" {
   assert_eq(merged_decoded, combined)
   let meta_a = inspect_first_block(comp_a)
   let meta_b = inspect_first_block(comp_b)
-  @json.inspect(meta_a.block_type, content=2)
-  @json.inspect(meta_b.block_type, content=2)
-  @json.inspect(meta_a.is_final, content=true)
-  @json.inspect(meta_b.is_final, content=true)
+  json_inspect(meta_a.block_type, content=2)
+  json_inspect(meta_b.block_type, content=2)
+  json_inspect(meta_a.is_final, content=true)
+  json_inspect(meta_b.is_final, content=true)
 }

@@ -2,7 +2,7 @@
 /// ByteBuf tests
 test "bytebuf_creation" {
   let buf = @bytebuf.new(size_hint=10)
-  @json.inspect(buf.length(), content=0)
+  json_inspect(buf.length(), content=0)
 }
 
 ///|
@@ -11,7 +11,7 @@ test "bytebuf_add_byte" {
   buf.write_byte(0x41) // 'A'
   buf.write_byte(0x42) // 'B'
   let result = buf.contents()
-  @json.inspect((buf.length(), result[0].to_int(), result[1].to_int()), content=[
+  json_inspect((buf.length(), result[0].to_int(), result[1].to_int()), content=[
     2, 65, 66,
   ])
 }
@@ -23,7 +23,7 @@ test "bytebuf_grow" {
   buf.write_byte(0x42)
   buf.write_byte(0x43) // Should trigger grow
   // Buffer should have grown
-  @json.inspect(buf.length(), content=3)
+  json_inspect(buf.length(), content=3)
 }
 
 ///|
@@ -35,7 +35,7 @@ test "bytebuf_recopy" {
   // Copy bytes 0-1 (AB) to the end
   buf.recopy(0, 2)
   let result = buf.contents()
-  @json.inspect(
+  json_inspect(
     (
       buf.length(),
       result[0].to_int(),
@@ -57,7 +57,7 @@ test "bytebuf_recopy_overlapping" {
   buf.recopy(0, 5)
   let result = buf.contents()
   // Should produce "AAAAAA" (6 total A's)
-  @json.inspect(
+  json_inspect(
     (
       buf.length(),
       result[0].to_int(),

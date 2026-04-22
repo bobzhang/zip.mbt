@@ -174,11 +174,11 @@ let length_value_of_sym_table : Array[Int] = [
 test "length_value_table" {
   // Test a few entries from the length value table
   // Symbol 257 -> length 3, 0 extra bits
-  @json.inspect(length_value_of_sym_table[0], content=48) // 3 << 4
+  json_inspect(length_value_of_sym_table[0], content=48) // 3 << 4
   // Symbol 265 -> length 11, 1 extra bit
-  @json.inspect(length_value_of_sym_table[8], content=177) // (11 << 4) | 1
+  json_inspect(length_value_of_sym_table[8], content=177) // (11 << 4) | 1
   // Symbol 285 -> length 258, 0 extra bits
-  @json.inspect(length_value_of_sym_table[28], content=4128) // 258 << 4
+  json_inspect(length_value_of_sym_table[28], content=4128) // 258 << 4
 }
 
 ///|
@@ -257,11 +257,11 @@ let dist_value_of_sym : Array[Int] = [
 test "distance_value_table" {
   // Test a few entries from the distance value table
   // Symbol 0 -> distance 1, 0 extra bits
-  @json.inspect(dist_value_of_sym[0], content=16) // 1 << 4
+  json_inspect(dist_value_of_sym[0], content=16) // 1 << 4
   // Symbol 4 -> distance 5, 1 extra bit
-  @json.inspect(dist_value_of_sym[4], content=81) // (5 << 4) | 1
+  json_inspect(dist_value_of_sym[4], content=81) // (5 << 4) | 1
   // Symbol 29 -> distance 24577, 13 extra bits
-  @json.inspect(dist_value_of_sym[29], content=393245) // (24577 << 4) | 13
+  json_inspect(dist_value_of_sym[29], content=393245) // (24577 << 4) | 13
 }
 
 // Code length symbols

@@ -4,7 +4,7 @@
 /// Archive tests
 test "archive_empty" {
   let archive = @zip.Archive::empty()
-  @json.inspect((archive.is_empty(), archive.member_count()), content=[true, 0])
+  json_inspect((archive.is_empty(), archive.member_count()), content=[true, 0])
 }
 
 ///|
@@ -16,7 +16,7 @@ test "archive_add_and_find" {
   let archive = @zip.Archive::empty()
   archive.add(m1)
   archive.add(m2)
-  @json.inspect(
+  json_inspect(
     (
       archive.is_empty(),
       archive.member_count(),
@@ -50,7 +50,7 @@ test "archive_remove" {
   archive.add(m1)
   archive.add(m2)
   archive.remove("file1.txt")
-  @json.inspect(
+  json_inspect(
     (archive.member_count(), archive.mem("file1.txt"), archive.mem("file2.txt")),
     content=[1, false, true],
   )
@@ -69,7 +69,7 @@ test "archive_replace_member" {
   archive.add(m2)
 
   // Should have only one member (replaced)
-  @json.inspect(archive.member_count(), content=1)
+  json_inspect(archive.member_count(), content=1)
   guard archive.find("test.txt") is Some(found) else {
     fail("Member not found")
   }
@@ -98,7 +98,7 @@ test "archive_fold" {
     },
     "",
   )
-  @json.inspect(paths, content="b.txt,a.txt,c.txt")
+  json_inspect(paths, content="b.txt,a.txt,c.txt")
 }
 
 ///|
@@ -111,7 +111,7 @@ test "archive_encoding_size" {
   archive.add(m)
   let size = archive.encoding_size()
   // Local header (30) + path (8) + data (4) + central dir (46) + path (8) + EOCD (22) = 118
-  @json.inspect(size, content=118)
+  json_inspect(size, content=118)
 }
 
 ///|
@@ -120,7 +120,7 @@ test "archive_of_bytes_empty" {
   let archive = @zip.Archive::empty()
   let bytes = archive.to_bytes()
   let decoded = @zip.Archive::of_bytes(bytes)
-  @json.inspect((decoded.is_empty(), decoded.member_count()), content=[true, 0])
+  json_inspect((decoded.is_empty(), decoded.member_count()), content=[true, 0])
 }
 
 ///|
@@ -136,7 +136,7 @@ test "archive_roundtrip_single_file" {
 
   // Decode
   let decoded = @zip.Archive::of_bytes(bytes)
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 1,
     "members": [["hello.txt", "File"]],
   })
@@ -169,7 +169,7 @@ test "archive_roundtrip_multiple_files" {
 
   // Decode
   let decoded = @zip.Archive::of_bytes(bytes)
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 3,
     "members": [
       ["docs/file1.txt", "File"],
@@ -194,7 +194,7 @@ test "archive_roundtrip_with_directory" {
 
   // Decode
   let decoded = @zip.Archive::of_bytes(bytes)
-  @json.inspect(decoded, content={
+  json_inspect(decoded, content={
     "length": 2,
     "members": [["mydir/", "Dir"], ["mydir/file.txt", "File"]],
   })
@@ -207,11 +207,11 @@ test "archive_of_bytes_invalid" {
   let invalid = b"This is not a ZIP file"
   try {
     let _ = @zip.Archive::of_bytes(invalid)
-    @json.inspect("should have failed", content="error")
+    json_inspect("should have failed", content="error")
   } catch {
     msg => {
       let msg_str = msg.to_string()
-      @json.inspect(msg_str.contains("magic"), content=true)
+      json_inspect(msg_str.contains("magic"), content=true)
     }
   }
 }
@@ -227,7 +227,7 @@ test "archive_to_map" {
   archive.add(m1)
   archive.add(m2)
   let map = archive.to_map()
-  @json.inspect(
+  json_inspect(
     (map.contains("a.txt"), map.contains("b.txt"), map.contains("c.txt")),
     content=[true, true, false],
   )
@@ -242,7 +242,7 @@ test "archive_of_map_roundtrip" {
   original.add(m)
   let map = original.to_map()
   let restored = @zip.Archive::of_map(map)
-  @json.inspect((restored.member_count(), restored.mem("test.txt")), content=[
+  json_inspect((restored.member_count(), restored.mem("test.txt")), content=[
     1, true,
   ])
 }
@@ -253,11 +253,11 @@ test "coverage_archive_no_magic" {
   let data = b"Not a ZIP file"
   try {
     let _ = @zip.Archive::of_bytes(data)
-    @json.inspect("should fail", content="error")
+    json_inspect("should fail", content="error")
   } catch {
     msg => {
       let msg_str = msg.to_string()
-      @json.inspect(msg_str.contains("magic"), content=true)
+      json_inspect(msg_str.contains("magic"), content=true)
     }
   }
 }
@@ -268,12 +268,12 @@ test "coverage_archive_too_short" {
   let data = b"PK\x03\x04short"
   try {
     let _ = @zip.Archive::of_bytes(data)
-    @json.inspect("should fail", content="error")
+    json_inspect("should fail", content="error")
   } catch {
     msg => {
       let msg_str = msg.to_string()
       // Check for either old or new error message format
-      @json.inspect(
+      json_inspect(
         msg_str.contains("end of central directory") || msg_str.contains("EOCD"),
         content=true,
       )
@@ -291,7 +291,7 @@ test "coverage_archive_to_array" {
   let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let f = @member.make("dir/f.txt", File(file))
   a.add(f)
-  @json.inspect(a.to_array().length(), content=2)
+  json_inspect(a.to_array().length(), content=2)
 }
 
 ///|
@@ -307,5 +307,5 @@ test "coverage_archive_first" {
   a.add(m1)
   a.add(m2)
   let enc = a.to_bytes(first=@fpath.Fpath("z.txt"))
-  @json.inspect(enc.length() > 0, content=true)
+  json_inspect(enc.length() > 0, content=true)
 }

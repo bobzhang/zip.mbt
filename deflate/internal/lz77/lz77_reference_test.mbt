@@ -15,13 +15,13 @@ test "lz77_reference_simple_repeat" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=8)
+  json_inspect(actual_matches.length(), content=8)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=786443, pos=12
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[786443, 12])
+    json_inspect((first_backref, first_pos), content=[786443, 12])
   }
 }
 
@@ -37,13 +37,13 @@ test "lz77_reference_long_repeat" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=231)
+  json_inspect(actual_matches.length(), content=231)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=1704170, pos=26
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[1704170, 26])
+    json_inspect((first_backref, first_pos), content=[1704170, 26])
   }
 }
 
@@ -56,7 +56,7 @@ test "lz77_reference_no_matches" {
   let input = b"\x39\x0c\x8c\x7d\x72\x47\x34\x2c\xd8\x10\x0f\x2f\x6f\x77\x0d\x65\xd6\x70\xe5\x8e\x03\x51\xd8\xae\x8e\x4f\x6e\xac\x34\x2f\xc2\x31\xb7\xb0\x87\x16\xeb\x3f\xc1\x28\x96\xb9\x62\x23\x17\x74\x94\x28\x77\x33\xc2\x8e\xe8\xba\x53\xbd\xb5\x6b\x88\x24\x57\x7d\x53\xec\xc2\x8a\x70\xa6\x1c\x75\x10\xa1\xcd\x89\x21\x6c\xa1\x6c\xff\xca\xea\x49\x87\x47\x7e\x86\xdb\xcc\xb9\x70\x46\xfc\x2e\x18\x38\x4e\x51\xd8\x20\xc5"
   // No matches expected for this test case
   let actual_matches = find_all_matches(input)
-  @json.inspect(actual_matches.length(), content=0)
+  json_inspect(actual_matches.length(), content=0)
 }
 
 ///|
@@ -71,13 +71,13 @@ test "lz77_reference_overlapping" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=4)
+  json_inspect(actual_matches.length(), content=4)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=262151, pos=4
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[262151, 4])
+    json_inspect((first_backref, first_pos), content=[262151, 4])
   }
 }
 
@@ -93,13 +93,13 @@ test "lz77_reference_different_distances" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=2)
+  json_inspect(actual_matches.length(), content=2)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=458756, pos=7
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[458756, 7])
+    json_inspect((first_backref, first_pos), content=[458756, 7])
   }
 }
 
@@ -115,13 +115,13 @@ test "lz77_reference_max_match_length" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=296)
+  json_inspect(actual_matches.length(), content=296)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=65794, pos=2
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[65794, 2])
+    json_inspect((first_backref, first_pos), content=[65794, 2])
   }
 }
 
@@ -137,13 +137,13 @@ test "lz77_reference_min_match_boundary" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=2)
+  json_inspect(actual_matches.length(), content=2)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=196613, pos=3
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[196613, 3])
+    json_inspect((first_backref, first_pos), content=[196613, 3])
   }
 }
 
@@ -159,13 +159,13 @@ test "lz77_reference_hash_collisions" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=1)
+  json_inspect(actual_matches.length(), content=1)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=524292, pos=8
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[524292, 8])
+    json_inspect((first_backref, first_pos), content=[524292, 8])
   }
 }
 
@@ -181,13 +181,13 @@ test "lz77_reference_window_boundary" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=6990)
+  json_inspect(actual_matches.length(), content=6990)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=459010, pos=7
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[459010, 7])
+    json_inspect((first_backref, first_pos), content=[459010, 7])
   }
 }
 
@@ -200,7 +200,7 @@ test "lz77_reference_empty" {
   let input = b""
   // No matches expected for this test case
   let actual_matches = find_all_matches(input)
-  @json.inspect(actual_matches.length(), content=0)
+  json_inspect(actual_matches.length(), content=0)
 }
 
 ///|
@@ -212,7 +212,7 @@ test "lz77_reference_single_byte" {
   let input = b"\x41"
   // No matches expected for this test case
   let actual_matches = find_all_matches(input)
-  @json.inspect(actual_matches.length(), content=0)
+  json_inspect(actual_matches.length(), content=0)
 }
 
 ///|
@@ -224,7 +224,7 @@ test "lz77_reference_two_bytes" {
   let input = b"\x41\x42"
   // No matches expected for this test case
   let actual_matches = find_all_matches(input)
-  @json.inspect(actual_matches.length(), content=0)
+  json_inspect(actual_matches.length(), content=0)
 }
 
 ///|
@@ -236,7 +236,7 @@ test "lz77_reference_almost_min_match" {
   let input = b"\x61\x62\x61\x20\x61\x62"
   // No matches expected for this test case
   let actual_matches = find_all_matches(input)
-  @json.inspect(actual_matches.length(), content=0)
+  json_inspect(actual_matches.length(), content=0)
 }
 
 ///|
@@ -251,13 +251,13 @@ test "lz77_reference_json_pattern" {
   let actual_matches = find_all_matches(input)
 
   // Verify we found the expected number of matches
-  @json.inspect(actual_matches.length(), content=10)
+  json_inspect(actual_matches.length(), content=10)
 
   // Verify first few matches (to avoid huge test output)
   // First match: backref=1900557, pos=30
   if actual_matches.length() > 0 {
     let (first_backref, first_pos) = actual_matches[0]
-    @json.inspect((first_backref, first_pos), content=[1900557, 30])
+    json_inspect((first_backref, first_pos), content=[1900557, 30])
   }
 }
 
