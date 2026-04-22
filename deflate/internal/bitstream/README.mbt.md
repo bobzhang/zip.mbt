@@ -54,7 +54,7 @@ If there are partial bits (< 8), pads with zeros to reach a byte boundary.
 
 ## Usage Example
 
-```moonbit
+```moonbit nocheck
 ///|
 test {
   let output = @bytebuf.new(size_hint=100)

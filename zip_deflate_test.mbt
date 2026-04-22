@@ -77,9 +77,7 @@ test "archive_roundtrip_deflate" {
   }
   guard found.kind() is File(f) else { fail("compressed.txt should be a file") }
   let extracted = f.to_bytes()
-  json_inspect((extracted.length(), extracted[0] == data[0]), content=[
-    31, true,
-  ])
+  json_inspect((extracted.length(), extracted[0] == data[0]), content=[31, true])
 }
 
 ///|
@@ -395,9 +393,7 @@ test "dynamic_huffman_binary" {
   for i = 0; i < 256; i = i + 1 {
     data[i] = i.to_byte()
   }
-  let data_bytes = Bytes::from_array(
-    FixedArray::from_iter(data[0:].iter()),
-  )
+  let data_bytes = Bytes::from_array(FixedArray::from_iter(data[0:].iter()))
   let compressed = @deflate.deflate_dynamic(data_bytes[0:256], true, 8, 128)
   let decompressed = @deflate.inflate(compressed)
   json_inspect(
@@ -452,9 +448,7 @@ test "compression_level_large_data_integration" {
   for i = 200; i < 300; i = i + 1 {
     data[i] = b'C'
   }
-  let data_bytes = Bytes::from_array(
-    FixedArray::from_iter(data[0:].iter()),
-  )
+  let data_bytes = Bytes::from_array(FixedArray::from_iter(data[0:].iter()))
   let file = @file.File::deflate_of_bytes(data_bytes, 0, 300)
   // Decompress and verify  
   let decompressed = @deflate.inflate(

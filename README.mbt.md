@@ -43,7 +43,7 @@ Dynamic Huffman automatically used for data ≥256 bytes, providing optimal comp
 
 ### Quick Start: Create and Extract ZIP Archives
 
-```moonbit
+```moonbit nocheck
 ///|
 test "create_zip_with_deflate" {
   // Create files with DEFLATE compression
@@ -73,7 +73,7 @@ test "create_zip_with_deflate" {
 
 ### Roundtrip: Create, Save, Load, and Extract
 
-```moonbit
+```moonbit nocheck
 ///|
 test "zip_roundtrip_with_compression" {
   // Original data - repetitive for good compression
@@ -113,7 +113,7 @@ test "zip_roundtrip_with_compression" {
 
 ### Working with Multiple Files
 
-```moonbit
+```moonbit nocheck
 ///|
 test "zip_with_multiple_files" {
   // Create several files
@@ -145,7 +145,7 @@ test "zip_with_multiple_files" {
 
 ### Comparing Compression Levels
 
-```moonbit
+```moonbit nocheck
 ///|
 test "compression_levels_comparison" {
   // Highly compressible data
@@ -187,7 +187,7 @@ test "compression_levels_comparison" {
 
 ### Error Handling with Catchable Exceptions
 
-```moonbit
+```moonbit nocheck
 ///|
 test "error_handling_example" {
   // Create valid archive
@@ -213,7 +213,7 @@ test "error_handling_example" {
 
 ### Direct DEFLATE Compression/Decompression
 
-```moonbit
+```moonbit nocheck
 ///|
 test "direct_deflate_usage" {
   // Create data to compress

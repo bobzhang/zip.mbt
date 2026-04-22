@@ -1,0 +1,7 @@
+import {
+  "bobzhang/zip/types/fpath",
+}
+
+options(
+  "is-main": false,
+)

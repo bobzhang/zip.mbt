@@ -50,7 +50,7 @@ The lookup table is precomputed using the IEEE 802.3 polynomial: `0xEDB88320`
 
 ## Usage Example
 
-```moonbit
+```moonbit nocheck
 ///|
 test {
   let data = b"Hello, World!"

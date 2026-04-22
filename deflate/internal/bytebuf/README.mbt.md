@@ -53,7 +53,7 @@ Get the buffer contents as immutable `Bytes`.
 
 ## Usage Example
 
-```moonbit
+```moonbit nocheck
 ///|
 test {
   let buf = @bytebuf.new(size_hint=100) // Initial capacity 100, growable

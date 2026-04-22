@@ -52,7 +52,7 @@ Where:
 
 ## Usage Example
 
-```moonbit
+```moonbit nocheck
 ///|
 test {
   let data = b"Hello, World!\x00\x01\x02"

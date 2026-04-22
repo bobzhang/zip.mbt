@@ -3,7 +3,7 @@
 
 ///|
 /// Compression type - Re-exported from types package
-typealias @types.Compression
+using @types {type Compression}
 
 ///|
 /// Helper: UInt to hex string

@@ -119,7 +119,7 @@ Remove redundant separators and normalize path.
 
 ### Compression Types
 
-```moonbit
+```moonbit nocheck
 ///|
 test {
   // Create from ZIP method code

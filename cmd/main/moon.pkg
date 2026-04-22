@@ -1,0 +1,12 @@
+import {
+  "bobzhang/zip" @lib,
+  "bobzhang/zip/file",
+  "bobzhang/zip/member",
+  "bobzhang/zip/types",
+  "bobzhang/zip/types/fpath",
+  "bobzhang/zip/hexdump" @hexdump,
+}
+
+options(
+  "is-main": true,
+)
