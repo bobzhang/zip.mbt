@@ -1,0 +1,13 @@
+import {
+  "bobzhang/zip/deflate",
+  "bobzhang/zip/checksum/crc32",
+  "moonbitlang/core/bytes",
+}
+
+options(
+  is_main: false,
+  test_import: [
+    "bobzhang/zip/deflate",
+    { "alias": "encoding/utf8", "path": "moonbitlang/core/encoding/utf8" },
+  ],
+)

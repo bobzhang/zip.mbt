@@ -4,16 +4,16 @@
 // Re-export dependencies
 
 ///|
-typealias @bytebuf.ByteBuf
+using @bytebuf {type ByteBuf}
 
 ///|
-typealias @bitstream.BitWriter
+using @bitstream {type BitWriter}
 
 ///|
-typealias @huffman.HuffmanDecoder
+using @huffman {type HuffmanDecoder}
 
 ///|
-typealias @huffman.HuffmanEncoder
+using @huffman {type HuffmanEncoder}
 
 // ============================================================================
 // RFC 1951 DEFLATE Constants and Lookup Tables

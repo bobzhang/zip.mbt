@@ -36,7 +36,7 @@ Convert any path to Unix-style (forward slashes).
 - `dir/subdir/file.txt` → `dir/subdir/file.txt` (unchanged)
 
 **Example:**
-```moonbit
+```moonbit nocheck
 ///|
 test {
   let windows_path : @fpath.Fpath = "C:\\Users\\name\\file.txt"

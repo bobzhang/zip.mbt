@@ -1,0 +1,10 @@
+import {
+}
+
+import {
+  "bobzhang/zip/deflate/internal/bytebuf",
+} for "test"
+
+options(
+  "is-main": false,
+)

@@ -96,7 +96,6 @@ fn parse_dynamic_header(reader : BitReader) -> (Int, Int, Int) raise {
   let hclen = reader.read_bits(4) + 4
   for _i = 0; _i < hclen; _i = _i + 1 {
     let _ = reader.read_bits(3)
-
   }
   (hlit, hdist, hclen)
 }

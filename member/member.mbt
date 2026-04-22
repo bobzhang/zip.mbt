@@ -2,31 +2,31 @@
 
 ///|
 /// Re-export dependencies from other packages
-pub typealias @file.File
+pub using @file {type File}
 
 ///|
-pub typealias @types.Fpath
+pub using @types {type Fpath}
 
 ///|
-pub typealias @types.FileMode
+pub using @types {type FileMode}
 
 ///|
-pub typealias @types.Ptime
+pub using @types {type Ptime}
 
 ///|
 pub let dos_epoch : Ptime = @types.dos_epoch
 
 ///|
-pub fnalias @types.fpath_ensure_unix
+pub using @types {fpath_ensure_unix}
 
 ///|
-pub fnalias @types.fpath_ensure_directoryness
+pub using @types {fpath_ensure_directoryness}
 
 ///|
-pub fnalias @types.format_file_mode
+pub using @types {format_file_mode}
 
 ///|
-pub fnalias @types.ptime_format
+pub using @types {ptime_format}
 
 ///|
 /// Archive Member - represents a file or directory in a ZIP archive

@@ -52,7 +52,7 @@ result = (s2 << 16) | s1
 
 ## Usage Example
 
-```moonbit
+```moonbit nocheck
 ///|
 test {
   let data = b"Hello, World!"

@@ -98,7 +98,7 @@ pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
       t1[(b6 & 0xFF).to_int()] ^
       t0[(b7 & 0xFF).to_int()]
     continue next
-  } else {
+  } nobreak {
     slice
   }
 

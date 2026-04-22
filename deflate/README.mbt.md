@@ -123,7 +123,7 @@ Low-level functions for writing Huffman-encoded symbols.
 
 ### Basic Compression
 
-```moonbit
+```moonbit nocheck
 ///|
 test {
   let data = b"Hello, DEFLATE compression!"

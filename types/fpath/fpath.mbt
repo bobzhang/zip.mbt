@@ -64,10 +64,8 @@ pub fn ensure_unix(path : Fpath) -> Fpath {
     let c = code.unsafe_to_char()
     if c == '\\' {
       let _ = chars.push('/')
-
     } else {
       let _ = chars.push(c)
-
     }
   }
   Fpath(String::from_array(chars))
@@ -106,13 +104,11 @@ pub fn sanitize(path : Fpath) -> Fpath {
         let current = String::from_array(current_chars)
         if keep_segment(current) {
           let _ = segments.push(current)
-
         }
         current_chars.clear()
       }
     } else {
       let _ = current_chars.push(c)
-
     }
   }
 
@@ -121,7 +117,6 @@ pub fn sanitize(path : Fpath) -> Fpath {
     let current = String::from_array(current_chars)
     if keep_segment(current) {
       let _ = segments.push(current)
-
     }
   }
 
