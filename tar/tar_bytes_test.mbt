@@ -21,14 +21,14 @@ test "tar_bytes_vs_string_handling" {
   // Round-trip
   let tar_bytes = archive.to_bytes()
   let parsed = @tar.TarArchive::of_bytes(tar_bytes)
-  @json.inspect(parsed.length(), content=2)
+  json_inspect(parsed.length(), content=2)
 
   // Verify binary data preservation
   guard parsed.find("binary.dat") is Some(found_binary) else {
     fail("Binary file not found")
   }
   assert_eq(found_binary.data, binary_data)
-  @json.inspect(found_binary.size, content=18)
+  json_inspect(found_binary.size, content=18)
 
   // Verify Unicode data preservation
   guard parsed.find("unicode.txt") is Some(found_unicode) else {
@@ -36,7 +36,7 @@ test "tar_bytes_vs_string_handling" {
   }
   assert_eq(found_unicode.data, unicode_data)
   // UTF-8 encoding of "Hello 世界 🌍" should be > 10 bytes
-  @json.inspect(found_unicode.size > 10, content=true)
+  json_inspect(found_unicode.size > 10, content=true)
 }
 
 ///|
@@ -53,15 +53,15 @@ test "tar_header_field_encoding" {
   archive.add(dir_entry)
   let tar_bytes = archive.to_bytes()
   let parsed = @tar.TarArchive::of_bytes(tar_bytes)
-  @json.inspect(parsed.length(), content=2)
+  json_inspect(parsed.length(), content=2)
   guard parsed.find("test-file_123.txt") is Some(found_file) else {
     fail("ASCII file not found")
   }
-  @json.inspect(found_file.name, content="test-file_123.txt")
+  json_inspect(found_file.name, content="test-file_123.txt")
   guard parsed.find("some-dir/") is Some(found_dir) else {
     fail("Directory not found")
   }
-  @json.inspect(found_dir.name, content="some-dir/")
+  json_inspect(found_dir.name, content="some-dir/")
   match found_dir.typeflag {
     @tar.Directory => ()
     _ => fail("Expected Directory type")
@@ -78,7 +78,7 @@ test "tar_octal_field_parsing" {
   let tar_bytes = archive.to_bytes()
   let parsed = @tar.TarArchive::of_bytes(tar_bytes)
   guard parsed.find("test.txt") is Some(found) else { fail("File not found") }
-  @json.inspect(found.size, content=5)
+  json_inspect(found.size, content=5)
   assert_eq(found.data, b"hello")
 }
 
@@ -96,10 +96,10 @@ test "tar_format_structure_verification" {
   archive.add(medium_file)
   archive.add(large_file)
   let tar_bytes = archive.to_bytes()
-  @json.inspect(tar_bytes.length() % 512, content=0)
-  @json.inspect(tar_bytes.length() >= 10240, content=true)
+  json_inspect(tar_bytes.length() % 512, content=0)
+  json_inspect(tar_bytes.length() >= 10240, content=true)
   let parsed = @tar.TarArchive::of_bytes(tar_bytes)
-  @json.inspect(parsed.length(), content=3)
+  json_inspect(parsed.length(), content=3)
   guard parsed.find("small.txt") is Some(f1) else {
     fail("small.txt not found")
   }
@@ -107,9 +107,9 @@ test "tar_format_structure_verification" {
   guard parsed.find("medium.txt") is Some(f2) else {
     fail("medium.txt not found")
   }
-  @json.inspect(f2.size, content=600)
+  json_inspect(f2.size, content=600)
   guard parsed.find("large.txt") is Some(f3) else {
     fail("large.txt not found")
   }
-  @json.inspect(f3.size, content=1500)
+  json_inspect(f3.size, content=1500)
 }

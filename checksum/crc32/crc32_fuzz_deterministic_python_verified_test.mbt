@@ -36,7 +36,7 @@ test "crc32_deterministic_fuzz_lengths_python_verified" {
       all_ok = false
     }
   }
-  @json.inspect(all_ok, content=true)
+  json_inspect(all_ok, content=true)
 }
 
 ///|
@@ -84,5 +84,5 @@ test "crc32_deterministic_fuzz_incremental_python_verified" {
       all_ok = false
     }
   }
-  @json.inspect(all_ok, content=true)
+  json_inspect(all_ok, content=true)
 }

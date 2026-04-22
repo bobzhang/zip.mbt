@@ -154,12 +154,12 @@ fn test_hex_dump() -> Unit {
   println(@hexdump.hex_dump(simple_data))
 
   // Test with ZIP magic signature
-  let zip_magic = Bytes::from_fixedarray([0x50, 0x4B, 0x03, 0x04])
+  let zip_magic = Bytes::from_array([0x50, 0x4B, 0x03, 0x04])
   println("  ZIP magic signature hex dump:")
   println(@hexdump.hex_dump(zip_magic))
 
   // Test with mixed printable/non-printable data
-  let mixed_data = Bytes::from_fixedarray([
+  let mixed_data = Bytes::from_array([
     0x48, 0x65, 0x6c, 0x6c, 0x6f, // "Hello"
      0x00, 0x01, 0x02, 0x03, 0x04, // Non-printable
      0x20, 0x21, 0x22, 0x23, 0x24, // Printable ASCII

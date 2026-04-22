@@ -23,7 +23,7 @@ test "adler32_complete_python_verification" {
   let adler5 = @adler32.bytes_adler32(b"123456789"[0:9])
 
   // Verify all match Python exactly
-  @json.inspect([adler0, adler1, adler2, adler3, adler4, adler5], content=[
+  json_inspect([adler0, adler1, adler2, adler3, adler4, adler5], content=[
     1, 6422626, 38600999, 103547413, 436929629, 152961502,
   ])
 }
@@ -43,7 +43,7 @@ test "adler32_algorithm_verification" {
   // zlib.adler32(b"\x00") = 0x00010001 (65537)
   // zlib.adler32(b"\x01") = 0x00020002 (131074)  
   // zlib.adler32(b"\xff") = 0x01000100 (16777472)
-  @json.inspect([adler_0, adler_1, adler_255], content=[65537, 131074, 16777472])
+  json_inspect([adler_0, adler_1, adler_255], content=[65537, 131074, 16777472])
 }
 
 ///|
@@ -54,7 +54,7 @@ test "adler32_state_consistency" {
   let also_empty = @adler32.bytes_adler32(b""[:])
 
   // Both should give the same result (1)
-  @json.inspect((empty_result, also_empty, empty_result == also_empty), content=[
+  json_inspect((empty_result, also_empty, empty_result == also_empty), content=[
     1, 1, true,
   ])
 }
@@ -82,7 +82,7 @@ test "adler32_incremental_equivalence" {
     .finish()
 
   // Python: zlib.adler32(b"Hello, World! This is a longer test string.") = 0x42b10f0b (1118899979)
-  @json.inspect((direct, incr1, incr2, direct == incr1 && incr1 == incr2), content=[
+  json_inspect((direct, incr1, incr2, direct == incr1 && incr1 == incr2), content=[
     1118899979, 1118899979, 1118899979, true,
   ])
 }
@@ -102,5 +102,5 @@ test "adler32_large_data_handling" {
   let result = adler.finish()
 
   // Python: zlib.adler32(b"Z" * 1000) = 0x81315fa0 (2167496608)
-  @json.inspect(result, content=2167496608)
+  json_inspect(result, content=2167496608)
 }

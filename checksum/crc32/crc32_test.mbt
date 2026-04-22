@@ -4,7 +4,7 @@
 /// Test CRC-32 of empty data
 test "crc32_empty" {
   let crc = @crc32.bytes_crc32(b""[:])
-  @json.inspect((crc, crc == 0), content=[0, true])
+  json_inspect((crc, crc == 0), content=[0, true])
 }
 
 ///|
@@ -13,7 +13,7 @@ test "crc32_simple" {
   let data = b"hello world"
   let crc = @crc32.bytes_crc32(data[:])
   // CRC-32 of "hello world" should be 0x0d4a1185 (222957317 in decimal)
-  @json.inspect(crc, content=222957957)
+  json_inspect(crc, content=222957957)
 }
 
 ///|
@@ -25,7 +25,7 @@ test "crc32_incremental" {
     .update_bytes(data[5:11]) // " world"
     .finish()
   let crc2 = @crc32.bytes_crc32(data[:])
-  @json.inspect((crc1 == crc2, crc1), content=[true, 222957957])
+  json_inspect((crc1 == crc2, crc1), content=[true, 222957957])
 }
 
 ///|
@@ -33,7 +33,7 @@ test "crc32_incremental" {
 test "crc32_check_success" {
   // helper removed; simulate previous Ok result shape for snapshot stability
   if 0x12345678 == 0x12345678 {
-    @json.inspect({ "Ok": null }, content={ "Ok": null })
+    json_inspect({ "Ok": null }, content={ "Ok": null })
   } else {
     fail("unexpected inequality in test setup")
   }
@@ -44,7 +44,7 @@ test "crc32_check_success" {
 test "crc32_check_failure" {
   // helper removed; directly verify mismatch condition (snapshot expects true)
   guard 0x12345678 != 0x87654321 else { fail("should not succeed") }
-  @json.inspect(true, content=true)
+  json_inspect(true, content=true)
 }
 
 ///|
@@ -55,7 +55,7 @@ test "crc32_update_byte" {
   crc = crc.update_byte('i'.to_int())
   let result = crc.finish()
   // Just verify it produces a non-zero result
-  @json.inspect(result != 0, content=true)
+  json_inspect(result != 0, content=true)
 }
 
 ///|
@@ -65,5 +65,5 @@ test "crc32_partial" {
   let crc_hello = @crc32.bytes_crc32(data[0:5]) // Just "hello"
   let crc_world = @crc32.bytes_crc32(data[6:11]) // Just "world"
   // These should be different
-  @json.inspect(crc_hello != crc_world, content=true)
+  json_inspect(crc_hello != crc_world, content=true)
 }

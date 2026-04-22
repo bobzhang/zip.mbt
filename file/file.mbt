@@ -288,7 +288,7 @@ pub fn File::compressed_bytes_to_bytes(self : File) -> Bytes {
   for i = 0; i < self.compressed_size; i = i + 1 {
     result[i] = self.compressed_bytes[self.start + i]
   }
-  Bytes::from_fixedarray(FixedArray::from_iter(result[0:].iter()))
+  Bytes::from_array(FixedArray::from_iter(result[0:].iter()))
 }
 
 ///|
@@ -356,7 +356,7 @@ pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
       for i = 0; i < self.compressed_size; i = i + 1 {
         result_arr[i] = self.compressed_bytes[self.start + i]
       }
-      let result = Bytes::from_fixedarray(
+      let result = Bytes::from_array(
         FixedArray::from_iter(result_arr[0:].iter()),
       )
       let crc = @crc32.bytes_crc32(result[:])

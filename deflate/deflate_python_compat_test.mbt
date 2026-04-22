@@ -19,7 +19,7 @@ test "python_compat_empty" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -29,7 +29,7 @@ test "python_compat_empty" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -47,7 +47,7 @@ test "python_compat_single_byte" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -57,7 +57,7 @@ test "python_compat_single_byte" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -75,7 +75,7 @@ test "python_compat_repeated_10" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -85,7 +85,7 @@ test "python_compat_repeated_10" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -103,7 +103,7 @@ test "python_compat_repeated_100" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -113,7 +113,7 @@ test "python_compat_repeated_100" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -131,7 +131,7 @@ test "python_compat_repeated_1000" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -141,7 +141,7 @@ test "python_compat_repeated_1000" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -159,7 +159,7 @@ test "python_compat_hello_world" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -169,7 +169,7 @@ test "python_compat_hello_world" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -187,7 +187,7 @@ test "python_compat_lorem_ipsum" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -197,7 +197,7 @@ test "python_compat_lorem_ipsum" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -215,7 +215,7 @@ test "python_compat_binary_sequence" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -225,7 +225,7 @@ test "python_compat_binary_sequence" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -243,7 +243,7 @@ test "python_compat_pattern_abc" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -253,7 +253,7 @@ test "python_compat_pattern_abc" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -271,7 +271,7 @@ test "python_compat_mixed" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -281,7 +281,7 @@ test "python_compat_mixed" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -299,7 +299,7 @@ test "python_compat_zeros_100" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -309,7 +309,7 @@ test "python_compat_zeros_100" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -327,7 +327,7 @@ test "python_compat_zeros_1000" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -337,7 +337,7 @@ test "python_compat_zeros_1000" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -355,7 +355,7 @@ test "python_compat_level_none" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -365,7 +365,7 @@ test "python_compat_level_none" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -383,7 +383,7 @@ test "python_compat_level_fast" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -393,7 +393,7 @@ test "python_compat_level_fast" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -411,7 +411,7 @@ test "python_compat_level_default" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -421,7 +421,7 @@ test "python_compat_level_default" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -439,7 +439,7 @@ test "python_compat_level_best" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -449,7 +449,7 @@ test "python_compat_level_best" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -467,7 +467,7 @@ test "python_compat_alternating" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -477,7 +477,7 @@ test "python_compat_alternating" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -495,7 +495,7 @@ test "python_compat_long_match" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -505,7 +505,7 @@ test "python_compat_long_match" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -523,7 +523,7 @@ test "python_compat_json_data" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -533,7 +533,7 @@ test "python_compat_json_data" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }
 
 ///|
@@ -551,7 +551,7 @@ test "python_compat_large_text" {
     expected_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(decompressed == input, content=true)
+  json_inspect(decompressed == input, content=true)
 
   // Test compression: verify round-trip works
   // Note: Our output may differ from Python's (different encoder decisions)
@@ -561,5 +561,5 @@ test "python_compat_large_text" {
     our_compressed,
     decompressed_size=input.length(),
   )
-  @json.inspect(roundtrip == input, content=true)
+  json_inspect(roundtrip == input, content=true)
 }

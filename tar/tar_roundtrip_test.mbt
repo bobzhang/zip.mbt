@@ -11,18 +11,18 @@ test "tar_roundtrip_simple" {
 
   // Serialize to bytes
   let tar_bytes = original.to_bytes()
-  @json.inspect(tar_bytes.length() >= 10240, content=true)
+  json_inspect(tar_bytes.length() >= 10240, content=true)
 
   // Parse back from bytes
   let parsed = @tar.TarArchive::of_bytes(tar_bytes)
-  @json.inspect(parsed.length(), content=1)
+  json_inspect(parsed.length(), content=1)
 
   // Verify the parsed entry
   guard parsed.find("test.txt") is Some(found) else {
     fail("File not found in parsed archive")
   }
-  @json.inspect(found.name, content="test.txt")
-  @json.inspect(found.size, content=16)
+  json_inspect(found.name, content="test.txt")
+  json_inspect(found.size, content=16)
   assert_eq(found.data, file_data)
   match found.typeflag {
     @tar.RegularFile => () // Expected
@@ -45,26 +45,26 @@ test "tar_roundtrip_multiple_files" {
   original.add(file2)
   original.add(dir1)
   original.add(file3)
-  @json.inspect(original.length(), content=4)
+  json_inspect(original.length(), content=4)
 
   // Round-trip
   let tar_bytes = original.to_bytes()
   let parsed = @tar.TarArchive::of_bytes(tar_bytes)
-  @json.inspect(parsed.length(), content=4)
+  json_inspect(parsed.length(), content=4)
 
   // Check each entry
   guard parsed.find("readme.txt") is Some(f1) else {
     fail("readme.txt not found")
   }
   assert_eq(f1.data, b"This is a README")
-  @json.inspect(f1.size, content=16)
+  json_inspect(f1.size, content=16)
   guard parsed.find("data.bin") is Some(f2) else { fail("data.bin not found") }
   assert_eq(f2.data, b"\x00\x01\x02\x03\x04")
-  @json.inspect(f2.size, content=5)
+  json_inspect(f2.size, content=5)
   guard parsed.find("docs/") is Some(d1) else {
     fail("docs/ directory not found")
   }
-  @json.inspect(d1.size, content=0)
+  json_inspect(d1.size, content=0)
   match d1.typeflag {
     @tar.Directory => () // Expected
     _ => fail("Expected Directory")
@@ -73,16 +73,16 @@ test "tar_roundtrip_multiple_files" {
     fail("docs/guide.md not found")
   }
   assert_eq(f3.data, b"# User Guide\n\nContent here.")
-  @json.inspect(f3.size, content=27)
+  json_inspect(f3.size, content=27)
 }
 
 ///|
 test "tar_roundtrip_empty_archive" {
   let original = @tar.TarArchive::empty()
   let tar_bytes = original.to_bytes()
-  @json.inspect(tar_bytes.length(), content=10240) // Standard empty size
+  json_inspect(tar_bytes.length(), content=10240) // Standard empty size
   let parsed = @tar.TarArchive::of_bytes(tar_bytes)
-  @json.inspect(parsed.length(), content=0)
+  json_inspect(parsed.length(), content=0)
 }
 
 ///|
@@ -95,11 +95,11 @@ test "tar_roundtrip_large_file" {
   original.add(large_file)
   let tar_bytes = original.to_bytes()
   let parsed = @tar.TarArchive::of_bytes(tar_bytes)
-  @json.inspect(parsed.length(), content=1)
+  json_inspect(parsed.length(), content=1)
   guard parsed.find("large.dat") is Some(found) else {
     fail("Large file not found")
   }
-  @json.inspect(found.size, content=4000)
+  json_inspect(found.size, content=4000)
   assert_eq(found.data, large_data)
 }
 
@@ -117,8 +117,8 @@ test "tar_roundtrip_preserve_metadata" {
   guard parsed.find("test.txt") is Some(found) else { fail("File not found") }
 
   // Verify basic metadata is preserved
-  @json.inspect(found.name, content="test.txt")
-  @json.inspect(found.size, content=12)
-  @json.inspect(found.mode, content=420) // 0o644 in decimal (default)
+  json_inspect(found.name, content="test.txt")
+  json_inspect(found.size, content=12)
+  json_inspect(found.mode, content=420) // 0o644 in decimal (default)
   assert_eq(found.data, file_data)
 }

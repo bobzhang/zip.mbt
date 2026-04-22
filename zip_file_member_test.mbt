@@ -4,7 +4,7 @@
 test "file_stored_simple" {
   let data = b"test data"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
-  @json.inspect(
+  json_inspect(
     (
       file.compression is Stored,
       file.decompressed_size,
@@ -20,7 +20,7 @@ test "file_to_bytes_stored" {
   let data = b"hello"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let result = file.to_bytes()
-  @json.inspect((result[0].to_int(), result[1].to_int(), result.length()), content=[
+  json_inspect((result[0].to_int(), result[1].to_int(), result.length()), content=[
     104, 101, 5,
   ])
 }
@@ -29,7 +29,7 @@ test "file_to_bytes_stored" {
 test "file_is_encrypted" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
-  @json.inspect(file.is_encrypted(), content=false)
+  json_inspect(file.is_encrypted(), content=false)
 
   // Create a file with encrypted flag set
   let encrypted_file = @file.File::make(
@@ -41,8 +41,8 @@ test "file_is_encrypted" {
     0,
     gp_flags=@file.gp_flag_encrypted,
   )
-  @json.inspect(encrypted_file.is_encrypted(), content=true)
-  @json.inspect(encrypted_file.can_extract(), content=false)
+  json_inspect(encrypted_file.is_encrypted(), content=true)
+  json_inspect(encrypted_file.can_extract(), content=false)
 }
 
 ///|
@@ -51,7 +51,7 @@ test "member_make_file" {
   let data = b"test"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("test.txt", File(file))
-  @json.inspect((m.path(), m.is_file(), m.is_dir(), m.mode()), content=[
+  json_inspect((m.path(), m.is_file(), m.is_dir(), m.mode()), content=[
     "test.txt",
     true,
     false,
@@ -62,7 +62,7 @@ test "member_make_file" {
 ///|
 test "member_make_dir" {
   let m = @member.make("mydir", Dir)
-  @json.inspect((m.path(), m.is_dir(), m.is_file(), m.mode()), content=[
+  json_inspect((m.path(), m.is_dir(), m.is_file(), m.mode()), content=[
     "mydir/",
     true,
     false,
@@ -75,7 +75,7 @@ test "member_ensure_unix_path" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("dir\\file.txt", File(file))
-  @json.inspect(m.path(), content="dir/file.txt")
+  json_inspect(m.path(), content="dir/file.txt")
 }
 
 ///|
@@ -83,7 +83,7 @@ test "member_default_mtime" {
   let data = b"x"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let m = @member.make("file.txt", File(file))
-  @json.inspect(m.mtime(), content=["Ptime", 315532800]) // @types.dos_epoch
+  json_inspect(m.mtime(), content=["Ptime", 315532800]) // @types.dos_epoch
 }
 
 ///|
@@ -97,7 +97,7 @@ test "member_custom_mode_and_mtime" {
     mode=@types.FileMode(0o777),
     mtime=custom_time,
   )
-  @json.inspect((m.mode(), m.mtime()), content=[
+  json_inspect((m.mode(), m.mtime()), content=[
     ["FileMode", 511],
     ["Ptime", 315533800],
   ]) // 0o777 = 511
@@ -110,7 +110,7 @@ test "member_format" {
   let m = @member.make("test.txt", File(file))
   let formatted = m.format()
   // Should contain key parts: -, permissions, size, path
-  @json.inspect(
+  json_inspect(
     (
       formatted.contains("-"),
       formatted.contains("rw-"),
@@ -127,7 +127,7 @@ test "member_format_long" {
   let m = @member.make("test.txt", File(file))
   let formatted = m.format_long()
   // Should contain compression info
-  @json.inspect(
+  json_inspect(
     (
       formatted.contains("stored"),
       formatted.contains("100%"),
@@ -142,7 +142,7 @@ test "member_format_long_dir" {
   let m = @member.make("mydir/", Dir)
   let formatted = m.format_long()
   // Directories don't have compression info
-  @json.inspect(formatted.contains("["), content=false)
+  json_inspect(formatted.contains("["), content=false)
 }
 
 ///|
@@ -155,11 +155,11 @@ test "member_make_error_path_too_long" {
   }
   try {
     let _ = @member.make(long_path, Dir)
-    @json.inspect("should have failed", content="error")
+    json_inspect("should have failed", content="error")
   } catch {
     msg => {
       let msg_str = msg.to_string()
-      @json.inspect(msg_str.contains("exceeds maximum"), content=true)
+      json_inspect(msg_str.contains("exceeds maximum"), content=true)
     }
   }
 }
@@ -169,7 +169,7 @@ test "file_make_success" {
   // Test successful file creation with Result
   let data = b"test data"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
-  @json.inspect(file.decompressed_size, content=9)
+  json_inspect(file.decompressed_size, content=9)
 }
 
 ///|
@@ -177,7 +177,7 @@ test "file_make_success" {
 test "file_accessors" {
   let data = b"test data"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
-  @json.inspect(
+  json_inspect(
     (
       file.compression() is Stored,
       file.start(),
@@ -195,7 +195,7 @@ test "file_compressed_bytes_to_bytes" {
   let data = b"hello"
   let file = @file.File::stored_of_bytes(data, 0, data.length())
   let compressed = file.compressed_bytes_to_bytes()
-  @json.inspect(
+  json_inspect(
     (compressed.length(), compressed[0] == data[0], compressed[4] == data[4]),
     content=[5, true, true],
   )
@@ -209,7 +209,7 @@ test "coverage_file_accessors" {
   let _c = file.compressed_bytes()
   let _crc = file.decompressed_crc32()
   let _v = file.version_needed_to_extract()
-  @json.inspect(file.can_extract(), content=true)
+  json_inspect(file.can_extract(), content=true)
 }
 
 ///|
@@ -224,7 +224,7 @@ test "coverage_member_early_mtime" {
     mode=@types.FileMode(0o644),
     mtime=early,
   )
-  @json.inspect(m.mtime() >= @types.dos_epoch, content=true)
+  json_inspect(m.mtime() >= @types.dos_epoch, content=true)
 }
 
 ///|
@@ -233,5 +233,5 @@ test "coverage_member_empty_format" {
   let data = b""
   let file = @file.File::deflate_of_bytes(data, 0, data.length())
   let m = @member.make("empty.txt", File(file))
-  @json.inspect(m.format_long().contains("0%"), content=true)
+  json_inspect(m.format_long().contains("0%"), content=true)
 }
