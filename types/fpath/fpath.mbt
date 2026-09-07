@@ -8,6 +8,18 @@
 pub(all) struct Fpath(String) derive(Eq, Compare, FromJson, Hash)
 
 ///|
+pub extend Fpath with Eq::{not_equal, equal}
+
+///|
+pub extend Fpath with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
+pub extend Fpath with @json.FromJson::{from_json}
+
+///|
+pub extend Fpath with Hash::{hash, hash_combine}
+
+///|
 /// Get the length of the path string
 pub fn Fpath::length(self : Fpath) -> Int {
   self.0.length()
@@ -19,7 +31,7 @@ pub fn Fpath::length(self : Fpath) -> Int {
 pub fn Fpath::at(self : Fpath, index : Int) -> Int {
   // FIXME(upstream): ("_[_]") + op_get 
   // would cause weird errors
-  self.0[index]
+  self.0[index].to_int()
 }
 
 ///|
@@ -31,28 +43,37 @@ pub fn Fpath::is_empty(self : Fpath) -> Bool {
 ///|
 /// String concatenation for paths
 /// FIXME(upstream): derive Add
-pub impl Add for Fpath with add(x, other) {
+pub impl Add for Fpath with fn add(x, other) {
   Fpath(x.0 + other.0)
 }
 
 ///|
+pub extend Fpath with Add::{add}
+
+///|
 /// Convert to string for display
-pub impl Show for Fpath with output(x, logger) {
-  String::output(x.0, logger)
+pub impl Show for Fpath with fn output(x, logger) {
+  Show::output(x.0, logger)
 }
 
 ///|
 /// FIXME: this is actually needed,
 /// otherwise it will quote the string
-pub impl Show for Fpath with to_string(x) {
+pub impl Show for Fpath with fn to_string(x) {
   x.0
 }
 
 ///|
+pub extend Fpath with Show::{to_string, output}
+
+///|
 /// JSON serialization - serializes as plain string
-pub impl ToJson for Fpath with to_json(x) {
+pub impl ToJson for Fpath with fn to_json(x) {
   Json::string(x.0)
 }
+
+///|
+pub extend Fpath with ToJson::{to_json}
 
 ///|
 /// Convert backslashes to forward slashes (for Windows paths)

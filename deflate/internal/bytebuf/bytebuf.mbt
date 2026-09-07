@@ -13,7 +13,7 @@ struct ByteBuf {
 #as_free_fn
 pub fn ByteBuf::new(size_hint~ : Int, fixed? : Bool = false) -> ByteBuf {
   let actual_size = if size_hint == 0 && !fixed { 1024 } else { size_hint }
-  { buffer: FixedArray::make(actual_size, b'\x00'), length: 0, fixed }
+  { buffer: FixedArray::make(actual_size, b'\x00'), length: 0, fixed, }
 }
 
 ///|
@@ -25,7 +25,7 @@ pub fn ByteBuf::length(self : ByteBuf) -> Int {
 ///|
 /// Get contents as Bytes
 pub fn ByteBuf::contents(self : ByteBuf) -> Bytes {
-  @bytes.from_fixedarray(self.buffer, len=self.length)
+  Bytes::from_array(self.buffer[0:self.length])
 }
 
 ///|

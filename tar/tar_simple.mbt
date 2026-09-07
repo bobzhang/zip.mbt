@@ -7,15 +7,24 @@
 pub enum TarType {
   RegularFile // '0'
   Directory // '5'
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
-impl ToJson for TarType with to_json(self) -> Json {
+pub extend TarType with Debug::{to_repr}
+
+///|
+pub extend TarType with Eq::{not_equal, equal}
+
+///|
+impl ToJson for TarType with fn to_json(self) -> Json {
   match self {
     RegularFile => "RegularFile"
     Directory => "Directory"
   }
 }
+
+///|
+extend TarType with ToJson::{to_json}
 
 ///|
 /// TAR entry structure
@@ -30,10 +39,13 @@ pub struct TarEntry {
   uid : Int // User ID
   gid : Int // Group ID
   mtime : Int // Modification time (Unix timestamp)
-} derive(Show)
+} derive(Debug)
 
 ///|
-impl ToJson for TarEntry with to_json(self) -> Json {
+pub extend TarEntry with Debug::{to_repr}
+
+///|
+impl ToJson for TarEntry with fn to_json(self) -> Json {
   {
     "name": self.name,
     "size": self.size,
@@ -51,18 +63,24 @@ impl ToJson for TarEntry with to_json(self) -> Json {
 /// Writer currently pads empty archives to 10KiB (optimization opportunity).
 pub struct TarArchive {
   entries : Array[TarEntry]
-} derive(Show)
+} derive(Debug)
 
 ///|
-pub impl ToJson for TarArchive with to_json(self) -> Json {
+pub extend TarArchive with Debug::{to_repr}
+
+///|
+pub impl ToJson for TarArchive with fn to_json(self) -> Json {
   self.entries.to_json()
 }
+
+///|
+pub extend TarArchive with ToJson::{to_json}
 
 ///|
 /// Create an empty TAR archive
 /// Create an empty archive.
 pub fn TarArchive::empty() -> TarArchive {
-  { entries: [] }
+  { entries: [], }
 }
 
 ///|
@@ -332,7 +350,7 @@ fn parse_octal(s : String) -> Int {
       break
     } // NUL or space
     if c >= 48 && c <= 55 { // '0'..'7'
-      value = value * 8 + (c - 48)
+      value = value * 8 + (c.to_int() - 48)
     } else {
       break
     }
@@ -407,14 +425,14 @@ fn parse_tar_header(data : Bytes, offset : Int) -> (TarEntry, Int)? {
   // Extract file data if it's a regular file
   let file_data = if typeflag == RegularFile && size > 0 {
     if data_offset + size <= data.length() {
-      data[data_offset:data_offset + size].to_bytes()
+      data[data_offset:data_offset + size].to_owned()
     } else {
       b"" // Truncated file
     }
   } else {
     b"" // Directory or empty file
   }
-  let entry = { name, size, data: file_data, typeflag, mode, uid, gid, mtime }
+  let entry = { name, size, data: file_data, typeflag, mode, uid, gid, mtime, }
 
   // Calculate next header position (data padded to 512-byte boundary)
   let data_blocks = (size + 511) / 512

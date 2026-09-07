@@ -1,5 +1,6 @@
 import {
   "bobzhang/zip/types/fpath",
+  "moonbitlang/core/json",
 }
 
 options(

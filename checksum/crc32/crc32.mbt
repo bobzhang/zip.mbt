@@ -7,7 +7,13 @@
 ///|
 /// CRC-32 state for incremental checksum computation
 /// Internal state wraps the running (bitwise inverted) CRC value.
-struct Crc32(UInt) derive(Eq, Show)
+struct Crc32(UInt) derive(Eq, Debug)
+
+///|
+pub extend Crc32 with Eq::{not_equal, equal}
+
+///|
+pub extend Crc32 with Debug::{to_repr}
 
 ///|
 /// CRC-32 polynomial (reversed, for table-driven algorithm)
@@ -19,7 +25,7 @@ let crc32_poly : UInt = 0xedb88320
 /// Pre-computed for fast table-driven CRC calculation. Also used as tables[0] for slice-by-8.
 let crc32_table : Array[UInt] = Array::makei(256, i => {
   let mut c = i.reinterpret_as_uint()
-  for k in 0..<8 {
+  for _ in 0..<8 {
     c = if (c & 1) != 0 { crc32_poly ^ (c >> 1) } else { c >> 1 }
   }
   c
@@ -81,7 +87,7 @@ pub fn Crc32::update_bytes(self : Crc32, data : BytesView) -> Crc32 {
   }
   let tables = crc32_tables
   let t0 = crc32_table
-  guard tables is [_, t1, t2, t3, t4, t5, t6, t7]
+  guard! tables is [_, t1, t2, t3, t4, t5, t6, t7]
   let Crc32(value0) = self
   let mut v = value0
   // Bulk slice-by-8 loop (process 8 bytes at a time)

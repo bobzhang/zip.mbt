@@ -167,26 +167,24 @@ pub let fixed_dist_decoder : HuffmanDecoder = {
 }
 
 ///|
-/// Symbol info packs code and code length into a single Int
-/// Bits layout: code (upper bits) | code_length (lower 5 bits)
-/// This allows efficient storage and access
-pub typealias Int as SymInfo
-
-///|
-/// Create symbol info from code and code length
-pub fn sym_info_make(code : Int, code_length : Int) -> SymInfo {
+/// Create symbol info from code and code length.
+///
+/// "Symbol info" is a plain `Int` that packs both values:
+/// bits layout is `code` (upper bits) | `code_length` (lower 5 bits).
+/// This allows efficient storage and access.
+pub fn sym_info_make(code : Int, code_length : Int) -> Int {
   (code << 5) | code_length
 }
 
 ///|
 /// Extract code from symbol info
-pub fn sym_info_code(info : SymInfo) -> Int {
+pub fn sym_info_code(info : Int) -> Int {
   info >> 5
 }
 
 ///|
 /// Extract code length from symbol info
-pub fn sym_info_code_length(info : SymInfo) -> Int {
+pub fn sym_info_code_length(info : Int) -> Int {
   info & 0x1F
 }
 
@@ -194,7 +192,7 @@ pub fn sym_info_code_length(info : SymInfo) -> Int {
 /// Huffman encoder for deflate compression
 /// Stores symbol-to-code mappings
 struct HuffmanEncoder {
-  codes : Array[SymInfo] // codes[symbol] = sym_info for that symbol
+  codes : Array[Int] // codes[symbol] = sym_info for that symbol
   mut max_sym : Int // Maximum symbol that has a code
 }
 
@@ -202,7 +200,7 @@ struct HuffmanEncoder {
 /// Create a new Huffman encoder
 pub fn HuffmanEncoder::new() -> HuffmanEncoder {
   // Need room for all possible symbols including fixed codes (0-287)
-  { codes: Array::make(litlen_sym_fixed_max + 1, 0), max_sym: 0 }
+  { codes: Array::make(litlen_sym_fixed_max + 1, 0), max_sym: 0, }
 }
 
 ///|
@@ -219,7 +217,7 @@ pub fn HuffmanEncoder::codes_length(self : HuffmanEncoder) -> Int {
 
 ///|
 /// Get symbol info for a given symbol
-pub fn HuffmanEncoder::get(self : HuffmanEncoder, symbol : Int) -> SymInfo {
+pub fn HuffmanEncoder::get(self : HuffmanEncoder, symbol : Int) -> Int {
   self.codes[symbol]
 }
 
@@ -228,7 +226,7 @@ pub fn HuffmanEncoder::get(self : HuffmanEncoder, symbol : Int) -> SymInfo {
 pub fn HuffmanEncoder::set(
   self : HuffmanEncoder,
   symbol : Int,
-  info : SymInfo,
+  info : Int,
 ) -> Unit {
   self.codes[symbol] = info
   if sym_info_code_length(info) > 0 && symbol > self.max_sym {

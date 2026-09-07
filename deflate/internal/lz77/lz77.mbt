@@ -31,7 +31,7 @@ pub let no_pos : Int = -1 // Marker for no position
 /// Compute rolling hash of 4 bytes starting at position i
 /// Uses Fibonacci hashing: multiply by golden ratio and take upper bits
 pub fn hash4(bytes : BytesView) -> Int {
-  guard bytes is [u32le(v), ..]
+  guard! bytes is [u32le(v), ..]
   // Fibonacci hash: multiply by golden ratio approximation
   let hmul : UInt = 0x9E3779B1 // 2^32 / phi, where phi = golden ratio
   let product = v * hmul

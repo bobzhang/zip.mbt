@@ -1,25 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/checksum/adler32"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
-fn bytes_adler32(BytesView) -> UInt
+pub fn bytes_adler32(BytesView) -> UInt
 
 // Errors
 
 // Types and methods
-type Adler32
-fn Adler32::equal(Self, Self) -> Bool // from trait `Eq`
-fn Adler32::finish(Self) -> UInt
-fn Adler32::init() -> Self
-#deprecated
-fn Adler32::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn Adler32::output(Self, &Logger) -> Unit // from trait `Show`
-fn Adler32::to_string(Self) -> String // from trait `Show`
-fn Adler32::update_bytes(Self, BytesView) -> Self
-impl Eq for Adler32
-impl Show for Adler32
+type Adler32 derive(Eq, @debug.Debug)
+pub fn Adler32::equal(Self, Self) -> Bool
+pub fn Adler32::finish(Self) -> UInt
+pub fn Adler32::init() -> Self
+pub fn Adler32::not_equal(Self, Self) -> Bool
+pub fn Adler32::to_repr(Self) -> @debug.Repr
+pub fn Adler32::update_bytes(Self, BytesView) -> Self
 
 // Type aliases
 
 // Traits
-

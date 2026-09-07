@@ -8,7 +8,13 @@ pub(all) enum Compression {
   Xz // XZ (not supported)
   Zstd // Zstandard (not supported)
   Other(Int) // Unknown compression method
-} derive(Eq, Show)
+} derive(Eq, Debug)
+
+///|
+pub extend Compression with Eq::{not_equal, equal}
+
+///|
+pub extend Compression with Debug::{to_repr}
 
 ///|
 /// Convert compression format to ZIP method number

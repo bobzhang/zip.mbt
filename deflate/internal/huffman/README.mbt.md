@@ -36,20 +36,17 @@ Decodes Huffman-encoded symbols.
 
 ```
 pub struct HuffmanEncoder {
-  pub codes : Array[SymInfo]  // codes[symbol] = (code, length)
+  pub codes : Array[Int]  // codes[symbol] = (code, length)
   pub mut max_sym : Int       // Maximum encoded symbol
 }
 ```
 
 Encodes symbols to Huffman codes.
 
-#### `SymInfo`
+#### Symbol info
 
-```
-pub typealias Int as SymInfo
-```
-
-Packed representation: `(code << 16) | code_length`
+Symbol info is a plain `Int` that packs both the Huffman code and its
+length: `(code << 5) | code_length`.
 
 ### Constants
 
@@ -92,20 +89,20 @@ Initialize decoder from code lengths.
 
 Create an empty Huffman encoder.
 
-##### `get(self, symbol : Int) -> SymInfo`
+##### `get(self, symbol : Int) -> Int`
 
 Get encoding information for a symbol.
 
-##### `set(self, symbol : Int, info : SymInfo) -> Unit`
+##### `set(self, symbol : Int, info : Int) -> Unit`
 
 Set encoding information for a symbol.
 
 #### Symbol Info Functions
 
 ```
-pub fn sym_info_make(code : Int, code_length : Int) -> SymInfo
-pub fn sym_info_code(info : SymInfo) -> Int
-pub fn sym_info_code_length(info : SymInfo) -> Int
+pub fn sym_info_make(code : Int, code_length : Int) -> Int
+pub fn sym_info_code(info : Int) -> Int
+pub fn sym_info_code_length(info : Int) -> Int
 ```
 
 Pack/unpack symbol encoding information.

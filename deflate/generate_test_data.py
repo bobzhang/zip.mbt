@@ -18,9 +18,14 @@ def bytes_to_moonbit_array(data: bytes) -> str:
     """Convert bytes to MoonBit byte array literal."""
     if len(data) == 0:
         return 'b""'
-    # Format as b"\x01\x02\x03..."
-    hex_str = ''.join(f'\\x{b:02x}' for b in data)
-    return f'b"{hex_str}"'
+    # Format as b"\x01\x02\x03...", split into chunks so that no source line
+    # exceeds the compiler's 65535-column text-segment limit (warning 33).
+    chunk_size = 4096
+    chunks = [
+        ''.join(f'\\x{b:02x}' for b in data[i:i + chunk_size])
+        for i in range(0, len(data), chunk_size)
+    ]
+    return ' +\n    '.join(f'b"{c}"' for c in chunks)
 
 def create_test_case(name: str, input_data: bytes, level: int = -1) -> Dict[str, Any]:
     """

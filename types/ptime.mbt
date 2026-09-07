@@ -18,6 +18,21 @@
 pub(all) struct Ptime(Int) derive(Eq, Compare, ToJson, FromJson, Hash)
 
 ///|
+pub extend Ptime with Eq::{not_equal, equal}
+
+///|
+pub extend Ptime with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
+pub extend Ptime with ToJson::{to_json}
+
+///|
+pub extend Ptime with @json.FromJson::{from_json}
+
+///|
+pub extend Ptime with Hash::{hash, hash_combine}
+
+///|
 /// DOS epoch: 1980-01-01 00:00:00 UTC (in POSIX time).
 /// 
 /// This is the earliest representable time in ZIP archives. Any POSIX time

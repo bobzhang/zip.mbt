@@ -7,7 +7,13 @@
 ///|
 /// Adler-32 state for incremental checksum computation
 /// Internal Adler state packs s2 (high 16) and s1 (low 16) per RFC 1950.
-struct Adler32(UInt) derive(Eq, Show)
+struct Adler32(UInt) derive(Eq, Debug)
+
+///|
+pub extend Adler32 with Eq::{not_equal, equal}
+
+///|
+pub extend Adler32 with Debug::{to_repr}
 
 ///|
 /// Adler-32 modulus (largest prime less than 65536)

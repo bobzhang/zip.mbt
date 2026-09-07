@@ -1,49 +1,43 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/types/fpath"
 
-import(
-  "moonbitlang/core/json"
-)
+import {
+  "moonbitlang/core/json",
+}
 
 // Values
-fn ensure_directoryness(Fpath) -> Fpath
+pub fn ensure_directoryness(Fpath) -> Fpath
 
-fn ensure_unix(Fpath) -> Fpath
+pub fn ensure_unix(Fpath) -> Fpath
 
-fn sanitize(Fpath) -> Fpath
+pub fn sanitize(Fpath) -> Fpath
 
 // Errors
 
 // Types and methods
-pub(all) struct Fpath(String)
-fn Fpath::add(Self, Self) -> Self // from trait `Add`
+pub(all) struct Fpath(String) derive(Compare, Eq, Hash, @json.FromJson)
+pub fn Fpath::add(Self, Self) -> Self
 #alias("_[_]")
-fn Fpath::at(Self, Int) -> Int
-fn Fpath::compare(Self, Self) -> Int // from trait `Compare`
-fn Fpath::equal(Self, Self) -> Bool // from trait `Eq`
-fn Fpath::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError // from trait `@json.FromJson`
-fn Fpath::hash(Self) -> Int // from trait `Hash`
-fn Fpath::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
-#deprecated
-fn Fpath::inner(Self) -> String
-fn Fpath::is_empty(Self) -> Bool
-fn Fpath::length(Self) -> Int
-#deprecated
-fn Fpath::op_add(Self, Self) -> Self // from trait `Add`
-#deprecated
-fn Fpath::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn Fpath::output(Self, &Logger) -> Unit // from trait `Show`
-fn Fpath::to_json(Self) -> Json // from trait `ToJson`
-fn Fpath::to_string(Self) -> String // from trait `Show`
-impl Add for Fpath
-impl Compare for Fpath
-impl Eq for Fpath
-impl Hash for Fpath
-impl Show for Fpath
-impl ToJson for Fpath
-impl @json.FromJson for Fpath
+pub fn Fpath::at(Self, Int) -> Int
+pub fn Fpath::compare(Self, Self) -> Int
+pub fn Fpath::equal(Self, Self) -> Bool
+pub fn Fpath::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Fpath::hash(Self) -> Int
+pub fn Fpath::hash_combine(Self, Hasher) -> Unit
+pub fn Fpath::is_empty(Self) -> Bool
+pub fn Fpath::length(Self) -> Int
+pub fn Fpath::not_equal(Self, Self) -> Bool
+pub fn Fpath::op_ge(Self, Self) -> Bool
+pub fn Fpath::op_gt(Self, Self) -> Bool
+pub fn Fpath::op_le(Self, Self) -> Bool
+pub fn Fpath::op_lt(Self, Self) -> Bool
+pub fn Fpath::output(Self, &Logger) -> Unit
+pub fn Fpath::to_json(Self) -> Json
+pub fn Fpath::to_string(Self) -> String
+pub impl Add for Fpath
+pub impl Show for Fpath
+pub impl ToJson for Fpath
 
 // Type aliases
 
 // Traits
-

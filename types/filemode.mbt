@@ -5,6 +5,21 @@
 pub(all) struct FileMode(Int) derive(Eq, Compare, ToJson, FromJson, Hash)
 
 ///|
+pub extend FileMode with Eq::{not_equal, equal}
+
+///|
+pub extend FileMode with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
+pub extend FileMode with ToJson::{to_json}
+
+///|
+pub extend FileMode with @json.FromJson::{from_json}
+
+///|
+pub extend FileMode with Hash::{hash, hash_combine}
+
+///|
 /// Get the integer value of the file mode
 /// Raw integer permission bits (includes type bits if supplied externally).
 pub fn FileMode::to_int(self : FileMode) -> Int {
@@ -20,15 +35,18 @@ pub fn FileMode::from_int(value : Int) -> FileMode {
 
 ///|
 /// String representation for display
-pub impl Show for FileMode with output(x, logger) {
+pub impl Show for FileMode with fn output(x, logger) {
   Show::output(x.0, logger)
 }
 
 ///|
 /// Convert to string (returns the integer as string)
-pub impl Show for FileMode with to_string(x) {
+pub impl Show for FileMode with fn to_string(x) {
   x.0.to_string()
 }
+
+///|
+pub extend FileMode with Show::{to_string, output}
 
 ///|
 /// Format Unix file mode like ls -l (e.g., "rwxr-xr-x")
