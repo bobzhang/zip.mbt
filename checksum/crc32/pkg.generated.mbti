@@ -1,26 +1,25 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/checksum/crc32"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
-fn bytes_crc32(BytesView) -> UInt
+pub fn bytes_crc32(BytesView) -> UInt
 
 // Errors
 
 // Types and methods
-type Crc32
-fn Crc32::equal(Self, Self) -> Bool // from trait `Eq`
-fn Crc32::finish(Self) -> UInt
-fn Crc32::init() -> Self
-#deprecated
-fn Crc32::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn Crc32::output(Self, &Logger) -> Unit // from trait `Show`
-fn Crc32::to_string(Self) -> String // from trait `Show`
-fn Crc32::update_byte(Self, Int) -> Self
-fn Crc32::update_bytes(Self, BytesView) -> Self
-impl Eq for Crc32
-impl Show for Crc32
+type Crc32 derive(Eq, @debug.Debug)
+pub fn Crc32::equal(Self, Self) -> Bool
+pub fn Crc32::finish(Self) -> UInt
+pub fn Crc32::init() -> Self
+pub fn Crc32::not_equal(Self, Self) -> Bool
+pub fn Crc32::to_repr(Self) -> @debug.Repr
+pub fn Crc32::update_byte(Self, Int) -> Self
+pub fn Crc32::update_bytes(Self, BytesView) -> Self
 
 // Type aliases
 
 // Traits
-

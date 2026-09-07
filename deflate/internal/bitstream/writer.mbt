@@ -10,7 +10,7 @@ struct BitWriter {
 ///|
 /// Create a new BitWriter
 pub fn BitWriter::new(dst : @bytebuf.ByteBuf) -> BitWriter {
-  { dst, bits: 0, bits_len: 0 }
+  { dst, bits: 0, bits_len: 0, }
 }
 
 ///|

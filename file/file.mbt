@@ -370,7 +370,7 @@ pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
       let crc = @crc32.bytes_crc32(decompressed[:])
       (decompressed, crc)
     }
-    _ => fail("Compression format \{self.compression} not supported")
+    _ => fail("Compression format \{Repr(self.compression)} not supported")
   }
 }
 

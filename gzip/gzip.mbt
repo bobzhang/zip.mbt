@@ -62,7 +62,7 @@ pub fn compress(
   out[i + 5] = ((isize_u32 >> 8) & 0xFF).reinterpret_as_int().to_byte()
   out[i + 6] = ((isize_u32 >> 16) & 0xFF).reinterpret_as_int().to_byte()
   out[i + 7] = ((isize_u32 >> 24) & 0xFF).reinterpret_as_int().to_byte()
-  @bytes.from_fixedarray(out, len=total)
+  Bytes::from_array(out[0:total])
 }
 
 ///|
@@ -95,7 +95,7 @@ pub fn decompress(data : BytesView) -> Bytes raise {
   let decompressed = @deflate.inflate(comp_slice_view)
 
   // Verify CRC32
-  match data[-8:] {
+  match data[data.length() - 8:] {
     [u32le(expected_crc32), ..] => {
       let computed_crc32 = @crc32.bytes_crc32(decompressed[:])
       if computed_crc32 != expected_crc32 {

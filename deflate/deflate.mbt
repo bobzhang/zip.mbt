@@ -917,7 +917,7 @@ priv struct FrequencyCounter {
 
 ///|
 fn FrequencyCounter::new() -> FrequencyCounter {
-  { litlen_freqs: Array::make(286, 0), dist_freqs: Array::make(30, 0) }
+  { litlen_freqs: Array::make(286, 0), dist_freqs: Array::make(30, 0), }
 }
 
 ///|
@@ -1013,7 +1013,7 @@ pub fn deflate_fixed(
     ..write_literal_symbol(
       @huffman.fixed_litlen_encoder, litlen_end_of_block_sym,
     )
-    ..flush()
+    .flush()
     return output.contents()
   }
   let hash_head = Array::make(@lz77.hash_size, @lz77.no_pos)
@@ -1375,7 +1375,13 @@ pub(all) enum DeflateLevel {
   Fast // Fast compression with fixed Huffman
   Default // Default compression with dynamic Huffman
   Best // Best compression with maximum effort
-} derive(Eq, Show)
+} derive(Eq, Debug)
+
+///|
+pub extend DeflateLevel with Eq::{not_equal, equal}
+
+///|
+pub extend DeflateLevel with Debug::{to_repr}
 
 // ============================================================================
 // High-level DEFLATE API Functions
@@ -1549,7 +1555,7 @@ pub fn zlib_decompress(data : BytesView) -> (Bytes, UInt) raise {
     fail("Preset dictionary not supported")
   }
   // Copy bytes (BytesView -> Bytes) for inflate API
-  let bytes_copy = data.to_bytes()
+  let bytes_copy = data.to_owned()
   let deflate_len = len - 6
   let decompressed = inflate(bytes_copy[2:2 + deflate_len])
   // Trailer

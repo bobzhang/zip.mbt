@@ -1,20 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/deflate"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
-fn deflate(BytesView, level? : DeflateLevel) -> Bytes raise
+pub fn deflate(BytesView, level? : DeflateLevel) -> Bytes raise
 
-fn deflate_dynamic(BytesView, Bool, Int, Int) -> Bytes
+pub fn deflate_dynamic(BytesView, Bool, Int, Int) -> Bytes
 
-fn deflate_fixed(BytesView, Bool, Int, Int) -> Bytes
+pub fn deflate_fixed(BytesView, Bool, Int, Int) -> Bytes
 
-fn deflate_stored(BytesView) -> Bytes raise
+pub fn deflate_stored(BytesView) -> Bytes raise
 
-fn inflate(BytesView, decompressed_size? : Int) -> Bytes raise
+pub fn inflate(BytesView, decompressed_size? : Int) -> Bytes raise
 
-fn zlib_compress(BytesView, level? : DeflateLevel) -> (UInt, Bytes)
+pub fn zlib_compress(BytesView, level? : DeflateLevel) -> (UInt, Bytes)
 
-fn zlib_decompress(BytesView) -> (Bytes, UInt) raise
+pub fn zlib_decompress(BytesView) -> (Bytes, UInt) raise
 
 // Errors
 
@@ -24,16 +28,11 @@ pub(all) enum DeflateLevel {
   Fast
   Default
   Best
-}
-fn DeflateLevel::equal(Self, Self) -> Bool // from trait `Eq`
-#deprecated
-fn DeflateLevel::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn DeflateLevel::output(Self, &Logger) -> Unit // from trait `Show`
-fn DeflateLevel::to_string(Self) -> String // from trait `Show`
-impl Eq for DeflateLevel
-impl Show for DeflateLevel
+} derive(Eq, @debug.Debug)
+pub fn DeflateLevel::equal(Self, Self) -> Bool
+pub fn DeflateLevel::not_equal(Self, Self) -> Bool
+pub fn DeflateLevel::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

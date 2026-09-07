@@ -50,7 +50,7 @@ let eocd_size : Int = 22 // End of central directory record size
 /// The returned offset is used by Central Directory headers for file location.
 /// 
 /// Returns: byte offset where this local header was written in the buffer.
-fn Member::write_local_header(self : Member, buf : @buffer.Buffer) -> Int {
+fn Member::write_local_header(self : Member, buf : Buffer) -> Int {
   let local_header_offset = buf.length()
   let path_bytes = self.path().to_string().utf8()
   let (dos_date, dos_time) = @types.ptime_to_dos_date_time(self.mtime())
@@ -117,7 +117,7 @@ fn Member::write_local_header(self : Member, buf : @buffer.Buffer) -> Int {
 /// - file comment (variable, currently 0)
 fn Member::write_central_directory_header(
   self : Member,
-  buf : @buffer.Buffer,
+  buf : Buffer,
   local_header_offset : Int,
 ) -> Unit {
   let path_bytes = self.path().to_string().utf8()
@@ -198,7 +198,7 @@ pub fn Archive::to_bytes(self : Archive, first? : Fpath) -> Bytes raise {
   }
   let total_size = self.encoding_size()
   // Use Buffer from stdlib instead of manual array indexing
-  let buf = @buffer.new(size_hint=total_size)
+  let buf = Buffer(size_hint=total_size)
   let central_dir_entries : Array[(Int, Member)] = []
 
   // Helper to encode a member - write local header and record position

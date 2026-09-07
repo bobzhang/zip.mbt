@@ -9,7 +9,7 @@
 /// Create an empty archive with no members.
 /// Returns a fresh Archive ready for file additions.
 pub fn Archive::empty() -> Archive {
-  { members: {} }
+  { members: {}, }
 }
 
 ///|
@@ -79,5 +79,5 @@ pub fn Archive::to_map(self : Archive) -> Map[Fpath, Member] {
 /// Create archive from a SortedMap
 /// Warning: Assumes each key k maps to member m with Member::path(m) == k
 pub fn Archive::of_map(map : Map[Fpath, Member]) -> Archive {
-  { members: map }
+  { members: map, }
 }

@@ -4,9 +4,7 @@ import {
   "bobzhang/zip/member",
   "bobzhang/zip/types",
   "bobzhang/zip/types/fpath",
-  "bobzhang/zip/hexdump" @hexdump,
+  "bobzhang/zip/hexdump",
 }
 
-options(
-  "is-main": true,
-)
+pkgtype(kind: "executable")

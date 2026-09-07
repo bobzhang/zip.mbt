@@ -1,29 +1,30 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zip/types"
 
-import(
-  "bobzhang/zip/types/fpath"
-  "moonbitlang/core/json"
-)
+import {
+  "bobzhang/zip/types/fpath",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
 
 // Values
-let dos_epoch : Ptime
+pub let dos_epoch : Ptime
 
-fn format_file_mode(FileMode) -> String
+pub fn format_file_mode(FileMode) -> String
 
-fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
+pub fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
 
-fn fpath_ensure_unix(@fpath.Fpath) -> @fpath.Fpath
+pub fn fpath_ensure_unix(@fpath.Fpath) -> @fpath.Fpath
 
-fn fpath_sanitize(@fpath.Fpath) -> @fpath.Fpath
+pub fn fpath_sanitize(@fpath.Fpath) -> @fpath.Fpath
 
-fn ptime_format(Ptime) -> String
+pub fn ptime_format(Ptime) -> String
 
-fn ptime_of_dos_date_time(UInt16, UInt16) -> Ptime
+pub fn ptime_of_dos_date_time(UInt16, UInt16) -> Ptime
 
-fn ptime_to_date_time(Ptime) -> ((Int, Int, Int), (Int, Int, Int))
+pub fn ptime_to_date_time(Ptime) -> ((Int, Int, Int), (Int, Int, Int))
 
-fn ptime_to_dos_date_time(Ptime) -> (UInt16, UInt16)
+pub fn ptime_to_dos_date_time(Ptime) -> (UInt16, UInt16)
 
 // Errors
 
@@ -36,59 +37,47 @@ pub(all) enum Compression {
   Xz
   Zstd
   Other(Int)
-}
-fn Compression::equal(Self, Self) -> Bool // from trait `Eq`
+} derive(Eq, @debug.Debug)
+pub fn Compression::equal(Self, Self) -> Bool
 #as_free_fn(compression)
-fn Compression::from_int(Int) -> Self
-#deprecated
-fn Compression::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn Compression::output(Self, &Logger) -> Unit // from trait `Show`
-fn Compression::to_int(Self) -> Int
-fn Compression::to_string(Self) -> String
-impl Eq for Compression
-impl Show for Compression
+pub fn Compression::from_int(Int) -> Self
+pub fn Compression::not_equal(Self, Self) -> Bool
+pub fn Compression::to_int(Self) -> Int
+pub fn Compression::to_repr(Self) -> @debug.Repr
+pub fn Compression::to_string(Self) -> String
 
-pub(all) struct FileMode(Int)
-fn FileMode::compare(Self, Self) -> Int // from trait `Compare`
-fn FileMode::equal(Self, Self) -> Bool // from trait `Eq`
-fn FileMode::from_int(Int) -> Self
-fn FileMode::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError // from trait `@json.FromJson`
-fn FileMode::hash(Self) -> Int // from trait `Hash`
-fn FileMode::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
-#deprecated
-fn FileMode::inner(Self) -> Int
-#deprecated
-fn FileMode::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn FileMode::output(Self, &Logger) -> Unit // from trait `Show`
-fn FileMode::to_int(Self) -> Int
-fn FileMode::to_json(Self) -> Json // from trait `ToJson`
-fn FileMode::to_string(Self) -> String // from trait `Show`
-impl Compare for FileMode
-impl Eq for FileMode
-impl Hash for FileMode
-impl Show for FileMode
-impl ToJson for FileMode
-impl @json.FromJson for FileMode
+pub(all) struct FileMode(Int) derive(Compare, Eq, Hash, ToJson, @json.FromJson)
+pub fn FileMode::compare(Self, Self) -> Int
+pub fn FileMode::equal(Self, Self) -> Bool
+pub fn FileMode::from_int(Int) -> Self
+pub fn FileMode::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn FileMode::hash(Self) -> Int
+pub fn FileMode::hash_combine(Self, Hasher) -> Unit
+pub fn FileMode::not_equal(Self, Self) -> Bool
+pub fn FileMode::op_ge(Self, Self) -> Bool
+pub fn FileMode::op_gt(Self, Self) -> Bool
+pub fn FileMode::op_le(Self, Self) -> Bool
+pub fn FileMode::op_lt(Self, Self) -> Bool
+pub fn FileMode::output(Self, &Logger) -> Unit
+pub fn FileMode::to_int(Self) -> Int
+pub fn FileMode::to_json(Self) -> Json
+pub fn FileMode::to_string(Self) -> String
+pub impl Show for FileMode
 
-pub(all) struct Ptime(Int)
-fn Ptime::compare(Self, Self) -> Int // from trait `Compare`
-fn Ptime::equal(Self, Self) -> Bool // from trait `Eq`
-fn Ptime::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError // from trait `@json.FromJson`
-fn Ptime::hash(Self) -> Int // from trait `Hash`
-fn Ptime::hash_combine(Self, Hasher) -> Unit // from trait `Hash`
-#deprecated
-fn Ptime::inner(Self) -> Int
-#deprecated
-fn Ptime::op_equal(Self, Self) -> Bool // from trait `Eq`
-fn Ptime::to_json(Self) -> Json // from trait `ToJson`
-impl Compare for Ptime
-impl Eq for Ptime
-impl Hash for Ptime
-impl ToJson for Ptime
-impl @json.FromJson for Ptime
+pub(all) struct Ptime(Int) derive(Compare, Eq, Hash, ToJson, @json.FromJson)
+pub fn Ptime::compare(Self, Self) -> Int
+pub fn Ptime::equal(Self, Self) -> Bool
+pub fn Ptime::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Ptime::hash(Self) -> Int
+pub fn Ptime::hash_combine(Self, Hasher) -> Unit
+pub fn Ptime::not_equal(Self, Self) -> Bool
+pub fn Ptime::op_ge(Self, Self) -> Bool
+pub fn Ptime::op_gt(Self, Self) -> Bool
+pub fn Ptime::op_le(Self, Self) -> Bool
+pub fn Ptime::op_lt(Self, Self) -> Bool
+pub fn Ptime::to_json(Self) -> Json
 
 // Type aliases
-pub typealias @fpath.Fpath as Fpath
+pub using @fpath {type Fpath}
 
 // Traits
-

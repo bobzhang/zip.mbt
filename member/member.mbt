@@ -92,7 +92,7 @@ pub fn Member::make(
   } else {
     modification_time
   }
-  { path: final_path, kind, mode: file_mode, mtime: final_mtime }
+  { path: final_path, kind, mode: file_mode, mtime: final_mtime, }
 }
 
 ///|

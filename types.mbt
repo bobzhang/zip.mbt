@@ -26,7 +26,10 @@ struct Archive {
 /// 
 /// Example output structure:
 /// {"length": 3, "members": [["readme.txt", "File"], ["src/", "Dir"]]}
-pub impl ToJson for Archive with to_json(self) {
+pub extend Archive with ToJson::{to_json}
+
+///|
+pub impl ToJson for Archive with fn to_json(self) {
   let members : Array[Json] = []
   for path, m in self.members { // insertion order
     match m.kind() {
