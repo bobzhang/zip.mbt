@@ -1,7 +1,6 @@
 import {
   "bobzhang/zip/deflate",
   "bobzhang/zip/checksum/crc32",
-  "moonbitlang/core/bytes",
 }
 
 import {

@@ -1,7 +1,3 @@
-import {
-  "moonbitlang/core/bytes",
-}
-
 options(
   "is-main": false,
 )
