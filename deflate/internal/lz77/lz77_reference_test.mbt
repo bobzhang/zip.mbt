@@ -263,7 +263,7 @@ test "lz77_reference_json_pattern" {
 
 ///|
 /// Helper function to find all LZ77 matches in data
-fn find_all_matches(data : Bytes) -> Array[(Int, Int)] {
+fn find_all_matches(data : Bytes) -> Array[(Int32, Int32)] {
   let hash_head = Array::make(32768, -1)
   let hash_prev = Array::make(32768, 0)
   let mut matches = []

@@ -6,20 +6,20 @@
 
 ///|
 /// Constants for DEFLATE Huffman coding
-let litlen_sym_max : Int = 285 // Maximum literal/length symbol
+let litlen_sym_max : Int32 = 285 // Maximum literal/length symbol
 
 ///|
-let litlen_sym_fixed_max : Int = 287 // Max for fixed Huffman
+let litlen_sym_fixed_max : Int32 = 287 // Max for fixed Huffman
 
 ///|
-let dist_sym_max : Int = 29 // Maximum distance symbol
+let dist_sym_max : Int32 = 29 // Maximum distance symbol
 
 ///|
 /// Huffman decoder for inflate (decompression)
 struct HuffmanDecoder {
-  counts : Array[Int] // counts[i] = number of codes of length i
-  symbols : Array[Int] // symbols sorted by code
-  mut max_sym : Int // maximum symbol seen
+  counts : Array[Int32] // counts[i] = number of codes of length i
+  symbols : Array[Int32] // symbols sorted by code
+  mut max_sym : Int32 // maximum symbol seen
 }
 
 ///|
@@ -38,9 +38,9 @@ pub fn HuffmanDecoder::new() -> HuffmanDecoder {
 /// Initialize a Huffman decoder from code lengths
 pub fn HuffmanDecoder::init_from_lengths(
   self : HuffmanDecoder,
-  lengths : Array[Int],
-  start : Int,
-  lengths_len : Int,
+  lengths : Array[Int32],
+  start : Int32,
+  lengths_len : Int32,
 ) -> Unit {
   // Clear counts
   for i = 0; i < self.counts.length(); i = i + 1 {
@@ -96,31 +96,31 @@ pub fn HuffmanDecoder::init_from_lengths(
 
 ///|
 /// Get the max_sym field (maximum symbol seen)
-pub fn HuffmanDecoder::max_sym(self : HuffmanDecoder) -> Int {
+pub fn HuffmanDecoder::max_sym(self : HuffmanDecoder) -> Int32 {
   self.max_sym
 }
 
 ///|
 /// Get count for a specific code length
-pub fn HuffmanDecoder::count(self : HuffmanDecoder, len : Int) -> Int {
+pub fn HuffmanDecoder::count(self : HuffmanDecoder, len : Int32) -> Int32 {
   self.counts[len]
 }
 
 ///|
 /// Get symbol at a specific index
-pub fn HuffmanDecoder::symbol(self : HuffmanDecoder, index : Int) -> Int {
+pub fn HuffmanDecoder::symbol(self : HuffmanDecoder, index : Int32) -> Int32 {
   self.symbols[index]
 }
 
 ///|
 /// Get the length of counts array
-pub fn HuffmanDecoder::counts_length(self : HuffmanDecoder) -> Int {
+pub fn HuffmanDecoder::counts_length(self : HuffmanDecoder) -> Int32 {
   self.counts.length()
 }
 
 ///|
 /// Get the length of symbols array
-pub fn HuffmanDecoder::symbols_length(self : HuffmanDecoder) -> Int {
+pub fn HuffmanDecoder::symbols_length(self : HuffmanDecoder) -> Int32 {
   self.symbols.length()
 }
 
@@ -172,19 +172,19 @@ pub let fixed_dist_decoder : HuffmanDecoder = {
 /// "Symbol info" is a plain `Int` that packs both values:
 /// bits layout is `code` (upper bits) | `code_length` (lower 5 bits).
 /// This allows efficient storage and access.
-pub fn sym_info_make(code : Int, code_length : Int) -> Int {
+pub fn sym_info_make(code : Int32, code_length : Int32) -> Int32 {
   (code << 5) | code_length
 }
 
 ///|
 /// Extract code from symbol info
-pub fn sym_info_code(info : Int) -> Int {
+pub fn sym_info_code(info : Int32) -> Int32 {
   info >> 5
 }
 
 ///|
 /// Extract code length from symbol info
-pub fn sym_info_code_length(info : Int) -> Int {
+pub fn sym_info_code_length(info : Int32) -> Int32 {
   info & 0x1F
 }
 
@@ -192,8 +192,8 @@ pub fn sym_info_code_length(info : Int) -> Int {
 /// Huffman encoder for deflate compression
 /// Stores symbol-to-code mappings
 struct HuffmanEncoder {
-  codes : Array[Int] // codes[symbol] = sym_info for that symbol
-  mut max_sym : Int // Maximum symbol that has a code
+  codes : Array[Int32] // codes[symbol] = sym_info for that symbol
+  mut max_sym : Int32 // Maximum symbol that has a code
 }
 
 ///|
@@ -205,19 +205,19 @@ pub fn HuffmanEncoder::new() -> HuffmanEncoder {
 
 ///|
 /// Get the max_sym field (maximum symbol that has a code)
-pub fn HuffmanEncoder::max_sym(self : HuffmanEncoder) -> Int {
+pub fn HuffmanEncoder::max_sym(self : HuffmanEncoder) -> Int32 {
   self.max_sym
 }
 
 ///|
 /// Get the length of codes array
-pub fn HuffmanEncoder::codes_length(self : HuffmanEncoder) -> Int {
+pub fn HuffmanEncoder::codes_length(self : HuffmanEncoder) -> Int32 {
   self.codes.length()
 }
 
 ///|
 /// Get symbol info for a given symbol
-pub fn HuffmanEncoder::get(self : HuffmanEncoder, symbol : Int) -> Int {
+pub fn HuffmanEncoder::get(self : HuffmanEncoder, symbol : Int32) -> Int32 {
   self.codes[symbol]
 }
 
@@ -225,8 +225,8 @@ pub fn HuffmanEncoder::get(self : HuffmanEncoder, symbol : Int) -> Int {
 /// Set symbol info for a given symbol
 pub fn HuffmanEncoder::set(
   self : HuffmanEncoder,
-  symbol : Int,
-  info : Int,
+  symbol : Int32,
+  info : Int32,
 ) -> Unit {
   self.codes[symbol] = info
   if sym_info_code_length(info) > 0 && symbol > self.max_sym {
@@ -236,7 +236,7 @@ pub fn HuffmanEncoder::set(
 
 ///|
 /// Helper function to reverse bits (for Huffman codes)
-pub fn reverse_bits(value : Int, length : Int) -> Int {
+pub fn reverse_bits(value : Int32, length : Int32) -> Int32 {
   let mut result = 0
   let mut v = value
   for _i = 0; _i < length; _i = _i + 1 {

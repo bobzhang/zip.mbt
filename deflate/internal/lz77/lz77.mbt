@@ -7,33 +7,33 @@
 /// - Back-reference encoding (distance, length pairs)
 
 // LZ77 constants
-pub let min_match_len : Int = 3 // Minimum match length
+pub let min_match_len : Int32 = 3 // Minimum match length
 
 ///|
-pub let max_match_len : Int = 258 // Maximum match length (same as length_max)
+pub let max_match_len : Int32 = 258 // Maximum match length (same as length_max)
 
 ///|
-let max_match_dist : Int = 32768 // Maximum back-reference distance
+let max_match_dist : Int32 = 32768 // Maximum back-reference distance
 
 ///|
-pub let window_size : Int = 32768 // Sliding window size
+pub let window_size : Int32 = 32768 // Sliding window size
 
 ///|
-let hash_bit_size : Int = 15 // Hash table size = 2^15 = 32768
+let hash_bit_size : Int32 = 15 // Hash table size = 2^15 = 32768
 
 ///|
-pub let hash_size : Int = 32768 // 1 << hash_bit_size
+pub let hash_size : Int32 = 32768 // 1 << hash_bit_size
 
 ///|
-pub let no_pos : Int = -1 // Marker for no position
+pub let no_pos : Int32 = -1 // Marker for no position
 
 ///|
 /// Compute rolling hash of 4 bytes starting at position i
 /// Uses Fibonacci hashing: multiply by golden ratio and take upper bits
-pub fn hash4(bytes : BytesView) -> Int {
+pub fn hash4(bytes : BytesView) -> Int32 {
   guard! bytes is [u32le(v), ..]
   // Fibonacci hash: multiply by golden ratio approximation
-  let hmul : UInt = 0x9E3779B1 // 2^32 / phi, where phi = golden ratio
+  let hmul : UInt32 = 0x9E3779B1 // 2^32 / phi, where phi = golden ratio
   let product = v * hmul
   ((product >> (32 - hash_bit_size)) & 0x7FFF).reinterpret_as_int() // Extract high 15 bits of 32-bit hash
 }
@@ -41,10 +41,10 @@ pub fn hash4(bytes : BytesView) -> Int {
 ///|
 /// Insert position into hash chain
 pub fn insert_hash(
-  hash_head : Array[Int],
-  hash_prev : Array[Int],
-  hash : Int,
-  pos : Int,
+  hash_head : Array[Int32],
+  hash_prev : Array[Int32],
+  hash : Int32,
+  pos : Int32,
 ) -> Unit {
   hash_prev[pos % window_size] = hash_head[hash]
   hash_head[hash] = pos
@@ -53,7 +53,7 @@ pub fn insert_hash(
 ///|
 /// Match bytes backward from positions i and j for len bytes
 /// Returns -1 if all match, or the count of remaining unmatched bytes
-fn match_bwd(bytes : BytesView, i : Int, j : Int, len : Int) -> Int {
+fn match_bwd(bytes : BytesView, i : Int32, j : Int32, len : Int32) -> Int32 {
   if len < 0 {
     return len
   }
@@ -69,11 +69,11 @@ fn match_bwd(bytes : BytesView, i : Int, j : Int, len : Int) -> Int {
 /// Returns the length of the match
 pub fn match_fwd(
   bytes : BytesView,
-  i : Int,
-  j : Int,
-  len : Int,
-  max_match_len : Int,
-) -> Int {
+  i : Int32,
+  j : Int32,
+  len : Int32,
+  max_match_len : Int32,
+) -> Int32 {
   if len >= max_match_len {
     return len
   }
@@ -93,11 +93,11 @@ pub fn match_fwd(
 /// Uses bidirectional matching: check backward first, then forward
 pub fn find_match_length(
   bytes : BytesView,
-  i : Int,
-  j : Int,
-  prev_match_len : Int,
-  max_match_len : Int,
-) -> Int {
+  i : Int32,
+  j : Int32,
+  prev_match_len : Int32,
+  max_match_len : Int32,
+) -> Int32 {
   let newi = i + prev_match_len
   let newj = j + prev_match_len
   if newi >= bytes.length() || newj >= bytes.length() {
@@ -117,12 +117,12 @@ pub fn find_match_length(
 /// Back-reference: represents a (distance, length) pair for LZ77
 /// Packed into a single Int: (distance << 16) | length
 /// If distance == 0, it's a literal (length is the byte value)
-pub fn make_backref(dist : Int, len : Int) -> Int {
+pub fn make_backref(dist : Int32, len : Int32) -> Int32 {
   (dist << 16) | len
 }
 
 ///|
-pub fn backref_dist(bref : Int) -> Int {
+pub fn backref_dist(bref : Int32) -> Int32 {
   // Extract upper 16 bits, handling the bit pattern correctly
   let bits = bref & -65536 // Mask to keep only upper 16 bits
   if bits < 0 {
@@ -134,7 +134,7 @@ pub fn backref_dist(bref : Int) -> Int {
 }
 
 ///|
-pub fn backref_len(bref : Int) -> Int {
+pub fn backref_len(bref : Int32) -> Int32 {
   bref & 0xFFFF
 }
 
@@ -147,15 +147,15 @@ pub fn backref_len(bref : Int) -> Int {
 /// - max_chain_len: Maximum number of hash chain entries to check
 pub fn find_backref(
   bytes : BytesView,
-  hash_head : Array[Int],
-  hash_prev : Array[Int],
-  pos : Int,
-  hash : Int,
-  prev_match_len : Int,
-  max_match_len : Int,
-  good_match : Int,
-  max_chain_len : Int,
-) -> Int {
+  hash_head : Array[Int32],
+  hash_prev : Array[Int32],
+  pos : Int32,
+  hash : Int32,
+  prev_match_len : Int32,
+  max_match_len : Int32,
+  good_match : Int32,
+  max_chain_len : Int32,
+) -> Int32 {
   // Adjust prev_match_len: we want at least min_match_len
   let prev_len = if prev_match_len == 0 {
     min_match_len - 1
@@ -177,11 +177,11 @@ pub fn find_backref(
 
   // Search the hash chain for best match
   fn search_chain(
-    chain_left : Int,
-    i : Int,
-    match_pos : Int,
-    best_len : Int,
-  ) -> Int {
+    chain_left : Int32,
+    i : Int32,
+    match_pos : Int32,
+    best_len : Int32,
+  ) -> Int32 {
     if i == no_pos || chain_left == 0 || pos - i > max_match_dist {
       // End of chain or out of range
       if match_pos == no_pos {

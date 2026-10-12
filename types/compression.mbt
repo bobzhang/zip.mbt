@@ -7,7 +7,7 @@ pub(all) enum Compression {
   Lzma // LZMA (not supported)
   Xz // XZ (not supported)
   Zstd // Zstandard (not supported)
-  Other(Int) // Unknown compression method
+  Other(Int32) // Unknown compression method
 } derive(Eq, Debug)
 
 ///|
@@ -19,7 +19,7 @@ pub extend Compression with Debug::{to_repr}
 ///|
 /// Convert compression format to ZIP method number
 /// Map to ZIP numeric method id.
-pub fn Compression::to_int(self : Compression) -> Int {
+pub fn Compression::to_int(self : Compression) -> Int32 {
   match self {
     Stored => 0
     Deflate => 8
@@ -35,7 +35,7 @@ pub fn Compression::to_int(self : Compression) -> Int {
 /// Convert ZIP method number to compression format
 #as_free_fn(compression)
 /// Construct enum from ZIP method id; unrecognized -> Other(id).
-pub fn Compression::from_int(compression_method : Int) -> Compression {
+pub fn Compression::from_int(compression_method : Int32) -> Compression {
   match compression_method {
     0 => Stored
     8 => Deflate

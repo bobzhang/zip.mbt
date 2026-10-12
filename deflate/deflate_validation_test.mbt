@@ -26,10 +26,10 @@
 ///|
 struct BitReader {
   bytes : BytesView
-  len : Int
-  mut pos : Int
-  mut bitbuf : Int
-  mut bitcount : Int
+  len : Int32
+  mut pos : Int32
+  mut bitbuf : Int32
+  mut bitcount : Int32
 }
 
 ///|
@@ -38,7 +38,7 @@ fn BitReader::new(bytes : BytesView) -> BitReader {
 }
 
 ///|
-fn BitReader::read_bits(self : BitReader, count : Int) -> Int raise {
+fn BitReader::read_bits(self : BitReader, count : Int32) -> Int32 raise {
   let mut bits = self.bitbuf
   let mut bitcount = self.bitcount
   while bitcount < count {
@@ -66,7 +66,7 @@ fn BitReader::align_to_byte(self : BitReader) -> Unit {
 }
 
 ///|
-fn parse_stored_block(reader : BitReader) -> Int raise {
+fn parse_stored_block(reader : BitReader) -> Int32 raise {
   reader.align_to_byte()
   if reader.pos + 4 > reader.len {
     fail("Corrupted deflate stream: truncated stored block header")
@@ -87,7 +87,7 @@ fn parse_stored_block(reader : BitReader) -> Int raise {
 }
 
 ///|
-fn parse_dynamic_header(reader : BitReader) -> (Int, Int, Int) raise {
+fn parse_dynamic_header(reader : BitReader) -> (Int32, Int32, Int32) raise {
   let hlit = reader.read_bits(5) + 257
   let hdist = reader.read_bits(5) + 1
   if hlit > 286 || hdist > 30 {
@@ -102,12 +102,12 @@ fn parse_dynamic_header(reader : BitReader) -> (Int, Int, Int) raise {
 
 ///|
 struct BlockMetadata {
-  block_type : Int
+  block_type : Int32
   is_final : Bool
-  stored_len : Int
-  hlit : Int
-  hdist : Int
-  hclen : Int
+  stored_len : Int32
+  hlit : Int32
+  hdist : Int32
+  hclen : Int32
 }
 
 ///|
@@ -134,7 +134,7 @@ fn inspect_first_block(bytes : BytesView) -> BlockMetadata raise {
 }
 
 ///|
-fn repeat_slice(data : Bytes, times : Int) -> Bytes {
+fn repeat_slice(data : Bytes, times : Int32) -> Bytes {
   let len = data.length()
   if times == 0 || len == 0 {
     return b""
@@ -148,7 +148,7 @@ fn repeat_slice(data : Bytes, times : Int) -> Bytes {
 }
 
 ///|
-fn make_incrementing(len : Int) -> Bytes {
+fn make_incrementing(len : Int32) -> Bytes {
   let buf = @bytebuf.new(size_hint=if len == 0 { 1 } else { len })
   for i = 0; i < len; i = i + 1 {
     buf.write_byte((i & 0xFF).to_byte())
@@ -157,7 +157,7 @@ fn make_incrementing(len : Int) -> Bytes {
 }
 
 ///|
-fn make_mixed(len : Int) -> Bytes {
+fn make_mixed(len : Int32) -> Bytes {
   let buf = @bytebuf.new(size_hint=if len == 0 { 1 } else { len })
   for i = 0; i < len; i = i + 1 {
     if i % 128 < 96 {

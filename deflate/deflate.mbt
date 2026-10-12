@@ -22,28 +22,28 @@ using @huffman {type HuffmanEncoder}
 ///|
 /// Maximum literal/length symbol value (285) per RFC 1951.
 /// Symbols 0-255: literal bytes, 256: end-of-block, 257-285: length codes.
-let litlen_sym_max : Int = 285
+let litlen_sym_max : Int32 = 285
 
 ///|
 /// End-of-block symbol (256) terminates each deflate block.
 /// Required at the end of every block to signal decoder completion.
-let litlen_end_of_block_sym : Int = 256
+let litlen_end_of_block_sym : Int32 = 256
 
 // let litlen_first_len_sym : Int = 257
 
 ///|
 /// Maximum distance symbol value (29) per RFC 1951.
 /// Distance symbols 0-29 encode back-reference distances 1-32768.
-let dist_sym_max : Int = 29
+let dist_sym_max : Int32 = 29
 
 ///|
 /// Total count of distance symbols (30) including symbol 0.
-let max_dist_sym_count : Int = 30
+let max_dist_sym_count : Int32 = 30
 
 ///|
 /// Total count of code length symbols (19) for dynamic Huffman trees.
 /// Used to encode the code lengths of literal/length and distance trees.
-let max_codelen_sym_count : Int = 19
+let max_codelen_sym_count : Int32 = 19
 
 ///|
 /// Code length symbol transmission order per RFC 1951 Section 3.2.7.
@@ -51,7 +51,7 @@ let max_codelen_sym_count : Int = 19
 /// Dynamic Huffman blocks first transmit code lengths for code length symbols
 /// in this specific order to optimize compression of typical length patterns.
 /// Most significant symbols (16-18) appear first as they're often unused.
-let codelen_order : Array[Int] = [
+let codelen_order : Array[Int32] = [
   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
 ]
 
@@ -62,37 +62,37 @@ let codelen_order : Array[Int] = [
 ///|
 /// Extract base length value from packed length encoding.
 /// Upper 28 bits contain the base length for length symbols 257-285.
-fn length_value_base(v : Int) -> Int {
+fn length_value_base(v : Int32) -> Int32 {
   v >> 4
 }
 
 ///|
 /// Extract extra bits count from packed length encoding.
 /// Lower 4 bits specify how many additional bits to read for exact length.
-fn length_value_extra_bits(v : Int) -> Int {
+fn length_value_extra_bits(v : Int32) -> Int32 {
   v & 0xF
 }
 
 ///|
 /// Extract base distance value from packed distance encoding.
 /// Upper 28 bits contain the base distance for distance symbols 0-29.
-fn dist_value_base(v : Int) -> Int {
+fn dist_value_base(v : Int32) -> Int32 {
   v >> 4
 }
 
 ///|
 /// Extract extra bits count from packed distance encoding.  
 /// Lower 4 bits specify how many additional bits to read for exact distance.
-fn dist_value_extra_bits(v : Int) -> Int {
+fn dist_value_extra_bits(v : Int32) -> Int32 {
   v & 0xF
 }
 
 // Length and distance value tables
 
 ///|
-fn length_value_of_length_sym(sym : Int) -> Int {
+fn length_value_of_length_sym(sym : Int32) -> Int32 {
   // Symbol must be 257-285
-  let length_value_table : Array[Int] = [
+  let length_value_table : Array[Int32] = [
     3 << 4,
     4 << 4,
     5 << 4,
@@ -127,7 +127,7 @@ fn length_value_of_length_sym(sym : Int) -> Int {
 }
 
 ///|
-let dist_value_of_sym : Array[Int] = [
+let dist_value_of_sym : Array[Int32] = [
   1 << 4,
   2 << 4,
   3 << 4,
@@ -168,10 +168,10 @@ let dist_value_of_sym : Array[Int] = [
 /// Inflate decoder state
 priv struct InflateDecoder {
   src : BytesView // Source compressed data view (no copy)
-  src_max : Int // Maximum valid index in src
-  mut src_pos : Int // Current read position
-  mut src_bits : Int // Buffered bits (up to 31 bits)
-  mut src_bits_len : Int // Number of valid bits in src_bits
+  src_max : Int32 // Maximum valid index in src
+  mut src_pos : Int32 // Current read position
+  mut src_bits : Int32 // Buffered bits (up to 31 bits)
+  mut src_bits_len : Int32 // Number of valid bits in src_bits
   dst : ByteBuf // Output buffer
   dyn_litlen : HuffmanDecoder // Dynamic literal/length decoder
   dyn_dist : HuffmanDecoder // Dynamic distance decoder
@@ -181,7 +181,7 @@ priv struct InflateDecoder {
 /// Create a new inflate decoder
 fn InflateDecoder::new(
   src_view : BytesView,
-  decompressed_size : Int?,
+  decompressed_size : Int32?,
 ) -> InflateDecoder {
   let len = src_view.length()
   let src_max = len - 1
@@ -203,7 +203,10 @@ fn InflateDecoder::new(
 
 ///|
 /// Read N bits from the bit stream (N < 32)
-fn InflateDecoder::read_bits(self : InflateDecoder, count : Int) -> Int raise {
+fn InflateDecoder::read_bits(
+  self : InflateDecoder,
+  count : Int32,
+) -> Int32 raise {
   let mut bits = self.src_bits
   let mut bits_len = self.src_bits_len
   // Refill bit buffer if needed
@@ -227,9 +230,9 @@ fn InflateDecoder::read_bits(self : InflateDecoder, count : Int) -> Int raise {
 /// Read an integer value: base + read_bits(bit_count)
 fn InflateDecoder::read_int(
   self : InflateDecoder,
-  base : Int,
-  bit_count : Int,
-) -> Int raise {
+  base : Int32,
+  bit_count : Int32,
+) -> Int32 raise {
   if bit_count == 0 {
     base
   } else {
@@ -242,10 +245,10 @@ fn InflateDecoder::read_int(
 fn read_symbol_loop(
   decoder_state : InflateDecoder,
   decoder : HuffmanDecoder,
-  len : Int,
-  base : Int,
-  offs : Int,
-) -> Int raise {
+  len : Int32,
+  base : Int32,
+  offs : Int32,
+) -> Int32 raise {
   let new_offs = 2 * offs + decoder_state.read_bits(1)
   let count = decoder.count(len)
   if new_offs < count {
@@ -266,7 +269,7 @@ fn read_symbol_loop(
 fn InflateDecoder::read_symbol(
   self : InflateDecoder,
   decoder : HuffmanDecoder,
-) -> Int raise {
+) -> Int32 raise {
   read_symbol_loop(self, decoder, 1, 0, 0)
 }
 
@@ -464,7 +467,7 @@ fn inflate_loop(decoder : InflateDecoder) -> Bytes raise {
 ///   src_view - BytesView identifying compressed data (no copy performed)
 ///   decompressed_size - optional expected output size (optimizes allocation / validation)
 /// Errors: raises on malformed block headers, invalid Huffman codes, or truncated input.
-pub fn inflate(src_view : BytesView, decompressed_size? : Int) -> Bytes raise {
+pub fn inflate(src_view : BytesView, decompressed_size? : Int32) -> Bytes raise {
   // Directly construct decoder from view (avoid intermediate copy)
   let decoder = InflateDecoder::new(src_view, decompressed_size)
   inflate_loop(decoder)
@@ -557,10 +560,10 @@ pub fn deflate_stored(data : BytesView) -> Bytes raise {
 /// ## Returns
 /// Array of code lengths indexed by symbol, 0 = unused symbol.
 fn build_optimal_code_lengths(
-  freqs : Array[Int],
-  max_sym : Int,
-  max_code_len : Int,
-) -> Array[Int] {
+  freqs : Array[Int32],
+  max_sym : Int32,
+  max_code_len : Int32,
+) -> Array[Int32] {
   let lengths = Array::make(max_sym + 1, 0)
 
   // Count non-zero frequencies
@@ -648,8 +651,8 @@ fn build_optimal_code_lengths(
 ///|
 /// Build canonical Huffman codes from code lengths
 fn build_canonical_huffman(
-  lengths : Array[Int],
-  max_sym : Int,
+  lengths : Array[Int32],
+  max_sym : Int32,
 ) -> HuffmanEncoder {
   let encoder = @huffman.HuffmanEncoder::new()
   let count = Array::make(16, 0)
@@ -681,11 +684,11 @@ fn build_canonical_huffman(
 ///|
 /// Encode code lengths with run-length compression
 fn encode_code_lengths(
-  litlen_lengths : Array[Int],
-  dist_lengths : Array[Int],
-  hlit : Int,
-  hdist : Int,
-) -> (Array[Int], Array[Int], Int) {
+  litlen_lengths : Array[Int32],
+  dist_lengths : Array[Int32],
+  hlit : Int32,
+  hdist : Int32,
+) -> (Array[Int32], Array[Int32], Int32) {
   let litlen_count = hlit + 257
   let dist_count = hdist + 1
   let total = litlen_count + dist_count
@@ -756,10 +759,10 @@ fn write_dynamic_header(
   _litlen_encoder : HuffmanEncoder,
   _dist_encoder : HuffmanEncoder,
   codelen_encoder : HuffmanEncoder,
-  codelen_syms : Array[Int],
-  sym_count : Int,
-  hlit : Int,
-  hdist : Int,
+  codelen_syms : Array[Int32],
+  sym_count : Int32,
+  hlit : Int32,
+  hdist : Int32,
 ) -> Unit {
   let mut hclen_idx = 18
   while hclen_idx > 0 {
@@ -801,7 +804,7 @@ fn write_dynamic_header(
 
 ///|
 /// Convert a match length to symbol
-fn length_to_symbol(length : Int) -> Int {
+fn length_to_symbol(length : Int32) -> Int32 {
   if length <= 10 {
     257 + (length - 3)
   } else if length <= 18 {
@@ -821,7 +824,7 @@ fn length_to_symbol(length : Int) -> Int {
 
 ///|
 /// Convert a distance to symbol
-fn distance_to_symbol(dist : Int) -> Int {
+fn distance_to_symbol(dist : Int32) -> Int32 {
   if dist <= 4 {
     dist - 1
   } else if dist <= 8 {
@@ -858,7 +861,7 @@ fn distance_to_symbol(dist : Int) -> Int {
 fn BitWriter::write_literal_symbol(
   writer : BitWriter,
   encoder : HuffmanEncoder,
-  symbol : Int,
+  symbol : Int32,
 ) -> Unit {
   let info = encoder.get(symbol)
   let code = @huffman.sym_info_code(info)
@@ -872,8 +875,8 @@ fn write_length_distance(
   writer : BitWriter,
   litlen_encoder : HuffmanEncoder,
   dist_encoder : HuffmanEncoder,
-  length : Int,
-  distance : Int,
+  length : Int32,
+  distance : Int32,
 ) -> Unit {
   // Write length symbol
   let len_sym = length_to_symbol(length)
@@ -911,8 +914,8 @@ fn write_length_distance(
 ///|
 /// Frequency counter for dynamic Huffman
 priv struct FrequencyCounter {
-  litlen_freqs : Array[Int]
-  dist_freqs : Array[Int]
+  litlen_freqs : Array[Int32]
+  dist_freqs : Array[Int32]
 }
 
 ///|
@@ -921,18 +924,24 @@ fn FrequencyCounter::new() -> FrequencyCounter {
 }
 
 ///|
-fn FrequencyCounter::add_literal(self : FrequencyCounter, lit : Int) -> Unit {
+fn FrequencyCounter::add_literal(self : FrequencyCounter, lit : Int32) -> Unit {
   self.litlen_freqs[lit] = self.litlen_freqs[lit] + 1
 }
 
 ///|
-fn FrequencyCounter::add_length(self : FrequencyCounter, length : Int) -> Unit {
+fn FrequencyCounter::add_length(
+  self : FrequencyCounter,
+  length : Int32,
+) -> Unit {
   let sym = length_to_symbol(length)
   self.litlen_freqs[sym] = self.litlen_freqs[sym] + 1
 }
 
 ///|
-fn FrequencyCounter::add_distance(self : FrequencyCounter, dist : Int) -> Unit {
+fn FrequencyCounter::add_distance(
+  self : FrequencyCounter,
+  dist : Int32,
+) -> Unit {
   let sym = distance_to_symbol(dist)
   self.dist_freqs[sym] = self.dist_freqs[sym] + 1
 }
@@ -1000,8 +1009,8 @@ fn FrequencyCounter::add_end_of_block(self : FrequencyCounter) -> Unit {
 pub fn deflate_fixed(
   data : BytesView,
   is_final : Bool,
-  good_match : Int,
-  max_chain : Int,
+  good_match : Int32,
+  max_chain : Int32,
 ) -> Bytes {
   let len = data.length()
   if len == 0 {
@@ -1023,7 +1032,7 @@ pub fn deflate_fixed(
   let header = if is_final { 0b011 } else { 0b010 }
   writer.write_bits(header, 3)
   let max_pos = len - @lz77.min_match_len
-  fn compress_loop(pos : Int, prev_bref : Int) -> Unit {
+  fn compress_loop(pos : Int32, prev_bref : Int32) -> Unit {
     if pos > max_pos {
       let prev_len = @lz77.backref_len(prev_bref)
       let final_pos = if prev_len == 0 {
@@ -1156,8 +1165,8 @@ pub fn deflate_fixed(
 pub fn deflate_dynamic(
   data : BytesView,
   is_final : Bool,
-  good_match : Int,
-  max_chain : Int,
+  good_match : Int32,
+  max_chain : Int32,
 ) -> Bytes {
   /// Dynamic Huffman DEFLATE compression.
   ///
@@ -1198,7 +1207,7 @@ pub fn deflate_dynamic(
   let symbols = Array::make(max_symbols, 0)
   let mut sym_idx = 0
   let max_pos = len - @lz77.min_match_len
-  fn compress_and_count(pos : Int, prev_bref : Int) -> Unit {
+  fn compress_and_count(pos : Int32, prev_bref : Int32) -> Unit {
     if pos > max_pos {
       let prev_len = @lz77.backref_len(prev_bref)
       let final_pos = if prev_len == 0 {
@@ -1480,7 +1489,10 @@ pub fn deflate(data : BytesView, level? : DeflateLevel) -> Bytes raise {
 /// - 4 bytes: Adler-32 checksum (big-endian)
 /// Produce a zlib (RFC 1950) wrapped deflate stream.
 /// Returns (adler32, bytes) where checksum is of original data.
-pub fn zlib_compress(data : BytesView, level? : DeflateLevel) -> (UInt, Bytes) {
+pub fn zlib_compress(
+  data : BytesView,
+  level? : DeflateLevel,
+) -> (UInt32, Bytes) {
   let len = data.length()
   // Determine compression parameters
   let (good_match, max_chain, flevel) = match level {
@@ -1530,7 +1542,7 @@ pub fn zlib_compress(data : BytesView, level? : DeflateLevel) -> (UInt, Bytes) {
 /// Validates header and checksum
 /// Parse and decompress a zlib wrapper, validating header & Adler-32.
 /// Returns (decompressed bytes, adler32) and raises on header/checksum errors.
-pub fn zlib_decompress(data : BytesView) -> (Bytes, UInt) raise {
+pub fn zlib_decompress(data : BytesView) -> (Bytes, UInt32) raise {
   let len = data.length()
   if len < 6 {
     fail("zlib data too short (minimum 6 bytes)")

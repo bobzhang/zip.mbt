@@ -7,7 +7,7 @@
 ///|
 /// Adler-32 state for incremental checksum computation
 /// Internal Adler state packs s2 (high 16) and s1 (low 16) per RFC 1950.
-struct Adler32(UInt) derive(Eq, Debug)
+struct Adler32(UInt32) derive(Eq, Debug)
 
 ///|
 pub extend Adler32 with Eq::{not_equal, equal}
@@ -18,7 +18,7 @@ pub extend Adler32 with Debug::{to_repr}
 ///|
 /// Adler-32 modulus (largest prime less than 65536)
 /// Largest prime < 2^16, modulus for the two accumulators.
-let adler32_base : UInt = 65521
+let adler32_base : UInt32 = 65521
 
 ///|
 /// Initialize a new Adler-32 checksum computation
@@ -32,7 +32,7 @@ pub fn Adler32::init() -> Adler32 {
 /// Finalize the Adler-32 checksum and return the result
 /// Returns the computed checksum value
 /// Return the raw packed (s2<<16 | s1) checksum.
-pub fn Adler32::finish(self : Adler32) -> UInt {
+pub fn Adler32::finish(self : Adler32) -> UInt32 {
   let Adler32(value) = self
   value
 }
@@ -72,7 +72,7 @@ pub fn Adler32::update_bytes(self : Adler32, data : BytesView) -> Adler32 {
 /// Compute Adler-32 checksum of a byte sequence in one step
 /// Convenience function that initializes, updates, and finalizes in one call
 /// One-shot checksum convenience function.
-pub fn bytes_adler32(data : BytesView) -> UInt {
+pub fn bytes_adler32(data : BytesView) -> UInt32 {
   Adler32::init().update_bytes(data).finish()
 }
 

@@ -2,7 +2,7 @@
 
 ///|
 /// Unix file mode (permission bits)
-pub(all) struct FileMode(Int) derive(Eq, Compare, ToJson, FromJson, Hash)
+pub(all) struct FileMode(Int32) derive(Eq, Compare, ToJson, FromJson, Hash)
 
 ///|
 pub extend FileMode with Eq::{not_equal, equal}
@@ -22,14 +22,14 @@ pub extend FileMode with Hash::{hash, hash_combine}
 ///|
 /// Get the integer value of the file mode
 /// Raw integer permission bits (includes type bits if supplied externally).
-pub fn FileMode::to_int(self : FileMode) -> Int {
+pub fn FileMode::to_int(self : FileMode) -> Int32 {
   self.0
 }
 
 ///|
 /// Create FileMode from integer
 /// Wrap raw bits in FileMode.
-pub fn FileMode::from_int(value : Int) -> FileMode {
+pub fn FileMode::from_int(value : Int32) -> FileMode {
   FileMode(value)
 }
 
@@ -52,7 +52,7 @@ pub extend FileMode with Show::{to_string, output}
 /// Format Unix file mode like ls -l (e.g., "rwxr-xr-x")
 /// Render rwx triads (owner/group/other).
 pub fn format_file_mode(mode : FileMode) -> String {
-  fn format_entity(m : Int) -> String {
+  fn format_entity(m : Int32) -> String {
     let r = if (m & 0o4) != 0 { "r" } else { "-" }
     let w = if (m & 0o2) != 0 { "w" } else { "-" }
     let x = if (m & 0o1) != 0 { "x" } else { "-" }

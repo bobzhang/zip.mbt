@@ -131,7 +131,7 @@
 ///|
 /// Length value table from RFC 1951 3.2.5
 /// Each entry packs (base_length << 4) | extra_bits
-let length_value_of_sym_table : Array[Int] = [
+let length_value_of_sym_table : Array[Int32] = [
   // Symbol 257-264: lengths 3-10, 0 extra bits
   3 << 4,
   4 << 4,
@@ -206,7 +206,7 @@ test "length_value_table" {
 
 ///|
 /// Distance value table from RFC 1951 3.2.5
-let dist_value_of_sym : Array[Int] = [
+let dist_value_of_sym : Array[Int32] = [
   // Symbols 0-3: distances 1-4, 0 extra bits
   1 << 4,
   2 << 4,
@@ -327,11 +327,11 @@ using @member {type Member}
 
 ///|
 /// ZIP local file header (little endian) ("PK\x03\x04")
-const ZIP_LOCAL_FILE_SIG : UInt = 0x04034b50
+const ZIP_LOCAL_FILE_SIG : UInt32 = 0x04034b50
 
 ///|
 /// ZIP end of central directory signature (little endian) ("PK\x05\x06")
-const ZIP_EOCD_SIG : UInt = 0x06054b50
+const ZIP_EOCD_SIG : UInt32 = 0x06054b50
 
 ///|
 /// Check if bytes start with ZIP magic signature
@@ -344,7 +344,7 @@ fn bytes_has_zip_magic(data : Bytes) -> Bool {
 
 ///|
 /// Central directory file header signature (little endian)
-const ZIP_CENTRAL_DIR_SIG : UInt = 0x02014b50
+const ZIP_CENTRAL_DIR_SIG : UInt32 = 0x02014b50
 
 ///|
 /// ZIP file decoding utilities
@@ -354,7 +354,7 @@ const ZIP_CENTRAL_DIR_SIG : UInt = 0x02014b50
 /// Returns (cd_offset, cd_size, entry_count)
 /// EOCD structure (22 bytes): signature(4) + disk(2) + cd_disk(2) + 
 /// entries_this_disk(2) + entries_total(2) + cd_size(4) + cd_offset(4) + comment_len(2)
-fn find_and_parse_eocd(data : Bytes) -> (Int, Int, Int) raise {
+fn find_and_parse_eocd(data : Bytes) -> (Int32, Int32, Int32) raise {
   let len = data.length()
   guard len >= 22 else {
     fail("File too small to contain EOCD (minimum 22 bytes)")
@@ -403,7 +403,7 @@ fn find_and_parse_eocd(data : Bytes) -> (Int, Int, Int) raise {
 /// dos_time(2) + dos_date(2) + crc32(4) + compressed_size(4) + uncompressed_size(4) +
 /// filename_len(2) + extra_len(2) + comment_len(2) + disk_num(2) + internal_attrs(2) +
 /// external_attrs(4) + local_header_offset(4) + filename + extra + comment
-fn parse_central_dir_entry(data : Bytes, pos : Int) -> (Member, Int) raise {
+fn parse_central_dir_entry(data : Bytes, pos : Int32) -> (Member, Int32) raise {
   // Returns (member, next_position)
   match data[pos:] {
     [

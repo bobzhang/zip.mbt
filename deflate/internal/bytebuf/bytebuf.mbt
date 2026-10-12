@@ -4,21 +4,21 @@
 /// FIXME(upstream): rename to Buffer does not work global wise
 struct ByteBuf {
   mut buffer : FixedArray[Byte]
-  mut length : Int
+  mut length : Int32
   fixed : Bool // If true, buffer cannot grow (size is known)
 }
 
 ///|
 /// Create a new byte buffer
 #as_free_fn
-pub fn ByteBuf::new(size_hint~ : Int, fixed? : Bool = false) -> ByteBuf {
+pub fn ByteBuf::new(size_hint~ : Int32, fixed~ : Bool = false) -> ByteBuf {
   let actual_size = if size_hint == 0 && !fixed { 1024 } else { size_hint }
   { buffer: FixedArray::make(actual_size, b'\x00'), length: 0, fixed, }
 }
 
 ///|
 /// Get current length of data in buffer
-pub fn ByteBuf::length(self : ByteBuf) -> Int {
+pub fn ByteBuf::length(self : ByteBuf) -> Int32 {
   self.length
 }
 
@@ -30,7 +30,7 @@ pub fn ByteBuf::contents(self : ByteBuf) -> Bytes {
 
 ///|
 /// Grow the buffer to ensure it can hold at least 'ensure' bytes
-fn ByteBuf::grow(self : ByteBuf, ensure : Int) -> Unit {
+fn ByteBuf::grow(self : ByteBuf, ensure : Int32) -> Unit {
   if self.fixed {
     abort("Expected decompression size exceeded")
   }
@@ -82,7 +82,7 @@ pub fn ByteBuf::write_bytesview(self : ByteBuf, src : BytesView) -> Unit {
 ///|
 /// Copy bytes from earlier in the buffer (for LZ77 back-references)
 /// This handles overlapping copies correctly (needed for RLE patterns)
-pub fn ByteBuf::recopy(self : ByteBuf, start : Int, len : Int) -> Unit {
+pub fn ByteBuf::recopy(self : ByteBuf, start : Int32, len : Int32) -> Unit {
   let new_len = self.length + len
   if new_len > self.buffer.length() {
     self.grow(new_len)

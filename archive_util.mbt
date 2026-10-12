@@ -20,7 +20,7 @@ pub fn Archive::is_empty(self : Archive) -> Bool {
 
 ///|
 /// Get the total count of members (files + directories) in this archive.
-pub fn Archive::member_count(self : Archive) -> Int {
+pub fn Archive::member_count(self : Archive) -> Int32 {
   self.members.length()
 }
 

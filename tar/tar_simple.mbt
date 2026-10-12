@@ -32,13 +32,13 @@ extend TarType with ToJson::{to_json}
 /// Limitations: path length >100 chars, prefix field, PAX headers not supported.
 pub struct TarEntry {
   name : String
-  size : Int
+  size : Int32
   data : Bytes
   typeflag : TarType
-  mode : Int // File mode (octal)
-  uid : Int // User ID
-  gid : Int // Group ID
-  mtime : Int // Modification time (Unix timestamp)
+  mode : Int32 // File mode (octal)
+  uid : Int32 // User ID
+  gid : Int32 // Group ID
+  mtime : Int32 // Modification time (Unix timestamp)
 } derive(Debug)
 
 ///|
@@ -70,7 +70,7 @@ pub extend TarArchive with Debug::{to_repr}
 
 ///|
 pub impl ToJson for TarArchive with fn to_json(self) -> Json {
-  self.entries.to_json()
+  Json(self.entries)
 }
 
 ///|
@@ -93,7 +93,7 @@ pub fn TarArchive::add(self : TarArchive, entry : TarEntry) -> Unit {
 ///|
 /// Get the number of entries in the archive
 /// Number of entries currently stored.
-pub fn TarArchive::length(self : TarArchive) -> Int {
+pub fn TarArchive::length(self : TarArchive) -> Int32 {
   self.entries.length()
 }
 
@@ -188,7 +188,11 @@ pub fn TarArchive::to_bytes(self : TarArchive) -> Bytes {
 
 ///|
 /// Write TAR header to array buffer at given position
-fn write_tar_header(buffer : Array[Int], pos : Int, entry : TarEntry) -> Unit {
+fn write_tar_header(
+  buffer : Array[Int32],
+  pos : Int32,
+  entry : TarEntry,
+) -> Unit {
   // Clear the header area
   for i = 0; i < 512; i = i + 1 {
     buffer[pos + i] = 0
@@ -245,10 +249,10 @@ fn write_tar_header(buffer : Array[Int], pos : Int, entry : TarEntry) -> Unit {
 ///|
 /// Write string to buffer field with null padding
 fn write_string_field(
-  buffer : Array[Int],
-  pos : Int,
+  buffer : Array[Int32],
+  pos : Int32,
   s : String,
-  max_len : Int,
+  max_len : Int32,
 ) -> Unit {
   // Convert UTF-16 string to UTF-8 bytes for TAR format
   let bytes = @encoding/utf8.encode(s)
@@ -269,10 +273,10 @@ fn write_string_field(
 ///|
 /// Write integer as octal string to buffer field
 fn write_octal_field(
-  buffer : Array[Int],
-  pos : Int,
-  value : Int,
-  width : Int,
+  buffer : Array[Int32],
+  pos : Int32,
+  value : Int32,
+  width : Int32,
 ) -> Unit {
   let raw = to_octal_string(value)
   let bytes_raw = @encoding/utf8.encode(raw)
@@ -293,7 +297,7 @@ fn write_octal_field(
 
 ///|
 /// Convert integer to octal string representation
-fn to_octal_string(value : Int) -> String {
+fn to_octal_string(value : Int32) -> String {
   if value == 0 {
     "0"
   } else {
@@ -322,7 +326,7 @@ pub fn TarArchive::find(self : TarArchive, name : String) -> TarEntry? {
 
 ///|
 /// Extract a null-terminated string from bytes starting at offset
-fn extract_string(data : Bytes, start : Int, max_len : Int) -> String {
+fn extract_string(data : Bytes, start : Int32, max_len : Int32) -> String {
   let mut end = start
   let limit = start + max_len
   // Find null terminator or end of field
@@ -342,7 +346,7 @@ fn extract_string(data : Bytes, start : Int, max_len : Int) -> String {
 
 ///|
 /// Parse octal string to integer  
-fn parse_octal(s : String) -> Int {
+fn parse_octal(s : String) -> Int32 {
   let mut value = 0
   for i = 0; i < s.length(); i = i + 1 {
     let c = s[i]
@@ -360,7 +364,7 @@ fn parse_octal(s : String) -> Int {
 
 ///|
 /// Check if a TAR header block is empty (all zeros)
-fn is_empty_block(data : Bytes, offset : Int) -> Bool {
+fn is_empty_block(data : Bytes, offset : Int32) -> Bool {
   if offset + 512 > data.length() {
     return true
   }
@@ -374,7 +378,7 @@ fn is_empty_block(data : Bytes, offset : Int) -> Bool {
 
 ///|
 /// Parse a single TAR header (512 bytes) and return entry info
-fn parse_tar_header(data : Bytes, offset : Int) -> (TarEntry, Int)? {
+fn parse_tar_header(data : Bytes, offset : Int32) -> (TarEntry, Int32)? {
   if offset + 512 > data.length() {
     return None
   }

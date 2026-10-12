@@ -3,8 +3,8 @@
 /// Accumulates bits and writes complete bytes to the output buffer
 struct BitWriter {
   dst : @bytebuf.ByteBuf // Output buffer
-  mut bits : Int // Accumulated bits (up to 31 bits)
-  mut bits_len : Int // Number of valid bits in 'bits'
+  mut bits : Int32 // Accumulated bits (up to 31 bits)
+  mut bits_len : Int32 // Number of valid bits in 'bits'
 }
 
 ///|
@@ -18,8 +18,8 @@ pub fn BitWriter::new(dst : @bytebuf.ByteBuf) -> BitWriter {
 /// Bits are written LSB first (as required by deflate format)
 pub fn BitWriter::write_bits(
   self : BitWriter,
-  value : Int,
-  count : Int,
+  value : Int32,
+  count : Int32,
 ) -> Unit {
   self.bits = self.bits | (value << self.bits_len)
   self.bits_len = self.bits_len + count
@@ -52,7 +52,7 @@ pub fn BitWriter::align_to_byte(self : BitWriter) -> Unit {
 
 ///|
 /// Write a byte directly to output (should be byte-aligned)
-pub fn BitWriter::write_byte(self : BitWriter, byte : Int) -> Unit {
+pub fn BitWriter::write_byte(self : BitWriter, byte : Int32) -> Unit {
   if self.bits_len != 0 {
     abort("BitWriter::write_byte called when not byte-aligned")
   }
@@ -61,7 +61,7 @@ pub fn BitWriter::write_byte(self : BitWriter, byte : Int) -> Unit {
 
 ///|
 /// Write a 16-bit little-endian value directly (should be byte-aligned)
-pub fn BitWriter::write_uint16_le(self : BitWriter, value : Int) -> Unit {
+pub fn BitWriter::write_uint16_le(self : BitWriter, value : Int32) -> Unit {
   if self.bits_len != 0 {
     abort("BitWriter::write_uint16_le called when not byte-aligned")
   }

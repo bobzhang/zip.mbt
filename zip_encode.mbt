@@ -15,15 +15,15 @@
 
 ///|
 /// Local file header fixed portion size (30 bytes, excludes variable filename/extra fields).
-let local_header_fixed_size : Int = 30 // Local file header fixed part
+let local_header_fixed_size : Int32 = 30 // Local file header fixed part
 
 ///|
 /// Central directory file header fixed portion size (46 bytes, excludes variable fields).
-let central_dir_header_fixed_size : Int = 46 // Central directory header fixed part
+let central_dir_header_fixed_size : Int32 = 46 // Central directory header fixed part
 
 ///|
 /// End of Central Directory Record size (22 bytes, excludes optional comment).
-let eocd_size : Int = 22 // End of central directory record size
+let eocd_size : Int32 = 22 // End of central directory record size
 
 ///|
 /// Write local file header for a member to buffer.
@@ -50,7 +50,7 @@ let eocd_size : Int = 22 // End of central directory record size
 /// The returned offset is used by Central Directory headers for file location.
 /// 
 /// Returns: byte offset where this local header was written in the buffer.
-fn Member::write_local_header(self : Member, buf : Buffer) -> Int {
+fn Member::write_local_header(self : Member, buf : Buffer) -> Int32 {
   let local_header_offset = buf.length()
   let path_bytes = self.path().to_string().utf8()
   let (dos_date, dos_time) = @types.ptime_to_dos_date_time(self.mtime())
@@ -118,7 +118,7 @@ fn Member::write_local_header(self : Member, buf : Buffer) -> Int {
 fn Member::write_central_directory_header(
   self : Member,
   buf : Buffer,
-  local_header_offset : Int,
+  local_header_offset : Int32,
 ) -> Unit {
   let path_bytes = self.path().to_string().utf8()
   let (dos_date, dos_time) = @types.ptime_to_dos_date_time(self.mtime())
@@ -131,9 +131,9 @@ fn Member::write_central_directory_header(
       buf.write_uint16_le(0) // compression
       buf.write_uint16_le(dos_time)
       buf.write_uint16_le(dos_date)
-      buf.write_uint_le((0 : UInt)) // CRC
-      buf.write_uint_le((0 : UInt)) // compressed size
-      buf.write_uint_le((0 : UInt)) // uncompressed size
+      buf.write_uint_le((0 : UInt32)) // CRC
+      buf.write_uint_le((0 : UInt32)) // compressed size
+      buf.write_uint_le((0 : UInt32)) // uncompressed size
       buf.write_uint16_le(path_bytes.length().to_uint16())
       buf.write_uint16_le(0) // extra field length
       buf.write_uint16_le(0) // file comment length
@@ -167,7 +167,7 @@ fn Member::write_central_directory_header(
 
 ///|
 /// Calculate the size needed to encode an archive
-pub fn Archive::encoding_size(self : Archive) -> Int {
+pub fn Archive::encoding_size(self : Archive) -> Int32 {
   let mut size = 0
   for _, m in self.members {
     let path_bytes = m.path().to_string().utf8().length()
@@ -199,7 +199,7 @@ pub fn Archive::to_bytes(self : Archive, first? : Fpath) -> Bytes raise {
   let total_size = self.encoding_size()
   // Use Buffer from stdlib instead of manual array indexing
   let buf = Buffer(size_hint=total_size)
-  let central_dir_entries : Array[(Int, Member)] = []
+  let central_dir_entries : Array[(Int32, Member)] = []
 
   // Helper to encode a member - write local header and record position
   let encode_member = fn(m : Member) {

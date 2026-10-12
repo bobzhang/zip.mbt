@@ -7,14 +7,14 @@ using @types {type Compression}
 
 ///|
 /// Helper: UInt to hex string
-fn UInt::to_hex_string(self : UInt) -> String {
+fn UInt32::to_hex_string(self : UInt32) -> String {
   let hex_digits = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
   ]
   let mut result = ""
   let v = self
   for i = 0; i < 8; i = i + 1 {
-    let digit = ((v >> (28 - i * 4)) & (0xF : UInt)).reinterpret_as_int()
+    let digit = ((v >> (28 - i * 4)) & (0xF : UInt32)).reinterpret_as_int()
     result = result + Char::to_string(hex_digits[digit])
   }
   result
@@ -89,7 +89,7 @@ pub struct File {
   /// Allows sharing a single Bytes buffer among multiple Files.
   ///
   /// For standalone file data, this is typically 0.
-  start : Int
+  start : Int32
   /// Compressed size in bytes
   ///
   /// The actual number of bytes occupied by the compressed data
@@ -97,7 +97,7 @@ pub struct File {
   ///
   /// Must not exceed max_file_size (2^32 - 1 = 4GB) for non-ZIP64 archives.
   /// For ZIP64 archives, larger sizes are stored in extra fields.
-  compressed_size : Int
+  compressed_size : Int32
   /// The compressed data buffer
   ///
   /// Contains the actual compressed file data. This may be:
@@ -118,7 +118,7 @@ pub struct File {
   ///
   /// Must match the actual decompressed data size for integrity.
   /// Must not exceed max_file_size (4GB) for non-ZIP64 archives.
-  decompressed_size : Int
+  decompressed_size : Int32
   /// CRC-32 checksum of uncompressed data
   ///
   /// IEEE 802.3 CRC-32 polynomial (0xEDB88320) as defined in RFC 1952.
@@ -131,7 +131,7 @@ pub struct File {
   /// 4. Mismatch indicates data corruption
   ///
   /// This is the primary integrity check in the ZIP format.
-  decompressed_crc32 : UInt
+  decompressed_crc32 : UInt32
 }
 
 ///|
@@ -160,14 +160,14 @@ pub let max_file_size : Int64 = 4294967295L // 2^32 - 1 (4GB)
 /// Performs size limit checks and applies default versions/flags if optionals are None.
 pub fn File::make(
   compressed_bytes : Bytes,
-  start : Int,
-  compressed_size : Int,
+  start : Int32,
+  compressed_size : Int32,
   compression : Compression,
-  decompressed_size : Int,
-  decompressed_crc32 : UInt,
-  version_made_by? : UInt16 = version_made_by_default,
-  version_needed? : UInt16 = version_needed_default,
-  gp_flags? : UInt16 = gp_flag_default,
+  decompressed_size : Int32,
+  decompressed_crc32 : UInt32,
+  version_made_by~ : UInt16 = version_made_by_default,
+  version_needed~ : UInt16 = version_needed_default,
+  gp_flags~ : UInt16 = gp_flag_default,
 ) -> File raise {
   if compressed_size.to_int64() > max_file_size ||
     decompressed_size.to_int64() > max_file_size {
@@ -194,8 +194,8 @@ pub fn File::make(
 /// Computes CRC-32 and sets compression=Stored.
 pub fn File::stored_of_bytes(
   bytes : Bytes,
-  start : Int,
-  len : Int,
+  start : Int32,
+  len : Int32,
 ) -> File raise {
   let crc = @crc32.bytes_crc32(bytes[start:start + len])
   File::make(bytes, start, len, Compression::Stored, len, crc)
@@ -208,8 +208,8 @@ pub fn File::stored_of_bytes(
 /// Chooses dynamic vs fixed Huffman based on size & level.
 pub fn File::deflate_of_bytes(
   bytes : Bytes,
-  start : Int,
-  len : Int,
+  start : Int32,
+  len : Int32,
   level? : @deflate.DeflateLevel,
 ) -> File raise {
   // Determine compression parameters based on level
@@ -264,13 +264,13 @@ pub fn File::compression(self : File) -> Compression {
 
 ///|
 /// Get start offset in compressed_bytes
-pub fn File::start(self : File) -> Int {
+pub fn File::start(self : File) -> Int32 {
   self.start
 }
 
 ///|
 /// Get compressed size
-pub fn File::compressed_size(self : File) -> Int {
+pub fn File::compressed_size(self : File) -> Int32 {
   self.compressed_size
 }
 
@@ -293,13 +293,13 @@ pub fn File::compressed_bytes_to_bytes(self : File) -> Bytes {
 
 ///|
 /// Get decompressed size
-pub fn File::decompressed_size(self : File) -> Int {
+pub fn File::decompressed_size(self : File) -> Int32 {
   self.decompressed_size
 }
 
 ///|
 /// Get decompressed CRC-32
-pub fn File::decompressed_crc32(self : File) -> UInt {
+pub fn File::decompressed_crc32(self : File) -> UInt32 {
   self.decompressed_crc32
 }
 
@@ -345,7 +345,7 @@ pub fn File::can_extract(self : File) -> Bool {
 ///|
 /// Decompress file data without CRC check
 /// Decompress to bytes (or copy if stored) and return (data, computed_crc32) without verifying.
-pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt) raise {
+pub fn File::to_bytes_no_crc_check(self : File) -> (Bytes, UInt32) raise {
   if self.is_encrypted() {
     fail("Encrypted files are not supported")
   }
