@@ -23,7 +23,7 @@ test "embedded_tar_parse_test2_multiple" {
   assert_eq(names[0], "readme.txt")
   assert_eq(names[1], "docs/")
   assert_eq(names[2], "docs/guide.md")
-  let sizes = archive.entries.map(fn(e) -> Int { e.size })
+  let sizes = archive.entries.map(fn(e) -> Int32 { e.size })
   // Expected sizes: readme.txt (16), docs/ (0), guide.md (27)
   assert_eq(sizes[0], 16)
   assert_eq(sizes[1], 0)

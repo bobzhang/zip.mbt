@@ -21,14 +21,14 @@ pub extend Fpath with Hash::{hash, hash_combine}
 
 ///|
 /// Get the length of the path string
-pub fn Fpath::length(self : Fpath) -> Int {
+pub fn Fpath::length(self : Fpath) -> Int32 {
   self.0.length()
 }
 
 ///|
 /// Get character at index
 #alias("_[_]")
-pub fn Fpath::at(self : Fpath, index : Int) -> Int {
+pub fn Fpath::at(self : Fpath, index : Int32) -> Int32 {
   // FIXME(upstream): ("_[_]") + op_get 
   // would cause weird errors
   self.0[index].to_int()

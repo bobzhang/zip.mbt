@@ -327,7 +327,7 @@ test "e2e_large_file_compression" {
 ///|
 test "e2e_stored_vs_deflate_comparison" {
   // Helper function to repeat bytes
-  fn repeat_bytes(data : Bytes, times : Int) -> Bytes {
+  fn repeat_bytes(data : Bytes, times : Int32) -> Bytes {
     let arr : Array[Byte] = []
     for j = 0; j < times; j = j + 1 {
       for i = 0; i < data.length(); i = i + 1 {

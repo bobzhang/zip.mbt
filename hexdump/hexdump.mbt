@@ -36,7 +36,7 @@ pub fn hex_dump(data : Bytes) -> String {
 
 ///|
 /// Format offset as 8-digit hex string
-fn format_offset(offset : Int) -> String {
+fn format_offset(offset : Int32) -> String {
   let hex_digits = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
   ]
@@ -54,7 +54,7 @@ fn format_offset(offset : Int) -> String {
 
 ///|
 /// Format bytes as hex string (16 bytes per line)
-fn format_hex_bytes(data : Bytes, start_offset : Int) -> String {
+fn format_hex_bytes(data : Bytes, start_offset : Int32) -> String {
   let mut result = ""
   let mut pos = start_offset
 
@@ -88,7 +88,7 @@ fn format_hex_bytes(data : Bytes, start_offset : Int) -> String {
 
 ///|
 /// Format bytes as ASCII representation (16 bytes per line)
-fn format_ascii_bytes(data : Bytes, start_offset : Int) -> String {
+fn format_ascii_bytes(data : Bytes, start_offset : Int32) -> String {
   let mut result = ""
   let mut pos = start_offset
 

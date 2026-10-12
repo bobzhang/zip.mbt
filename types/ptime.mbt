@@ -15,7 +15,7 @@
 /// 
 /// Standard Unix timestamp representation. ZIP files require conversion to
 /// DOS format which truncates to 2-second precision and has epoch 1980-01-01.
-pub(all) struct Ptime(Int) derive(Eq, Compare, ToJson, FromJson, Hash)
+pub(all) struct Ptime(Int32) derive(Eq, Compare, ToJson, FromJson, Hash)
 
 ///|
 pub extend Ptime with Eq::{not_equal, equal}
@@ -42,13 +42,13 @@ pub extend Ptime with Hash::{hash, hash_combine}
 pub let dos_epoch : Ptime = 315532800
 
 ///|
-let jd_posix_epoch : Int = 2440588 // Julian day of POSIX epoch
+let jd_posix_epoch : Int32 = 2440588 // Julian day of POSIX epoch
 
 ///|
 /// Convert POSIX time to ((year, month, day), (hour, minute, second))
 pub fn ptime_to_date_time(
   ptime_s : Ptime,
-) -> ((Int, Int, Int), (Int, Int, Int)) {
+) -> ((Int32, Int32, Int32), (Int32, Int32, Int32)) {
   // Calculate Julian day
   let jd = ptime_s.0 / 86400 + jd_posix_epoch
   let jd_rem = ptime_s.0 % 86400
@@ -171,7 +171,7 @@ pub fn ptime_to_dos_date_time(ptime_s : Ptime) -> (UInt16, UInt16) {
 pub fn ptime_format(ptime : Ptime) -> String {
   let ((year, month, day), (hh, mm, ss)) = ptime_to_date_time(ptime)
   // Format: YYYY-MM-DD HH:MM:SSZ
-  fn pad2(n : Int) -> String {
+  fn pad2(n : Int32) -> String {
     if n < 10 {
       "0" + n.to_string()
     } else {
@@ -179,7 +179,7 @@ pub fn ptime_format(ptime : Ptime) -> String {
     }
   }
 
-  fn pad4(n : Int) -> String {
+  fn pad4(n : Int32) -> String {
     if n < 10 {
       "000" + n.to_string()
     } else if n < 100 {

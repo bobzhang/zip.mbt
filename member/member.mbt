@@ -37,11 +37,11 @@ pub(all) enum MemberKind {
 
 ///|
 /// Maximum number of members in a ZIP archive (non-ZIP64)
-pub let max_member_count : Int = 65535
+pub let max_member_count : Int32 = 65535
 
 ///|
 /// Maximum path length in ZIP archives
-pub let max_path_length : Int = 65535
+pub let max_path_length : Int32 = 65535
 
 ///|
 /// Archive member (file or directory)
