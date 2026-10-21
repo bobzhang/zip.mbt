@@ -1,0 +1,8 @@
+.DS_Store
+target/
+.mooncakes/
+.moonagent/
+_build/
+
+# Local agent instructions point outside this repository.
+MoonBit.md
