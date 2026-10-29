@@ -16,9 +16,9 @@ pub fn fpath_ensure_directoryness(@fpath.Fpath) -> @fpath.Fpath
 
 pub fn fpath_ensure_unix(@fpath.Fpath) -> @fpath.Fpath
 
-pub let max_member_count : Int
+pub let max_member_count : Int32
 
-pub let max_path_length : Int
+pub let max_path_length : Int32
 
 pub fn ptime_format(@types.Ptime) -> String
 

@@ -8,17 +8,17 @@ import {
 // Values
 pub fn deflate(BytesView, level? : DeflateLevel) -> Bytes raise
 
-pub fn deflate_dynamic(BytesView, Bool, Int, Int) -> Bytes
+pub fn deflate_dynamic(BytesView, Bool, Int32, Int32) -> Bytes
 
-pub fn deflate_fixed(BytesView, Bool, Int, Int) -> Bytes
+pub fn deflate_fixed(BytesView, Bool, Int32, Int32) -> Bytes
 
 pub fn deflate_stored(BytesView) -> Bytes raise
 
-pub fn inflate(BytesView, decompressed_size? : Int) -> Bytes raise
+pub fn inflate(BytesView, decompressed_size? : Int32) -> Bytes raise
 
-pub fn zlib_compress(BytesView, level? : DeflateLevel) -> (UInt, Bytes)
+pub fn zlib_compress(BytesView, level? : DeflateLevel) -> (UInt32, Bytes)
 
-pub fn zlib_decompress(BytesView) -> (Bytes, UInt) raise
+pub fn zlib_decompress(BytesView) -> (Bytes, UInt32) raise
 
 // Errors
 

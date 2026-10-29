@@ -27,27 +27,27 @@ pub struct File {
   version_needed_to_extract : UInt16
   gp_flags : UInt16
   compression : @types.Compression
-  start : Int
-  compressed_size : Int
+  start : Int32
+  compressed_size : Int32
   compressed_bytes : Bytes
-  decompressed_size : Int
-  decompressed_crc32 : UInt
+  decompressed_size : Int32
+  decompressed_crc32 : UInt32
 }
 pub fn File::can_extract(Self) -> Bool
 pub fn File::compressed_bytes(Self) -> Bytes
 pub fn File::compressed_bytes_to_bytes(Self) -> Bytes
-pub fn File::compressed_size(Self) -> Int
+pub fn File::compressed_size(Self) -> Int32
 pub fn File::compression(Self) -> @types.Compression
-pub fn File::decompressed_crc32(Self) -> UInt
-pub fn File::decompressed_size(Self) -> Int
-pub fn File::deflate_of_bytes(Bytes, Int, Int, level? : @deflate.DeflateLevel) -> Self raise
+pub fn File::decompressed_crc32(Self) -> UInt32
+pub fn File::decompressed_size(Self) -> Int32
+pub fn File::deflate_of_bytes(Bytes, Int32, Int32, level? : @deflate.DeflateLevel) -> Self raise
 pub fn File::gp_flags(Self) -> UInt16
 pub fn File::is_encrypted(Self) -> Bool
-pub fn File::make(Bytes, Int, Int, @types.Compression, Int, UInt, version_made_by? : UInt16, version_needed? : UInt16, gp_flags? : UInt16) -> Self raise
-pub fn File::start(Self) -> Int
-pub fn File::stored_of_bytes(Bytes, Int, Int) -> Self raise
+pub fn File::make(Bytes, Int32, Int32, @types.Compression, Int32, UInt32, version_made_by? : UInt16, version_needed? : UInt16, gp_flags? : UInt16) -> Self raise
+pub fn File::start(Self) -> Int32
+pub fn File::stored_of_bytes(Bytes, Int32, Int32) -> Self raise
 pub fn File::to_bytes(Self) -> Bytes raise
-pub fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt) raise
+pub fn File::to_bytes_no_crc_check(Self) -> (Bytes, UInt32) raise
 pub fn File::version_made_by(Self) -> UInt16
 pub fn File::version_needed_to_extract(Self) -> UInt16
 

@@ -10,32 +10,32 @@ pub let fixed_litlen_decoder : HuffmanDecoder
 
 pub let fixed_litlen_encoder : HuffmanEncoder
 
-pub fn reverse_bits(Int, Int) -> Int
+pub fn reverse_bits(Int32, Int32) -> Int32
 
-pub fn sym_info_code(Int) -> Int
+pub fn sym_info_code(Int32) -> Int32
 
-pub fn sym_info_code_length(Int) -> Int
+pub fn sym_info_code_length(Int32) -> Int32
 
-pub fn sym_info_make(Int, Int) -> Int
+pub fn sym_info_make(Int32, Int32) -> Int32
 
 // Errors
 
 // Types and methods
 type HuffmanDecoder
-pub fn HuffmanDecoder::count(Self, Int) -> Int
-pub fn HuffmanDecoder::counts_length(Self) -> Int
-pub fn HuffmanDecoder::init_from_lengths(Self, Array[Int], Int, Int) -> Unit
-pub fn HuffmanDecoder::max_sym(Self) -> Int
+pub fn HuffmanDecoder::count(Self, Int32) -> Int32
+pub fn HuffmanDecoder::counts_length(Self) -> Int32
+pub fn HuffmanDecoder::init_from_lengths(Self, Array[Int32], Int32, Int32) -> Unit
+pub fn HuffmanDecoder::max_sym(Self) -> Int32
 pub fn HuffmanDecoder::new() -> Self
-pub fn HuffmanDecoder::symbol(Self, Int) -> Int
-pub fn HuffmanDecoder::symbols_length(Self) -> Int
+pub fn HuffmanDecoder::symbol(Self, Int32) -> Int32
+pub fn HuffmanDecoder::symbols_length(Self) -> Int32
 
 type HuffmanEncoder
-pub fn HuffmanEncoder::codes_length(Self) -> Int
-pub fn HuffmanEncoder::get(Self, Int) -> Int
-pub fn HuffmanEncoder::max_sym(Self) -> Int
+pub fn HuffmanEncoder::codes_length(Self) -> Int32
+pub fn HuffmanEncoder::get(Self, Int32) -> Int32
+pub fn HuffmanEncoder::max_sym(Self) -> Int32
 pub fn HuffmanEncoder::new() -> Self
-pub fn HuffmanEncoder::set(Self, Int, Int) -> Unit
+pub fn HuffmanEncoder::set(Self, Int32, Int32) -> Unit
 
 // Type aliases
 
