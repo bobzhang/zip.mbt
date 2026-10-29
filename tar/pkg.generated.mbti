@@ -16,7 +16,7 @@ pub struct TarArchive {
 pub fn TarArchive::add(Self, TarEntry) -> Unit
 pub fn TarArchive::empty() -> Self
 pub fn TarArchive::find(Self, String) -> TarEntry?
-pub fn TarArchive::length(Self) -> Int
+pub fn TarArchive::length(Self) -> Int32
 pub fn TarArchive::of_bytes(Bytes) -> Self
 pub fn TarArchive::to_bytes(Self) -> Bytes
 pub fn TarArchive::to_json(Self) -> Json
@@ -25,13 +25,13 @@ pub impl ToJson for TarArchive
 
 pub struct TarEntry {
   name : String
-  size : Int
+  size : Int32
   data : Bytes
   typeflag : TarType
-  mode : Int
-  uid : Int
-  gid : Int
-  mtime : Int
+  mode : Int32
+  uid : Int32
+  gid : Int32
+  mtime : Int32
 } derive(@debug.Debug)
 pub fn TarEntry::directory(String) -> Self
 pub fn TarEntry::file(String, Bytes) -> Self

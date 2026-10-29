@@ -18,14 +18,14 @@ pub fn sanitize(Fpath) -> Fpath
 pub(all) struct Fpath(String) derive(Compare, Eq, Hash, @json.FromJson)
 pub fn Fpath::add(Self, Self) -> Self
 #alias("_[_]")
-pub fn Fpath::at(Self, Int) -> Int
-pub fn Fpath::compare(Self, Self) -> Int
+pub fn Fpath::at(Self, Int32) -> Int32
+pub fn Fpath::compare(Self, Self) -> Int32
 pub fn Fpath::equal(Self, Self) -> Bool
 pub fn Fpath::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
-pub fn Fpath::hash(Self) -> Int
+pub fn Fpath::hash(Self) -> Int32
 pub fn Fpath::hash_combine(Self, Hasher) -> Unit
 pub fn Fpath::is_empty(Self) -> Bool
-pub fn Fpath::length(Self) -> Int
+pub fn Fpath::length(Self) -> Int32
 pub fn Fpath::not_equal(Self, Self) -> Bool
 pub fn Fpath::op_ge(Self, Self) -> Bool
 pub fn Fpath::op_gt(Self, Self) -> Bool

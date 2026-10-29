@@ -2,31 +2,31 @@
 package "bobzhang/zip/deflate/internal/lz77"
 
 // Values
-pub fn backref_dist(Int) -> Int
+pub fn backref_dist(Int32) -> Int32
 
-pub fn backref_len(Int) -> Int
+pub fn backref_len(Int32) -> Int32
 
-pub fn find_backref(BytesView, Array[Int], Array[Int], Int, Int, Int, Int, Int, Int) -> Int
+pub fn find_backref(BytesView, Array[Int32], Array[Int32], Int32, Int32, Int32, Int32, Int32, Int32) -> Int32
 
-pub fn find_match_length(BytesView, Int, Int, Int, Int) -> Int
+pub fn find_match_length(BytesView, Int32, Int32, Int32, Int32) -> Int32
 
-pub fn hash4(BytesView) -> Int
+pub fn hash4(BytesView) -> Int32
 
-pub let hash_size : Int
+pub let hash_size : Int32
 
-pub fn insert_hash(Array[Int], Array[Int], Int, Int) -> Unit
+pub fn insert_hash(Array[Int32], Array[Int32], Int32, Int32) -> Unit
 
-pub fn make_backref(Int, Int) -> Int
+pub fn make_backref(Int32, Int32) -> Int32
 
-pub fn match_fwd(BytesView, Int, Int, Int, Int) -> Int
+pub fn match_fwd(BytesView, Int32, Int32, Int32, Int32) -> Int32
 
-pub let max_match_len : Int
+pub let max_match_len : Int32
 
-pub let min_match_len : Int
+pub let min_match_len : Int32
 
-pub let no_pos : Int
+pub let no_pos : Int32
 
-pub let window_size : Int
+pub let window_size : Int32
 
 // Errors
 

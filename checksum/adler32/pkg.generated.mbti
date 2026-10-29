@@ -6,14 +6,14 @@ import {
 }
 
 // Values
-pub fn bytes_adler32(BytesView) -> UInt
+pub fn bytes_adler32(BytesView) -> UInt32
 
 // Errors
 
 // Types and methods
 type Adler32 derive(Eq, @debug.Debug)
 pub fn Adler32::equal(Self, Self) -> Bool
-pub fn Adler32::finish(Self) -> UInt
+pub fn Adler32::finish(Self) -> UInt32
 pub fn Adler32::init() -> Self
 pub fn Adler32::not_equal(Self, Self) -> Bool
 pub fn Adler32::to_repr(Self) -> @debug.Repr

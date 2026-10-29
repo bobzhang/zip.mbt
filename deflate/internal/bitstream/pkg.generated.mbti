@@ -14,9 +14,9 @@ type BitWriter
 pub fn BitWriter::align_to_byte(Self) -> Unit
 pub fn BitWriter::flush(Self) -> Unit
 pub fn BitWriter::new(@bytebuf.ByteBuf) -> Self
-pub fn BitWriter::write_bits(Self, Int, Int) -> Unit
-pub fn BitWriter::write_byte(Self, Int) -> Unit
-pub fn BitWriter::write_uint16_le(Self, Int) -> Unit
+pub fn BitWriter::write_bits(Self, Int32, Int32) -> Unit
+pub fn BitWriter::write_byte(Self, Int32) -> Unit
+pub fn BitWriter::write_uint16_le(Self, Int32) -> Unit
 
 // Type aliases
 

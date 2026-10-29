@@ -6,18 +6,18 @@ import {
 }
 
 // Values
-pub fn bytes_crc32(BytesView) -> UInt
+pub fn bytes_crc32(BytesView) -> UInt32
 
 // Errors
 
 // Types and methods
 type Crc32 derive(Eq, @debug.Debug)
 pub fn Crc32::equal(Self, Self) -> Bool
-pub fn Crc32::finish(Self) -> UInt
+pub fn Crc32::finish(Self) -> UInt32
 pub fn Crc32::init() -> Self
 pub fn Crc32::not_equal(Self, Self) -> Bool
 pub fn Crc32::to_repr(Self) -> @debug.Repr
-pub fn Crc32::update_byte(Self, Int) -> Self
+pub fn Crc32::update_byte(Self, Int32) -> Self
 pub fn Crc32::update_bytes(Self, BytesView) -> Self
 
 // Type aliases

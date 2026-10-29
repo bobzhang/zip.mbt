@@ -14,12 +14,12 @@ import {
 type Archive
 pub fn Archive::add(Self, @member.Member) -> Unit
 pub fn Archive::empty() -> Self
-pub fn Archive::encoding_size(Self) -> Int
+pub fn Archive::encoding_size(Self) -> Int32
 pub fn Archive::find(Self, @fpath.Fpath) -> @member.Member?
 pub fn[T] Archive::fold(Self, (@member.Member, T) -> T, T) -> T
 pub fn Archive::is_empty(Self) -> Bool
 pub fn Archive::mem(Self, @fpath.Fpath) -> Bool
-pub fn Archive::member_count(Self) -> Int
+pub fn Archive::member_count(Self) -> Int32
 pub fn Archive::of_bytes(Bytes) -> Self raise
 pub fn Archive::of_map(Map[@fpath.Fpath, @member.Member]) -> Self
 pub fn Archive::remove(Self, @fpath.Fpath) -> Unit
