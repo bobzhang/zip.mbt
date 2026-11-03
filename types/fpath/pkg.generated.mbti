@@ -15,13 +15,14 @@ pub fn sanitize(Fpath) -> Fpath
 // Errors
 
 // Types and methods
-pub(all) struct Fpath(String) derive(Compare, Eq, Hash, @json.FromJson)
+#derive(Compare, Eq, Hash, @json.FromJson)
+pub(all) struct Fpath(String)
 pub fn Fpath::add(Self, Self) -> Self
 #alias("_[_]")
 pub fn Fpath::at(Self, Int32) -> Int32
 pub fn Fpath::compare(Self, Self) -> Int32
 pub fn Fpath::equal(Self, Self) -> Bool
-pub fn Fpath::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Fpath::from_json(@json.Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn Fpath::hash(Self) -> Int32
 pub fn Fpath::hash_combine(Self, Hasher) -> Unit
 pub fn Fpath::is_empty(Self) -> Bool
@@ -32,11 +33,11 @@ pub fn Fpath::op_gt(Self, Self) -> Bool
 pub fn Fpath::op_le(Self, Self) -> Bool
 pub fn Fpath::op_lt(Self, Self) -> Bool
 pub fn Fpath::output(Self, &Logger) -> Unit
-pub fn Fpath::to_json(Self) -> Json
+pub fn Fpath::to_json(Self) -> @json.Json
 pub fn Fpath::to_string(Self) -> String
 pub impl Add for Fpath
 pub impl Show for Fpath
-pub impl ToJson for Fpath
+pub impl @json.ToJson for Fpath
 
 // Type aliases
 

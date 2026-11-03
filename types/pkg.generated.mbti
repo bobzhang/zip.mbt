@@ -29,6 +29,7 @@ pub fn ptime_to_dos_date_time(Ptime) -> (UInt16, UInt16)
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) enum Compression {
   Stored
   Deflate
@@ -37,7 +38,7 @@ pub(all) enum Compression {
   Xz
   Zstd
   Other(Int32)
-} derive(Eq, @debug.Debug)
+}
 pub fn Compression::equal(Self, Self) -> Bool
 #as_free_fn(compression)
 pub fn Compression::from_int(Int32) -> Self
@@ -46,11 +47,12 @@ pub fn Compression::to_int(Self) -> Int32
 pub fn Compression::to_repr(Self) -> @debug.Repr
 pub fn Compression::to_string(Self) -> String
 
-pub(all) struct FileMode(Int32) derive(Compare, Eq, Hash, ToJson, @json.FromJson)
+#derive(Compare, Eq, Hash, @json.FromJson, @json.ToJson)
+pub(all) struct FileMode(Int32)
 pub fn FileMode::compare(Self, Self) -> Int32
 pub fn FileMode::equal(Self, Self) -> Bool
 pub fn FileMode::from_int(Int32) -> Self
-pub fn FileMode::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn FileMode::from_json(@json.Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn FileMode::hash(Self) -> Int32
 pub fn FileMode::hash_combine(Self, Hasher) -> Unit
 pub fn FileMode::not_equal(Self, Self) -> Bool
@@ -60,14 +62,15 @@ pub fn FileMode::op_le(Self, Self) -> Bool
 pub fn FileMode::op_lt(Self, Self) -> Bool
 pub fn FileMode::output(Self, &Logger) -> Unit
 pub fn FileMode::to_int(Self) -> Int32
-pub fn FileMode::to_json(Self) -> Json
+pub fn FileMode::to_json(Self) -> @json.Json
 pub fn FileMode::to_string(Self) -> String
 pub impl Show for FileMode
 
-pub(all) struct Ptime(Int32) derive(Compare, Eq, Hash, ToJson, @json.FromJson)
+#derive(Compare, Eq, Hash, @json.FromJson, @json.ToJson)
+pub(all) struct Ptime(Int32)
 pub fn Ptime::compare(Self, Self) -> Int32
 pub fn Ptime::equal(Self, Self) -> Bool
-pub fn Ptime::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Ptime::from_json(@json.Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn Ptime::hash(Self) -> Int32
 pub fn Ptime::hash_combine(Self, Hasher) -> Unit
 pub fn Ptime::not_equal(Self, Self) -> Bool
@@ -75,7 +78,7 @@ pub fn Ptime::op_ge(Self, Self) -> Bool
 pub fn Ptime::op_gt(Self, Self) -> Bool
 pub fn Ptime::op_le(Self, Self) -> Bool
 pub fn Ptime::op_lt(Self, Self) -> Bool
-pub fn Ptime::to_json(Self) -> Json
+pub fn Ptime::to_json(Self) -> @json.Json
 
 // Type aliases
 pub using @fpath {type Fpath}
