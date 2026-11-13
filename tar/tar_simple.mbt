@@ -4,10 +4,11 @@
 ///|
 /// TAR entry type flags following POSIX ustar subset.
 /// Only '0' (regular file) and '5' (directory) currently supported.
+#derive(Debug, Eq)
 pub enum TarType {
   RegularFile // '0'
   Directory // '5'
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend TarType with Debug::{to_repr}
@@ -30,6 +31,7 @@ extend TarType with ToJson::{to_json}
 /// TAR entry structure
 /// Represents a single header + data payload within a TAR archive.
 /// Limitations: path length >100 chars, prefix field, PAX headers not supported.
+#derive(Debug)
 pub struct TarEntry {
   name : String
   size : Int32
@@ -39,7 +41,7 @@ pub struct TarEntry {
   uid : Int32 // User ID
   gid : Int32 // Group ID
   mtime : Int32 // Modification time (Unix timestamp)
-} derive(Debug)
+}
 
 ///|
 pub extend TarEntry with Debug::{to_repr}
@@ -61,9 +63,10 @@ impl ToJson for TarEntry with fn to_json(self) -> Json {
 /// TAR archive structure
 /// Collection of TarEntry values and helpers for (de)serialization.
 /// Writer currently pads empty archives to 10KiB (optimization opportunity).
+#derive(Debug)
 pub struct TarArchive {
   entries : Array[TarEntry]
-} derive(Debug)
+}
 
 ///|
 pub extend TarArchive with Debug::{to_repr}

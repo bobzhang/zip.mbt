@@ -15,7 +15,8 @@
 /// 
 /// Standard Unix timestamp representation. ZIP files require conversion to
 /// DOS format which truncates to 2-second precision and has epoch 1980-01-01.
-pub(all) struct Ptime(Int32) derive(Eq, Compare, ToJson, FromJson, Hash)
+#derive(Eq, Compare, ToJson, FromJson, Hash)
+pub(all) struct Ptime(Int32)
 
 ///|
 pub extend Ptime with Eq::{not_equal, equal}

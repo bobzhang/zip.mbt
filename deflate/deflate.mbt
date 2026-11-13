@@ -1379,12 +1379,13 @@ pub fn deflate_dynamic(
 /// - `Fast`: `deflate_fixed()` with good_match=4, max_chain=128
 /// - `Default`: `deflate_dynamic()` with good_match=8, max_chain=1024  
 /// - `Best`: `deflate_dynamic()` with good_match=32, max_chain=4096
+#derive(Eq, Debug)
 pub(all) enum DeflateLevel {
   None // No compression, use stored blocks only
   Fast // Fast compression with fixed Huffman
   Default // Default compression with dynamic Huffman
   Best // Best compression with maximum effort
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend DeflateLevel with Eq::{not_equal, equal}

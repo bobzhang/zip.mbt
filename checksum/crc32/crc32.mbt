@@ -7,7 +7,8 @@
 ///|
 /// CRC-32 state for incremental checksum computation
 /// Internal state wraps the running (bitwise inverted) CRC value.
-struct Crc32(UInt32) derive(Eq, Debug)
+#derive(Eq, Debug)
+struct Crc32(UInt32)
 
 ///|
 pub extend Crc32 with Eq::{not_equal, equal}

@@ -4,6 +4,7 @@ package "bobzhang/zip"
 import {
   "bobzhang/zip/member",
   "bobzhang/zip/types/fpath",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -25,9 +26,9 @@ pub fn Archive::of_map(Map[@fpath.Fpath, @member.Member]) -> Self
 pub fn Archive::remove(Self, @fpath.Fpath) -> Unit
 pub fn Archive::to_array(Self) -> Array[@member.Member]
 pub fn Archive::to_bytes(Self, first? : @fpath.Fpath) -> Bytes raise
-pub fn Archive::to_json(Self) -> Json
+pub fn Archive::to_json(Self) -> @json.Json
 pub fn Archive::to_map(Self) -> Map[@fpath.Fpath, @member.Member]
-pub impl ToJson for Archive
+pub impl @json.ToJson for Archive
 
 // Type aliases
 
