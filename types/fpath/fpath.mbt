@@ -5,7 +5,8 @@
 
 ///|
 /// File path in ZIP archive
-pub(all) struct Fpath(String) derive(Eq, Compare, FromJson, Hash)
+#derive(Eq, Compare, FromJson, Hash)
+pub(all) struct Fpath(String)
 
 ///|
 pub extend Fpath with Eq::{not_equal, equal}

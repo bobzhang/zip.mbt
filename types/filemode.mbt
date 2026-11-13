@@ -2,7 +2,8 @@
 
 ///|
 /// Unix file mode (permission bits)
-pub(all) struct FileMode(Int32) derive(Eq, Compare, ToJson, FromJson, Hash)
+#derive(Eq, Compare, ToJson, FromJson, Hash)
+pub(all) struct FileMode(Int32)
 
 ///|
 pub extend FileMode with Eq::{not_equal, equal}

@@ -3,6 +3,7 @@ package "bobzhang/zip/tar"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -10,19 +11,21 @@ import {
 // Errors
 
 // Types and methods
+#derive(@debug.Debug)
 pub struct TarArchive {
   entries : Array[TarEntry]
-} derive(@debug.Debug)
+}
 pub fn TarArchive::add(Self, TarEntry) -> Unit
 pub fn TarArchive::empty() -> Self
 pub fn TarArchive::find(Self, String) -> TarEntry?
 pub fn TarArchive::length(Self) -> Int32
 pub fn TarArchive::of_bytes(Bytes) -> Self
 pub fn TarArchive::to_bytes(Self) -> Bytes
-pub fn TarArchive::to_json(Self) -> Json
+pub fn TarArchive::to_json(Self) -> @json.Json
 pub fn TarArchive::to_repr(Self) -> @debug.Repr
-pub impl ToJson for TarArchive
+pub impl @json.ToJson for TarArchive
 
+#derive(@debug.Debug)
 pub struct TarEntry {
   name : String
   size : Int32
@@ -32,15 +35,16 @@ pub struct TarEntry {
   uid : Int32
   gid : Int32
   mtime : Int32
-} derive(@debug.Debug)
+}
 pub fn TarEntry::directory(String) -> Self
 pub fn TarEntry::file(String, Bytes) -> Self
 pub fn TarEntry::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub enum TarType {
   RegularFile
   Directory
-} derive(Eq, @debug.Debug)
+}
 pub fn TarType::equal(Self, Self) -> Bool
 pub fn TarType::not_equal(Self, Self) -> Bool
 pub fn TarType::to_repr(Self) -> @debug.Repr

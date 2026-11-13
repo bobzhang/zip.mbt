@@ -11,7 +11,8 @@ pub fn bytes_crc32(BytesView) -> UInt32
 // Errors
 
 // Types and methods
-type Crc32 derive(Eq, @debug.Debug)
+#derive(Eq, @debug.Debug)
+type Crc32
 pub fn Crc32::equal(Self, Self) -> Bool
 pub fn Crc32::finish(Self) -> UInt32
 pub fn Crc32::init() -> Self

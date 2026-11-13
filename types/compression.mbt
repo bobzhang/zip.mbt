@@ -1,5 +1,6 @@
 ///|
 /// Compression formats supported in ZIP archives
+#derive(Eq, Debug)
 pub(all) enum Compression {
   Stored // No compression
   Deflate // Deflate compression (RFC 1951)
@@ -8,7 +9,7 @@ pub(all) enum Compression {
   Xz // XZ (not supported)
   Zstd // Zstandard (not supported)
   Other(Int32) // Unknown compression method
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Compression with Eq::{not_equal, equal}
