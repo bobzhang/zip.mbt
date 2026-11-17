@@ -198,7 +198,7 @@ pub fn Archive::to_bytes(self : Archive, first? : Fpath) -> Bytes raise {
   }
   let total_size = self.encoding_size()
   // Use Buffer from stdlib instead of manual array indexing
-  let buf = Buffer(size_hint=total_size)
+  let buf = Buffer(capacity=total_size)
   let central_dir_entries : Array[(Int32, Member)] = []
 
   // Helper to encode a member - write local header and record position
