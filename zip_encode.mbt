@@ -67,7 +67,7 @@ fn Member::write_local_header(self : Member, buf : Buffer) -> Int32 {
       buf.write_uint_le(0) // uncompressed size
       buf.write_uint16_le(path_bytes.length().to_uint16())
       buf.write_uint16_le(0) // extra field length
-      buf.write_bytes(path_bytes)
+      buf.write_bytesview(path_bytes)
     }
     File(f) => {
       buf.write_uint_le(ZIP_LOCAL_FILE_SIG)
@@ -81,7 +81,7 @@ fn Member::write_local_header(self : Member, buf : Buffer) -> Int32 {
       buf.write_int_le(f.decompressed_size)
       buf.write_uint16_le(path_bytes.length().to_uint16())
       buf.write_uint16_le(0) // extra field length
-      buf.write_bytes(path_bytes)
+      buf.write_bytesview(path_bytes)
       // Write compressed data
       buf.write_bytesview(
         f.compressed_bytes[f.start:f.start + f.compressed_size],
@@ -141,7 +141,7 @@ fn Member::write_central_directory_header(
       buf.write_uint16_le(0) // internal file attributes
       buf.write_int_le(self.mode().to_int() << 16) // external file attributes
       buf.write_int_le(local_header_offset)
-      buf.write_bytes(path_bytes)
+      buf.write_bytesview(path_bytes)
     }
     File(f) => {
       buf.write_uint16_le(f.version_made_by)
@@ -160,7 +160,7 @@ fn Member::write_central_directory_header(
       buf.write_uint16_le(0) // internal file attributes
       buf.write_int_le(self.mode().to_int() << 16) // external file attributes
       buf.write_int_le(local_header_offset)
-      buf.write_bytes(path_bytes)
+      buf.write_bytesview(path_bytes)
     }
   }
 }
